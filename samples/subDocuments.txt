@@ -1,0 +1,1 @@
+local.getCollection('book').find({$and:[ {author:{$gt:55}},{title:{$regex:'^.*60.*$'}} ]})

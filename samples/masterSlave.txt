@@ -1,0 +1,28 @@
+import com.gmongo.GMongo
+
+def gmongo = new GMongo("localhost:27017")
+db = gmongo.getDB('local')
+
+db.master.drop()
+db.slave.drop()
+def rand  = new Random()
+
+20.times {
+   db.master << 
+   [
+     name: "Master_${it}", 
+     age: it, 
+    ]
+}
+            
+            
+20.times {
+   db.slave << 
+   [
+     name: "Slave_${it}", 
+     link: it*2, 
+    ]
+}
+            
+    
+

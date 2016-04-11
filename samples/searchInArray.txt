@@ -1,0 +1,18 @@
+import com.gmongo.GMongo
+
+def gmongo = new GMongo("localhost:27017")
+db = gmongo.getDB('local')
+
+db.shops.drop()
+def rand  = new Random()
+
+20.times {
+   db.shops << [name: "Shopa_${it}", sizes: [ "S", "M", "L"], products : [[name:"ProdA_${it}",price:it],[name:"ProdB_${it}",price:it]]]
+   db.shops << [name: "Shopb_${it}", sizes: [ "S", "M", "L"]]
+}
+    
+
+db.shops.find()                         
+//db.shops.find([name:"Shop_0"],["products":1])
+//db.shops.find(["products.price":0])
+//db.shops.aggregate( [ $unwind : "$sizes" ] )

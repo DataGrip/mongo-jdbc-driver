@@ -1,0 +1,70 @@
+
+<project name="MongoJdbc" default="Compile" >
+    <property file="build.properties"/>
+
+    <path id="driver.classpath">
+        <fileset id="lib" dir="driver/src/main/lib">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+    <pathconvert property="driver.classpath.jar" refid="driver.classpath" pathsep=" ">
+        <map from="C:\work\mongoui\driver\src\main\lib\" to="./"/>
+    </pathconvert>
+
+
+    <target name="Compile" description="compile">
+        <!-- THE STARTDARD ANT TASK buildnumber DOES READ, THAN INCREMENT AND SAVE. THIS MAKE PROBLEMS WITH UPDATES -->
+        <propertyfile file="buildnum.properties">
+            <entry key="buildnum" type="int" default="0" operation="+" pattern="00"/>
+        </propertyfile>
+        <property file="buildnum.properties"/>
+
+        <echo message="------------------ Compile  #${buildnum} -----------------"/>
+
+        <mkdir dir="target/classes"/>
+        <javac destdir="target/classes" debug="true" debuglevel="lines,source" deprecation="on" source="1.7" target="1.7">
+            <classpath refid="driver.classpath" />
+            <src path="driver/src/main/java"/>
+        </javac>
+        <jar destfile="target/dist/mongojdbc${driver.version}.jar">
+            <fileset dir="target/classes" />
+            <fileset dir="driver/src/main/resources/jar"/>
+            <manifest>
+                <attribute name="Main-Class" value="com.wisecoders.dbs.Dbs"/>
+                <attribute name="Class-Path" value="${driver.classpath.jar}"/>
+                <attribute name="Specification-Version" value="${driver.version}"/>
+                <attribute name="Specification-Vendor" value="Wise Coders Technologies"/>
+                <attribute name="Implementation-Vendor-Id" value="dbschema.com"/>
+                <attribute name="Implementation-Vendor" value="Wise Coders Technologies"/>
+                <attribute name="Implementation-Version" value="${buildnum}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="DeployLocal" depends="Compile">
+        <delete>
+            <fileset dir="/work/dbs/dbs-app/src/main/pack/drivers/MongoDb">
+                <include name="*.jar"/>
+            </fileset>
+        </delete>
+        <copy todir="/work/dbs/dbs-app/src/main/pack/drivers/MongoDb">
+            <fileset file="target/dist/mongojdbc${driver.version}.jar"/>
+            <fileset file="driver/src/main/lib/mongo3.0.2.jar"/>
+        </copy>
+
+    </target>
+
+    <target name="DeployWebSite" depends="Compile">
+        <delete file="target/dist/MongoDbJdbcDriver.zip"/>
+        <zip destfile="target/dist/MongoDbJdbcDriver.zip">
+            <zipfileset file="target/dist/mongojdbc${driver.version}.jar" />
+            <zipfileset file="driver/src/main/lib/mongo3.0.2.jar" />
+        </zip>
+        <scp todir="${dbs.deploy.url}" trust="true" sftp="true">
+            <!-- 'PASSIVE' FLAG HELPS TO GO EASIER THROUGH WINDOWS FIREWALL -->
+            <fileset file="target/dist/MongoDbJdbcDriver.zip"/>
+        </scp>
+    </target>
+
+</project>
