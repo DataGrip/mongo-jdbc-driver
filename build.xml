@@ -9,7 +9,7 @@
     </path>
 
     <pathconvert property="driver.classpath.jar" refid="driver.classpath" pathsep=" ">
-        <map from="C:\work\mongoui\driver\src\main\lib\" to="./"/>
+        <map from="C:\work\mongo-jdbc\driver\src\main\lib\" to="./"/>
     </pathconvert>
 
 
@@ -31,7 +31,7 @@
             <fileset dir="target/classes" />
             <fileset dir="driver/src/main/resources/jar"/>
             <manifest>
-                <attribute name="Main-Class" value="com.wisecoders.dbs.Dbs"/>
+                <attribute name="Main-Class" value="com.dbschema.MongoJdbcDriver"/>
                 <attribute name="Class-Path" value="${driver.classpath.jar}"/>
                 <attribute name="Specification-Version" value="${driver.version}"/>
                 <attribute name="Specification-Vendor" value="Wise Coders Technologies"/>

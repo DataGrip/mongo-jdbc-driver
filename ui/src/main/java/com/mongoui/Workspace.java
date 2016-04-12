@@ -3,7 +3,7 @@ package com.mongoui;
 import com.jidesoft.docking.DockableFrame;
 import com.mongodb.BasicDBList;
 import com.mongoui.table.ui.ResultPane;
-import com.nosql.NoSqlDriver;
+import com.dbschema.NoSqlDriver;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.jdesktop.application.Application;
 
