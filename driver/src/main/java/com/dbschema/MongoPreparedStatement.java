@@ -152,9 +152,6 @@ public class MongoPreparedStatement implements PreparedStatement {
             return lastResultSet;
         } catch ( Throwable ex ){
             ex.printStackTrace();
-            if( sql.startsWith("mydatabase")){
-                throw new SQLException( "Please replace 'mydatabase' and 'mycollection' with the name of the database and collection to be used. " + ex.getMessage() );
-            }
             throw new SQLException( ex.getMessage() + "\nExecuted query: " + sql );
         }
 

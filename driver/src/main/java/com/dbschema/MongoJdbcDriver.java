@@ -12,10 +12,11 @@ import java.util.logging.Logger;
 
 
 /**
- * Driver implementation that provides minimal JDBC implementation for accessing MongoDB instances. The jdbc
- * driver url spec is as follows: jdbc:mongodb://<server>[:27017]/<db-name> See getPropertyInfo method for
- * driver properties that can be specified when getting a Connection to alter the semantics of that
- * Connection.
+ * Minimal implementation of the JDBC standards for MongoDb database.
+ * This is customized for DbSchema database designer.
+ * Connect to the database using a URL like :
+ * jdbc:mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
+ * The URL excepting the jdbc: prefix is passed as it is to the MongoDb native Java driver.
  */
 public class MongoJdbcDriver implements Driver
 {
@@ -31,7 +32,9 @@ public class MongoJdbcDriver implements Driver
 
 
     /**
-     * @see java.sql.Driver#connect(java.lang.String, java.util.Properties)
+     * Connect to the database using a URL like :
+     * jdbc:mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
+     * The URL excepting the jdbc: prefix is passed as it is to the MongoDb native Java driver.
      */
     public Connection connect(String url, Properties info) throws SQLException {
         if ( url != null && acceptsURL( url )){

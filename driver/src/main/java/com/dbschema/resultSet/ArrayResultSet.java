@@ -158,8 +158,7 @@ public class ArrayResultSet implements ResultSet
 		return false;
 	}
 
-	public String getString(int columnIndex) throws SQLException
-	{
+	public String getString(int columnIndex) throws SQLException {
 		if (currentRow >= data.length)
 		{
 			throw new SQLException("ResultSet exhausted, request currentRow = " + currentRow);
@@ -427,8 +426,16 @@ public class ArrayResultSet implements ResultSet
 
 	public Object getObject(int columnIndex) throws SQLException
 	{
-		
-		return null;
+        if (currentRow >= data.length)
+        {
+            throw new SQLException("ResultSet exhausted, request currentRow = " + currentRow);
+        }
+        int adjustedColumnIndex = columnIndex - 1;
+        if (adjustedColumnIndex >= data[currentRow].length)
+        {
+            throw new SQLException("Column index does not exist: " + columnIndex);
+        }
+        return data[currentRow][adjustedColumnIndex];
 	}
 
 	public Object getObject(String columnLabel) throws SQLException
