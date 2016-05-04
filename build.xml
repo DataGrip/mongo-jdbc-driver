@@ -67,4 +67,78 @@
         </scp>
     </target>
 
+    <taskdef name="groovy"  classname="org.codehaus.groovy.ant.Groovy" >
+        <classpath id="izp">
+            <fileset id="antlib" dir="./antlib">
+                <include name="**/*.jar"/>
+            </fileset>
+            <fileset id="lib" dir="driver/src/main/lib">
+                <include name="**/*.jar"/>
+            </fileset>
+            <fileset file="target/dist/mongojdbc${driver.version}.jar"/>
+        </classpath>
+    </taskdef>
+
+    <target name="Extract Completion Keywords2">
+        <groovy><![CDATA[
+            def listMethodNames = { clz ->
+                clz.metaClass.methods.each { method ->
+                  if ( method.isPublic() && ( !'equals'.equals(method.name) && !'notify'.equals(method.name) && !'notifyAll'.equals(method.name) && !'wait'.equals(method.name) && !'hashCode'.equals(method.name) )){
+                    println "${clz.getSimpleName()}|${method.name}(${method.nativeParameterTypes*.getSimpleName().join( ',' )})|${method.returnType.getSimpleName()}\\n\\"
+                  }
+                }
+            }
+            listMethodNames( com.dbschema.mongo.JMongoDatabase.class )
+            listMethodNames( com.dbschema.mongo.JMongoCollection.class )
+            listMethodNames( com.dbschema.mongo.JFindIterable.class )
+                ]]></groovy>
+            </target>
+
 </project>
+
+
+        <!--
+
+    <target name="OldExtract">
+        <groovy><![CDATA[
+            import java.io.*
+            import java.util.*
+            import java.util.regex.*
+
+            def extractCompletionList = { file ->
+                className = file.getName()
+                className = className.substring( 0, className.length() - ( className.endsWith('.java') ? '.java'.length() : 0 ))
+                TreeMap patterns = new TreeMap()
+                if ( file.exists() ){
+                  String content = file.getText('UTF-8')
+                  file.withReader { reader ->
+                    while ((line = reader.readLine())!=null ) {
+                      line = line.trim()
+                      if ( line.startsWith( 'public') ){
+                        line = line.substring('public'.length(), (line.endsWith('{') ? line.length()-1 : line.length()) ).trim()
+                        idx = line.indexOf(' ')
+                        if ( idx > 0 ){
+                          String methodName = line.substring(idx).trim()
+                          String retValue = line.substring(0,idx).trim()
+                          if ( !methodName.startsWith( className )){
+                            patterns.put( methodName, retValue )
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                println file.getName()
+                for (String methodName : patterns.keySet()) {
+                  String retValue = patterns.get(methodName);
+                  println "${className},${methodName},${retValue}"
+                }
+             }
+
+             extractCompletionList( new File('driver/src/main/java/com/dbschema/mongo/JMongoDatabase.java') )
+             extractCompletionList( new File('driver/src/main/java/com/dbschema/mongo/JMongoIterable.java') )
+
+        ]]></groovy>
+    </target>
+
+-->
