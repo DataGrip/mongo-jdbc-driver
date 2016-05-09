@@ -82,11 +82,25 @@
     <target name="Extract Completion Keywords2">
         <groovy><![CDATA[
             def listMethodNames = { clz ->
+                def result = []
                 clz.metaClass.methods.each { method ->
                   if ( method.isPublic() && ( !'equals'.equals(method.name) && !'notify'.equals(method.name) && !'notifyAll'.equals(method.name) && !'wait'.equals(method.name) && !'hashCode'.equals(method.name) )){
-                    println "${clz.getSimpleName()}|${method.name}(${method.nativeParameterTypes*.getSimpleName().join( ',' )})|${method.returnType.getSimpleName()}\\n\\"
+                    StringBuilder sbParams = new StringBuilder()
+                    for( Class paramType : method.nativeParameterTypes ){
+                      if ( sbParams.length() > 0 ) sbParams.append(", ")
+                      if ( 'Map'.equals(paramType.getSimpleName()) || 'Bson'.equals(paramType.getSimpleName())){
+                       sbParams.append("{ }")
+                      } else {
+                       sbParams.append(paramType.getSimpleName())
+                      }
+                    }
+                    result.add( "${clz.getSimpleName()}|${method.name}(${sbParams})|${method.returnType.getSimpleName()}\\n\\" )
+                    //println "${clz.getSimpleName()}|${method.name}(${method.nativeParameterTypes*.getSimpleName().join( ', ' )})|${method.returnType.getSimpleName()}\\n\\"
                   }
                 }
+                for ( String str : result.unique() ){
+                 println str
+               }
             }
             listMethodNames( com.dbschema.mongo.JMongoDatabase.class )
             listMethodNames( com.dbschema.mongo.JMongoCollection.class )
