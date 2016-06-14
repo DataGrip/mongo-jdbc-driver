@@ -140,6 +140,7 @@ public class MongoPreparedStatement implements PreparedStatement {
             if ( !dbIsSet ){
                 binding.put( "db", con.getDatabase("admin"));
             }
+            binding.put("client", con);
             engine.eval( "var ObjectId = function( oid ) { return new org.bson.types.ObjectId( oid );}");
             Object obj = engine.eval(sql);
             if ( obj instanceof Iterable){
