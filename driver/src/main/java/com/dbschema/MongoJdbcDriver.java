@@ -40,6 +40,7 @@ public class MongoJdbcDriver implements Driver
         if ( url != null && acceptsURL( url )){
             try	{
                 final MongoService service = new MongoService( url.substring("jdbc:".length()), info );
+
                 return new MongoConnection(service);
             } catch (UnknownHostException e) {
                 throw new SQLException("Unexpected exception: " + e.getMessage(), e);
