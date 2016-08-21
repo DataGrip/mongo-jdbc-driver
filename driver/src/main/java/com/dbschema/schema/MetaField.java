@@ -13,6 +13,7 @@ public class MetaField {
     public final List<ObjectId> objectIds = new ArrayList<ObjectId>();
     public final int type;
     public final List<MetaReference> references = new ArrayList<MetaReference>();
+    public boolean mandatory = true;
 
 
     public MetaField(final MetaJson parentJson, final String name, final String typeName, int type ){
@@ -64,5 +65,12 @@ public class MetaField {
     @Override
     public String toString() {
         return getNameWithPath();
+    }
+    public void setMandatory( boolean mandatory ){
+        this.mandatory = mandatory;
+    }
+
+    public boolean isMandatory(){
+        return mandatory;
     }
 }

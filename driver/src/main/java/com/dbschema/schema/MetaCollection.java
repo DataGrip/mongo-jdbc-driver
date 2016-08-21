@@ -64,24 +64,30 @@ public class MetaCollection extends MetaJson {
     private void discoverMap(MetaJson parentMap, Object object){
         if ( object instanceof Map){
             Map map = (Map)object;
+            final boolean parentIsNew = parentMap.fields.isEmpty();
             for ( Object key : map.keySet() ){
                 final Object value = map.get( key );
                 String type =( value != null ? value.getClass().getName() : "String" );
                 if ( type.lastIndexOf('.') > 0 ) type = type.substring( type.lastIndexOf('.')+1 );
                 if ( value instanceof Map ) {
-                    final MetaJson childrenMap = parentMap.createJsonMapField(key.toString());
+                    final MetaJson childrenMap = parentMap.createJsonMapField(key.toString(), parentIsNew);
                     discoverMap(childrenMap, value);
                 } else if ( value instanceof List && ( ((List)value).isEmpty() || isListOfDocuments(value))  ) {
-                    final MetaJson subDocument = parentMap.createJsonListField(key.toString());
+                    final MetaJson subDocument = parentMap.createJsonListField(key.toString(), parentIsNew );
                     for ( Object child : (List)value ){
                         discoverMap(subDocument, child);
                     }
                 } else {
-                    MetaField field = parentMap.createField((String) key, type, getJavaType( value ));
+                    MetaField field = parentMap.createField((String) key, type, getJavaType( value ), parentIsNew );
                     // VALUES WHICH ARE OBJECTID AND ARE NOT _id IN THE ROOT MAP
                     if ( value instanceof ObjectId && !"_id".equals( field.getNameWithPath() ) ){
                         field.addObjectId((ObjectId) value);
                     }
+                }
+            }
+            for ( MetaField field: parentMap.fields){
+                if ( !map.containsKey( field.name )){
+                     field.setMandatory( false );
                 }
             }
         }

@@ -100,6 +100,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
      * @see java.sql.DatabaseMetaData#getColumns(java.lang.String, java.lang.String, java.lang.String,
      *      java.lang.String)
      */
+    @Override
     public ResultSet getColumns(String catalogName, String schemaName, String tableNamePattern, String columnNamePattern) throws SQLException
     {
         // As far as this driver implementation goes, every "table" in MongoDB is actually a collection, and
@@ -136,7 +137,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
                 "0", // "BUFFER_LENGTH", (not used)
                 "0", // "DECIMAL_DIGITS",
                 "10", // "NUM_PREC_RADIX",
-                "" + columnNoNulls, // "NULLABLE",
+                "" + ( field.isMandatory() ? columnNoNulls : columnNullable ), // "NULLABLE",
                 "", // "REMARKS",
                 "", // "COLUMN_DEF",
                 "0", // "SQL_DATA_TYPE", (not used)
