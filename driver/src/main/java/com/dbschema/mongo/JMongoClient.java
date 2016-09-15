@@ -28,7 +28,7 @@ public class JMongoClient {
     }
 
     public List<MongoCredential> getCredentialsList() {
-        return getCredentialsList();
+        return mongoClient.getCredentialsList();
     }
 
     public MongoIterable<String> listDatabaseNames() {

@@ -1,5 +1,6 @@
 package com.dbschema.schema;
 
+import com.dbschema.mongo.parser.ScanStrategy;
 import com.mongodb.client.ListIndexesIterable;
 import com.mongodb.client.MongoCursor;
 import com.dbschema.mongo.JFindIterable;
@@ -14,18 +15,29 @@ import java.util.Map;
 
 public class MetaCollection extends MetaJson {
 
-    private static final int ITERATIONS = 30;
-
+    private boolean isFirstDiscover = true;
 
     public final String db;
     public final List<MetaIndex> metaIndexes = new ArrayList<MetaIndex>();
 
-    public MetaCollection( final JMongoCollection mongoCollection, final String db, final String name){
+    public MetaCollection( final JMongoCollection mongoCollection, final String db, final String name, final ScanStrategy strategy ){
         super( null, name, TYPE_MAP);
         this.db = db;
 
-        if( discoverCollectionFirstRecords( mongoCollection ) ){
-            discoverCollectionRandomRecords( mongoCollection );
+        switch ( strategy ){
+            case medium:
+                if( discoverCollectionFirstRecords( mongoCollection, 300 ) ){
+                    discoverCollectionRandomRecords( mongoCollection, 300 );
+                }
+                break;
+            case full:
+                discoverCollectionFirstRecords( mongoCollection, Integer.MAX_VALUE);
+                break;
+            default :
+                if( discoverCollectionFirstRecords( mongoCollection, 30 ) ){
+                    discoverCollectionRandomRecords( mongoCollection, 100 );
+                }
+                break;
         }
         discoverIndexes( mongoCollection );
 
@@ -38,12 +50,22 @@ public class MetaCollection extends MetaJson {
     }
 
 
-    private void discoverCollectionRandomRecords( JMongoCollection mongoCollection ) {
+    private boolean discoverCollectionFirstRecords(JMongoCollection mongoCollection, int iterations ) {
+        MongoCursor cursor = mongoCollection.find().iterator();
+        int iteration = 0;
+        while( cursor.hasNext() && ++iteration <= iterations ){
+            discoverMap(this, cursor.next());
+        }
+        cursor.close();
+        return iteration >= iterations;
+    }
+
+    private void discoverCollectionRandomRecords( JMongoCollection mongoCollection, int iterations ) {
         int skip = 10, i = 0;
-        final JFindIterable jFindIterable = mongoCollection.find().limit(-1);
-        while ( i++ < ITERATIONS ){
+        final JFindIterable jFindIterable = mongoCollection.find(); // .limit(-1)
+        while ( i++ < iterations ){
             final MongoCursor crs = jFindIterable.iterator();
-            while( i++ < ITERATIONS && crs.hasNext() ){
+            while( i++ < iterations && crs.hasNext() ){
                 discoverMap( this, crs.next());
             }
             jFindIterable.skip( skip );
@@ -51,34 +73,23 @@ public class MetaCollection extends MetaJson {
         }
     }
 
-    private boolean discoverCollectionFirstRecords(JMongoCollection mongoCollection) {
-        MongoCursor cursor = mongoCollection.find().iterator();
-        int iterations = 0;
-        while( cursor.hasNext() && ++iterations <= ITERATIONS ){
-            discoverMap(this, cursor.next());
-        }
-        cursor.close();
-        return iterations >= ITERATIONS;
-    }
-
     private void discoverMap(MetaJson parentMap, Object object){
         if ( object instanceof Map){
             Map map = (Map)object;
-            final boolean parentIsNew = parentMap.fields.isEmpty();
             for ( Object key : map.keySet() ){
                 final Object value = map.get( key );
                 String type =( value != null ? value.getClass().getName() : "String" );
                 if ( type.lastIndexOf('.') > 0 ) type = type.substring( type.lastIndexOf('.')+1 );
                 if ( value instanceof Map ) {
-                    final MetaJson childrenMap = parentMap.createJsonMapField(key.toString(), parentIsNew);
+                    final MetaJson childrenMap = parentMap.createJsonMapField(key.toString(), isFirstDiscover );
                     discoverMap(childrenMap, value);
                 } else if ( value instanceof List && ( ((List)value).isEmpty() || isListOfDocuments(value))  ) {
-                    final MetaJson subDocument = parentMap.createJsonListField(key.toString(), parentIsNew );
+                    final MetaJson subDocument = parentMap.createJsonListField(key.toString(), isFirstDiscover );
                     for ( Object child : (List)value ){
                         discoverMap(subDocument, child);
                     }
                 } else {
-                    MetaField field = parentMap.createField((String) key, type, getJavaType( value ), parentIsNew );
+                    MetaField field = parentMap.createField((String) key, type, getJavaType( value ), isFirstDiscover );
                     // VALUES WHICH ARE OBJECTID AND ARE NOT _id IN THE ROOT MAP
                     if ( value instanceof ObjectId && !"_id".equals( field.getNameWithPath() ) ){
                         field.addObjectId((ObjectId) value);
@@ -87,10 +98,11 @@ public class MetaCollection extends MetaJson {
             }
             for ( MetaField field: parentMap.fields){
                 if ( !map.containsKey( field.name )){
-                     field.setMandatory( false );
+                    field.setMandatory( false );
                 }
             }
         }
+        isFirstDiscover = false;
     }
 
     public int getJavaType( Object value ){

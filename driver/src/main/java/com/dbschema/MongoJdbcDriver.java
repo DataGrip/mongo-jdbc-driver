@@ -2,6 +2,7 @@
 package com.dbschema;
 
 import com.dbschema.mongo.MongoService;
+import com.dbschema.mongo.parser.ScanStrategy;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -38,8 +39,15 @@ public class MongoJdbcDriver implements Driver
      */
     public Connection connect(String url, Properties info) throws SQLException {
         if ( url != null && acceptsURL( url )){
+            ScanStrategy scan = ScanStrategy.fast;
+            for (ScanStrategy s : ScanStrategy.values() ){
+                if ( url.contains( "?scan=" + s ) || url.contains( "&scan=" + s )){
+                    scan = s;
+                    url = url.replaceFirst("\\?scan=" + s, "" ).replaceFirst("&scan=" + s, "");
+                }
+            }
             try	{
-                final MongoService service = new MongoService( url.substring("jdbc:".length()), info );
+                final MongoService service = new MongoService( url.substring("jdbc:".length()), info, scan );
 
                 return new MongoConnection(service);
             } catch (UnknownHostException e) {

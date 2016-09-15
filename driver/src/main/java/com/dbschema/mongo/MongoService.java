@@ -1,6 +1,7 @@
 package com.dbschema.mongo;
 
 import com.dbschema.Service;
+import com.dbschema.mongo.parser.ScanStrategy;
 import com.dbschema.schema.MetaCollection;
 import com.dbschema.schema.MetaField;
 import org.bson.types.ObjectId;
@@ -13,13 +14,15 @@ public class MongoService implements Service {
     private final JMongoClient client;
     private String uri;
     protected final HashMap<String,MetaCollection> metaCollections = new HashMap<String,MetaCollection>();
+    private final ScanStrategy scanStrategy;
 
     // USE STATIC SO OPENING A NEW CONNECTION WILL REMEMBER THIS
     public static final List<String> createdDatabases = new ArrayList<String>();
 
 
-    public MongoService(final String uri, final Properties prop) throws UnknownHostException {
+    public MongoService(final String uri, final Properties prop, final ScanStrategy scanStrategy) throws UnknownHostException {
         this.uri = uri;
+        this.scanStrategy = scanStrategy;
         client = new JMongoClient( uri );
     }
 
@@ -135,7 +138,7 @@ public class MongoService implements Service {
             try {
                 final JMongoCollection mongoCollection = mongoDatabase.getCollection( collectionName );
                 if ( mongoCollection != null ){
-                    return new MetaCollection( mongoCollection, dbOrCatalog, collectionName );
+                    return new MetaCollection( mongoCollection, dbOrCatalog, collectionName, scanStrategy );
                 }
             } catch ( Throwable ex ){
                 System.out.println("Error discovering collection " + dbOrCatalog + "." + collectionName + ". " + ex );
