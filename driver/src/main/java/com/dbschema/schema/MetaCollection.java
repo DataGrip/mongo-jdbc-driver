@@ -83,10 +83,15 @@ public class MetaCollection extends MetaJson {
                 if ( value instanceof Map ) {
                     final MetaJson childrenMap = parentMap.createJsonMapField(key.toString(), isFirstDiscover );
                     discoverMap(childrenMap, value);
-                } else if ( value instanceof List && ( ((List)value).isEmpty() || isListOfDocuments(value))  ) {
-                    final MetaJson subDocument = parentMap.createJsonListField(key.toString(), isFirstDiscover );
-                    for ( Object child : (List)value ){
-                        discoverMap(subDocument, child);
+                } else if ( value instanceof List ){
+                    final List list = (List)value;
+                    if ( (list.isEmpty() || isListOfDocuments(value))  ) {
+                        final MetaJson subDocument = parentMap.createJsonListField(key.toString(), isFirstDiscover );
+                        for ( Object child : (List)value ){
+                            discoverMap(subDocument, child);
+                        }
+                    } else {
+                        parentMap.createField((String) key, "List", TYPE_LIST, isFirstDiscover );
                     }
                 } else {
                     MetaField field = parentMap.createField((String) key, type, getJavaType( value ), isFirstDiscover );
