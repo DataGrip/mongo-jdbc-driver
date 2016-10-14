@@ -1,25 +1,27 @@
 
 package com.dbschema;
 
-import com.mongodb.*;
-import com.mongodb.client.model.UpdateOptions;
 import com.dbschema.mongo.JMongoCollection;
 import com.dbschema.mongo.JMongoDatabase;
 import com.dbschema.mongo.MongoService;
 import com.dbschema.resultSet.AggregateResultSet;
 import com.dbschema.resultSet.ArrayResultSet;
-import com.dbschema.resultSet.ResultSetIterator;
 import com.dbschema.resultSet.OkResultSet;
+import com.dbschema.resultSet.ResultSetIterator;
+import com.mongodb.AggregationOutput;
+import com.mongodb.BasicDBObject;
+import com.mongodb.client.model.UpdateOptions;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.bson.Document;
 
-import javax.script.*;
+import javax.script.Bindings;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.sql.Array;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.Map;
@@ -243,8 +245,8 @@ public class MongoPreparedStatement implements PreparedStatement {
         return null;
     }
 
-    private static final Pattern PATTERN_UPDATE = Pattern.compile("UPDATE\\s+(\\w*)\\.(\\w*)", Pattern.CASE_INSENSITIVE );
-    private static final Pattern PATTERN_DELETE = Pattern.compile("DELETE\\s+FROM\\s+(\\w*)\\.(\\w*)", Pattern.CASE_INSENSITIVE );
+    private static final Pattern PATTERN_UPDATE = Pattern.compile("UPDATE\\s+(.*)\\.(.*)", Pattern.CASE_INSENSITIVE );
+    private static final Pattern PATTERN_DELETE = Pattern.compile("DELETE\\s+FROM\\s+(.*)\\.(.*)", Pattern.CASE_INSENSITIVE );
     private static final String ERROR_MESSAGE = "Allowed statements: update(<dbname>.<collectionName>) or delete(<dbname>.<collectionName>). Before calling this do setObject(0,<dbobject>).";
 
     @Override

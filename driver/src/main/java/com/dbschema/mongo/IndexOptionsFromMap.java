@@ -1,9 +1,9 @@
 package com.dbschema.mongo;
 
 import com.mongodb.client.model.IndexOptions;
-import java.util.Map;
 
 import java.security.InvalidParameterException;
+import java.util.Map;
 
 public class IndexOptionsFromMap extends IndexOptions {
 

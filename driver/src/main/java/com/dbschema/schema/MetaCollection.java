@@ -1,13 +1,14 @@
 package com.dbschema.schema;
 
+import com.dbschema.mongo.JFindIterable;
+import com.dbschema.mongo.JMongoCollection;
 import com.dbschema.mongo.parser.ScanStrategy;
 import com.mongodb.client.ListIndexesIterable;
 import com.mongodb.client.MongoCursor;
-import com.dbschema.mongo.JFindIterable;
-import com.dbschema.mongo.JMongoCollection;
 import org.bson.types.ObjectId;
 
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -91,7 +92,7 @@ public class MetaCollection extends MetaJson {
                             discoverMap(subDocument, child);
                         }
                     } else {
-                        parentMap.createField((String) key, "List", TYPE_LIST, isFirstDiscover );
+                        parentMap.createField((String) key, "array", Types.ARRAY, isFirstDiscover );
                     }
                 } else {
                     MetaField field = parentMap.createField((String) key, type, getJavaType( value ), isFirstDiscover );

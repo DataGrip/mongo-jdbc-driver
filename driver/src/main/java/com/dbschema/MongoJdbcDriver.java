@@ -9,6 +9,7 @@ import java.net.URLClassLoader;
 import java.net.UnknownHostException;
 import java.sql.*;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -26,6 +27,8 @@ public class MongoJdbcDriver implements Driver
     static {
         try {
             DriverManager.registerDriver( new MongoJdbcDriver());
+            Logger mongoLogger = Logger.getLogger( "com.mongodb" );
+            if ( mongoLogger != null ) mongoLogger.setLevel(Level.SEVERE);
         } catch ( SQLException ex ){
             ex.printStackTrace();
         }
