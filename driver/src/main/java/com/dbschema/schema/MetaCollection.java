@@ -8,7 +8,6 @@ import com.mongodb.client.MongoCursor;
 import org.bson.types.ObjectId;
 
 import java.sql.Timestamp;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -92,7 +91,7 @@ public class MetaCollection extends MetaJson {
                             discoverMap(subDocument, child);
                         }
                     } else {
-                        parentMap.createField((String) key, "array", Types.ARRAY, isFirstDiscover );
+                        parentMap.createField((String) key, "array", MetaJson.TYPE_ARRAY, isFirstDiscover );
                     }
                 } else {
                     MetaField field = parentMap.createField((String) key, type, getJavaType( value ), isFirstDiscover );

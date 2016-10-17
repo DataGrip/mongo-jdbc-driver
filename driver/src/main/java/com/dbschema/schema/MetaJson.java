@@ -1,5 +1,6 @@
 package com.dbschema.schema;
 
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,6 +8,7 @@ public class MetaJson extends MetaField {
 
     public static final int TYPE_MAP = 4999544;
     public static final int TYPE_LIST = 4999545;
+    public static final int TYPE_ARRAY = Types.ARRAY;
 
     public final List<MetaField> fields = new ArrayList<MetaField>();
 

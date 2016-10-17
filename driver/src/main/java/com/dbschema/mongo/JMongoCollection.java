@@ -27,14 +27,6 @@ public class JMongoCollection<TDocument> {
         this.nativeCollection = nativeCollection;
     }
 
-    public AggregateIterable aggregate(String... strings) {
-        final List<Bson> bsons = new ArrayList<Bson>();
-        for ( String str : strings ){
-            bsons.add(JMongoUtil.parse(str));
-        }
-        return nativeCollection.aggregate( bsons );
-    }
-
     public void insert( String str ){
         insertOne( str );
     }
@@ -62,6 +54,7 @@ public class JMongoCollection<TDocument> {
     }
 
     public JFindIterable find(String str) {
+        System.out.println("find on str");
         return new JFindIterable<TDocument>( nativeCollection.find( JMongoUtil.parse(str) ) );
     }
 
@@ -70,6 +63,7 @@ public class JMongoCollection<TDocument> {
     }
 
     public JFindIterable find( Map map ){
+        System.out.println("find on map");
         JMongoUtil.doConversions(map);
         return new JFindIterable<TDocument>( nativeCollection.find(new Document( map )));
     }
@@ -275,8 +269,13 @@ public class JMongoCollection<TDocument> {
         return new JFindIterable( nativeCollection.find( bson, aClass ));
     }
 
-    public AggregateIterable aggregate(List<? extends Bson> bsons) {
-        return nativeCollection.aggregate( bsons );
+    public JAggregateIterable aggregate( Map... maps ){
+        List<Bson> list = new ArrayList<Bson>();
+        for ( Map map : maps ){
+            JMongoUtil.doConversions(map);
+            list.add(new Document(map));
+        }
+        return new JAggregateIterable<TDocument>( nativeCollection.aggregate(list));
     }
 
     public <TResult> AggregateIterable aggregate(List<? extends Bson> bsons, Class<TResult> aClass) {
@@ -284,7 +283,7 @@ public class JMongoCollection<TDocument> {
     }
 
     /*
-    Sample:
+   Sample:
 local.words.drop()
 
 local.words.insertOne({word: 'bla'});
@@ -294,34 +293,34 @@ local.words.insertOne({word: 'zla'});
 local.words.find()
 
 local.words.mapReduce(
-    "function map() { \r\n" +
-    " emit(this.word, {count: 1}) \r\n" +
-    "}",
-    " function reduce(key, values) { \r\n" +
-    "    var count = 0 \r\n" +
-    "    for (var i = 0; i < values.length; i++) \r\n" +
-    "        count += values[i].count \r\n" +
-    "    return {count: count} \r\n" +
-    "}"
-    // , "mrresult"
+   "function map() { \r\n" +
+   " emit(this.word, {count: 1}) \r\n" +
+   "}",
+   " function reduce(key, values) { \r\n" +
+   "    var count = 0 \r\n" +
+   "    for (var i = 0; i < values.length; i++) \r\n" +
+   "        count += values[i].count \r\n" +
+   "    return {count: count} \r\n" +
+   "}"
+   // , "mrresult"
 )
 
 OR
 
 
 var m =function map() {
- emit(this.word, {count: 5})
+emit(this.word, {count: 5})
 }
 var r=function reduce(key, values) {
-        var count = 5
-        for (var i = 0; i < values.length; i++)
-            count += values[i].count
-        return {count: count}
-    }
+       var count = 5
+       for (var i = 0; i < values.length; i++)
+           count += values[i].count
+       return {count: count}
+   }
 local.words.mapReduce(m, r );
 
 
-     */
+    */
 
     public MapReduceIterable mapReduce(String s, String s1) {
         return nativeCollection.mapReduce( s, s1);
