@@ -54,7 +54,6 @@ public class JMongoCollection<TDocument> {
     }
 
     public JFindIterable find(String str) {
-        System.out.println("find on str");
         return new JFindIterable<TDocument>( nativeCollection.find( JMongoUtil.parse(str) ) );
     }
 
@@ -63,7 +62,6 @@ public class JMongoCollection<TDocument> {
     }
 
     public JFindIterable find( Map map ){
-        System.out.println("find on map");
         JMongoUtil.doConversions(map);
         return new JFindIterable<TDocument>( nativeCollection.find(new Document( map )));
     }
