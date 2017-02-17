@@ -50,7 +50,7 @@
         </delete>
         <copy todir="/work/dbs/dbs-app/src/main/pack/drivers/MongoDb">
             <fileset file="target/dist/mongojdbc${driver.version}.jar"/>
-            <fileset file="driver/src/main/lib/mongo-java-driver-3.3.0.jar"/>
+            <fileset file="driver/src/main/lib/mongo-java-driver-3.4.2.jar"/>
         </copy>
 
     </target>
@@ -59,7 +59,7 @@
         <delete file="target/dist/MongoDbJdbcDriver.zip"/>
         <zip destfile="target/dist/MongoDbJdbcDriver.zip">
             <zipfileset file="target/dist/mongojdbc${driver.version}.jar" />
-            <zipfileset file="driver/src/main/lib/mongo-java-driver-3.3.0.jar" />
+            <zipfileset file="driver/src/main/lib/mongo-java-driver-3.4.2.jar" />
         </zip>
         <scp todir="${dbs.deploy.url}" trust="true" sftp="true">
             <!-- 'PASSIVE' FLAG HELPS TO GO EASIER THROUGH WINDOWS FIREWALL -->
