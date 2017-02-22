@@ -155,7 +155,7 @@ public class MongoPreparedStatement implements PreparedStatement {
             return lastResultSet;
         } catch ( Throwable ex ){
             ex.printStackTrace();
-            throw new SQLException( ex.getMessage() + "\nExecuted query: " + sql );
+            throw new SQLException( ex.getMessage() );
         }
 
 
