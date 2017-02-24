@@ -1,13 +1,11 @@
 
 package com.dbschema;
 
+import com.dbschema.mongo.JFindIterable;
 import com.dbschema.mongo.JMongoCollection;
 import com.dbschema.mongo.JMongoDatabase;
 import com.dbschema.mongo.MongoService;
-import com.dbschema.resultSet.AggregateResultSet;
-import com.dbschema.resultSet.ArrayResultSet;
-import com.dbschema.resultSet.OkResultSet;
-import com.dbschema.resultSet.ResultSetIterator;
+import com.dbschema.resultSet.*;
 import com.mongodb.AggregationOutput;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.UpdateOptions;
@@ -34,16 +32,16 @@ public class MongoPreparedStatement implements PreparedStatement {
     private ResultSet lastResultSet;
     private boolean isClosed = false;
     private int maxRows = -1;
-    private final String sql;
+    private final String query;
 
     public MongoPreparedStatement(final MongoConnection con) {
         this.con = con;
-        this.sql = null;
+        this.query = null;
     }
 
-    public MongoPreparedStatement(final MongoConnection con, String sql) {
+    public MongoPreparedStatement(final MongoConnection con, String query) {
         this.con = con;
-        this.sql = sql;
+        this.query = query;
     }
 
     @Override
@@ -68,15 +66,15 @@ public class MongoPreparedStatement implements PreparedStatement {
     private static final Pattern PATTERN_SHOW_PROFILE = Pattern.compile("SHOW\\s+PROFILE\\s*", Pattern.CASE_INSENSITIVE );
 
     @Override
-    public ResultSet executeQuery(String sql) throws SQLException	{
+    public ResultSet executeQuery(String query) throws SQLException	{
         checkClosed();
         if (lastResultSet != null ) {
             lastResultSet.close();
         }
-        if ( sql == null ){
+        if ( query == null ){
             throw new SQLException("Null statement.");
         }
-        Matcher matcherSetDb = PATTERN_USE_DATABASE.matcher( sql );
+        Matcher matcherSetDb = PATTERN_USE_DATABASE.matcher( query );
         if ( matcherSetDb.matches() ){
             String db = matcherSetDb.group(1).trim();
             if ( ( db.startsWith("\"") && db.endsWith("\"")) || ( db.startsWith("'") && db.endsWith("'"))){
@@ -85,15 +83,15 @@ public class MongoPreparedStatement implements PreparedStatement {
             con.setCatalog( db );
             return new OkResultSet();
         }
-        Matcher matcherCreateDatabase = PATTERN_CREATE_DATABASE.matcher( sql );
+        Matcher matcherCreateDatabase = PATTERN_CREATE_DATABASE.matcher( query );
         if ( matcherCreateDatabase.matches() ){
             final String dbName = matcherCreateDatabase.group(1);
             con.getDatabase(dbName);
             MongoService.createdDatabases.add(dbName);
             return new OkResultSet();
         }
-        if ( sql.toLowerCase().startsWith("show ")){
-            if ( PATTERN_SHOW_DATABASES.matcher( sql ).matches() || PATTERN_SHOW_DBS.matcher( sql ).matches() ){
+        if ( query.toLowerCase().startsWith("show ")){
+            if ( PATTERN_SHOW_DATABASES.matcher( query ).matches() || PATTERN_SHOW_DBS.matcher( query ).matches() ){
                 ArrayResultSet result = new ArrayResultSet();
                 result.setColumnNames(new String[]{"DATABASE_NAME"});
                 for ( String str : con.getDatabaseNames() ){
@@ -101,7 +99,7 @@ public class MongoPreparedStatement implements PreparedStatement {
                 }
                 return lastResultSet = result;
             }
-            if ( PATTERN_SHOW_COLLECTIONS.matcher( sql ).matches()){
+            if ( PATTERN_SHOW_COLLECTIONS.matcher( query ).matches()){
                 ArrayResultSet result = new ArrayResultSet();
                 result.setColumnNames(new String[]{"COLLECTION_NAME"});
                 for ( String str : con.getService().getCollectionNames(con.getCatalog()) ){
@@ -109,13 +107,13 @@ public class MongoPreparedStatement implements PreparedStatement {
                 }
                 return lastResultSet = result;
             }
-            if ( PATTERN_SHOW_USERS.matcher( sql ).matches()){
-                sql = "db.runCommand(\"{usersInfo:'" + con.getCatalog() + "'}\")";
+            if ( PATTERN_SHOW_USERS.matcher( query ).matches()){
+                query = "db.runCommand(\"{usersInfo:'" + con.getCatalog() + "'}\")";
             }
-            if ( PATTERN_SHOW_PROFILE.matcher( sql ).matches() || PATTERN_SHOW_RULES.matcher( sql ).matches() ){
+            if ( PATTERN_SHOW_PROFILE.matcher( query ).matches() || PATTERN_SHOW_RULES.matcher( query ).matches() ){
                 throw new SQLException("Not yet implemented in this driver.");
             }
-            throw new SQLException("Invalid command : " + sql );
+            throw new SQLException("Invalid command : " + query );
         }
         try {
             Class.forName("jdk.nashorn.api.scripting.NashornScriptEngineFactory");
@@ -144,13 +142,15 @@ public class MongoPreparedStatement implements PreparedStatement {
             }
             binding.put("client", con);
             engine.eval( "var ObjectId = function( oid ) { return new org.bson.types.ObjectId( oid );}");
-            Object obj = engine.eval(sql);
+            Object obj = engine.eval(query);
             if ( obj instanceof Iterable){
                 lastResultSet = new ResultSetIterator( ((Iterable)obj).iterator() );
             } else if ( obj instanceof Iterator){
                 lastResultSet = new ResultSetIterator( (Iterator)obj );
             } else if ( obj instanceof AggregationOutput ){
                 lastResultSet = new AggregateResultSet( (AggregationOutput)obj );
+            } else if ( obj instanceof JMongoCollection ){
+                lastResultSet = new ResultSetIterator( ((JMongoCollection)obj).find() );
             }
             return lastResultSet;
         } catch ( Throwable ex ){
@@ -211,8 +211,8 @@ public class MongoPreparedStatement implements PreparedStatement {
 
 
     @Override
-    public boolean execute(final String sql) throws SQLException {
-        executeQuery( sql );
+    public boolean execute(final String query) throws SQLException {
+        executeQuery( query );
         return lastResultSet != null;
     }
 
@@ -233,7 +233,7 @@ public class MongoPreparedStatement implements PreparedStatement {
 
     @Override
     public int executeUpdate() throws SQLException {
-        return executeUpdate( sql );
+        return executeUpdate(query);
     }
 
     private JMongoDatabase getDatabase(String name){
@@ -504,7 +504,7 @@ public class MongoPreparedStatement implements PreparedStatement {
 
     @Override
     public ResultSet executeQuery() throws SQLException {
-        execute( sql );
+        execute(query);
         return lastResultSet;
     }
 

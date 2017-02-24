@@ -13,6 +13,7 @@ public class JMongoUtil {
 
 
     public static Document parse( String text ){
+        Thread.dumpStack();
         if ( text != null && text.trim().length() > 0 && !text.trim().startsWith("{")){
             throw new JsonParseException( "Json should start with '{'. Json text : " + text, 0 );
         }
