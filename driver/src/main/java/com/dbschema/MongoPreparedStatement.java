@@ -1,11 +1,13 @@
 
 package com.dbschema;
 
-import com.dbschema.mongo.JFindIterable;
 import com.dbschema.mongo.JMongoCollection;
 import com.dbschema.mongo.JMongoDatabase;
 import com.dbschema.mongo.MongoService;
-import com.dbschema.resultSet.*;
+import com.dbschema.resultSet.AggregateResultSet;
+import com.dbschema.resultSet.ArrayResultSet;
+import com.dbschema.resultSet.OkResultSet;
+import com.dbschema.resultSet.ResultSetIterator;
 import com.mongodb.AggregationOutput;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.UpdateOptions;
