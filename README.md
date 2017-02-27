@@ -1,6 +1,6 @@
 # MongoDb JDBC Driver
 
-This is an open source JDBC Driver for MongoDb used inside [DbSchema Database Designer](http://www.dbschema.com)
+This is an open source JDBC Driver for MongoDb used inside [DbSchema](http://www.dbschema.com) Database Designer.
 DbSchema is an interactive diagram designer with relational data explorer, visual query builder, random data generator, forms and reports and many other tools.
 
 ## Download Binary
@@ -11,7 +11,7 @@ You can test the driver by simply downloading [DbSchema Database Designer](http:
 ## Description
 
 The driver implements a PreparedStatement where native MongoDb queries can be passed ( db.myCollection.find() ).
-The result will be returned as ResultSet with one column containing the Map JSon object.
+The result will be returned as ResultSet with one column containing the JSon object as java.util.Map.
 
 The driver is using the Nashorn JS engine to execute the queries and map them to the objects from the native MongoDb Java driver.
 Like we pass to Nashorn a query like : db.myCollection.find({name:'John')) and we pass a binding with db=currentDatabase.

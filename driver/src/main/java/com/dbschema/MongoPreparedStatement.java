@@ -143,7 +143,9 @@ public class MongoPreparedStatement implements PreparedStatement {
                 binding.put( "db", con.getDatabase("admin"));
             }
             binding.put("client", con);
-            engine.eval( "var ObjectId = function( oid ) { return new org.bson.types.ObjectId( oid );}");
+            final String script = "var ObjectId = function( oid ) { return new org.bson.types.ObjectId( oid );}\n" +
+                    "var ISODate = function( str ) { return new java.text.SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\").parse(str);}";
+            engine.eval(script);
             Object obj = engine.eval(query);
             if ( obj instanceof Iterable){
                 lastResultSet = new ResultSetIterator( ((Iterable)obj).iterator() );
