@@ -9,7 +9,7 @@
     </path>
 
     <pathconvert property="driver.classpath.jar" refid="driver.classpath" pathsep=" ">
-        <map from="C:\work\mongo-jdbc\driver\src\main\lib\" to="./"/>
+        <map from="C:\work\mongodb-jdbc-driver\driver\src\main\lib\" to="./"/>
     </pathconvert>
 
 

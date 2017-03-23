@@ -50,7 +50,10 @@ public class MongoJdbcDriver implements Driver
                 }
             }
             try	{
-                final MongoService service = new MongoService( url.substring("jdbc:".length()), info, scan );
+                if ( url.startsWith("jdbc:")) {
+                    url = url.substring("jdbc:".length());
+                }
+                final MongoService service = new MongoService(url, info, scan );
 
                 return new MongoConnection(service);
             } catch (UnknownHostException e) {
@@ -68,7 +71,7 @@ public class MongoJdbcDriver implements Driver
      */
     @Override
     public boolean acceptsURL(String url) throws SQLException {
-        return url.startsWith("jdbc:mongodb:");
+        return url.startsWith("mongodb:") || url.startsWith("jdbc:mongodb:");
     }
 
     /**

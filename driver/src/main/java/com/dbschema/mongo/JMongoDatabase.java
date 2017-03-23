@@ -11,7 +11,6 @@ import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
