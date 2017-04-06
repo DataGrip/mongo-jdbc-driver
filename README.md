@@ -57,3 +57,5 @@ Use the Query Editor to edit and execute MongoDb queries in the native language:
 The best DbSchema features is about Relational Data Browse, where you can explore data from one or more collections. Collections may bind one with another using virtual relations ( if one field value points to a certain document from another collection ). This is shown as a line between collections ( see here master and slave ). Then data from both collections can be explored. Clicking a document in the first collection will update the second collection with the matching documents.
 
 ![mongo3.png](https://bitbucket.org/repo/BELRaG/images/2228714881-mongo3.png)
+
+A full description of DbSchema features is available on [DbSchema website](http://www.dbschema.com/mongodb-tool.html).
