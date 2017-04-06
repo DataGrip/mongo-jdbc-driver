@@ -6,7 +6,7 @@ DbSchema is an interactive diagram designer with relational data explorer, visua
 ## Download Binary
 
 [Available here](http://www.dbschema.com/jdbc-drivers/MongoDbJdbcDriver.zip). Unpack and include all jars in your classpath. 
-You can test the driver by simply downloading [DbSchema Database Designer](http://www.dbschema.com). The driver is included in the software package.
+You can test the driver by simply downloading [DbSchema Tool](http://www.dbschema.com) - it includes a trial period. The driver is included in the software package.
 
 ## Description
 
