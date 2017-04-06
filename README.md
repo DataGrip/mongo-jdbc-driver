@@ -18,5 +18,27 @@ Like we pass to Nashorn a query like : db.myCollection.find({name:'John')) and w
 We also wrap MongoDatabase in a JMongoDatabase object for accepting method calls with Map as arguments.
 Other objects like MongoCollection are wrapped as well.
 
+
+```
+#!java
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+
+...
+
+Class.forName("com.dbschema.CassandraJdbcDriver");
+Properties properties = new Properties();
+properties.put("user", "someuser");
+properties.put("password", "somepassword" );
+Connection con = DriverManager.getConnection("mongodb://host1:9160/keyspace1", properties);
+// OTHER URL (SAME AS FOR MONGODB NATIVE DRIVER): mongodb://db1.example.net,db2.example.net:2500/?replicaSet=test&connectTimeoutMS=300000
+String query = "db.sampleCollection().find()";
+Statement statement = con.createStatement();
+ResultSet rs = statement.executeQuery( query );
+Object json = rs.getObject(1);
+
+```
+
 Any contributions to this project are welcome.
 We are looking forward to improve this and make possible to execute all MongoDb native queries via JDBC.
