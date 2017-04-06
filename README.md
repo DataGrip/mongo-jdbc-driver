@@ -42,3 +42,10 @@ Object json = rs.getObject(1);
 
 Any contributions to this project are welcome.
 We are looking forward to improve this and make possible to execute all MongoDb native queries via JDBC.
+
+
+## DbSchema Features 
+
+DbSchema reads sample JSon documents from the database and builds diagrams showing the JSon structure. We consider that each collection documents have similar structure.
+
+![mongodb1.png](https://bitbucket.org/repo/BELRaG/images/282491526-mongodb1.png)
