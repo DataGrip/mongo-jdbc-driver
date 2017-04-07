@@ -1,6 +1,7 @@
 # MongoDb JDBC Driver
 
-This is an open source JDBC Driver for MongoDb used inside [DbSchema](http://www.dbschema.com) Database Designer.
+This is an open source JDBC Driver for MongoDb. We implemented this for use with [DbSchema](http://www.dbschema.com) Tool, but we make it available for everybody who needs a JDBC driver. The driver can execute native MongoDb queries and use the JDBC standards.
+
 DbSchema is an interactive diagram designer with relational data explorer, visual query builder, random data generator, forms and reports and many other tools.
 
 ## Download Binary
