@@ -8,7 +8,11 @@ About DbSchema: [DbSchema](http://www.dbschema.com)  is an interactive diagram d
 
 [Available here](http://www.dbschema.com/jdbc-drivers/MongoDbJdbcDriver.zip). Unpack and include all jars in your classpath. 
 
-## Description
+## Driver URL
+
+The driver is using the same URL as [native MongoDb Java driver](https://docs.mongodb.com/manual/reference/connection-string/). In fact the JDBC is using the native driver to connect and implements the JDBC functionality on top of it.
+
+## How it Works
 
 The driver implements a PreparedStatement where native MongoDb queries can be passed ( db.myCollection.find() ).
 The result will be returned as ResultSet with one column containing the JSon object as java.util.Map.
