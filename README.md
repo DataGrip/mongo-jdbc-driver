@@ -48,7 +48,15 @@ Any contributions to this project are welcome.
 We are looking forward to improve this and make possible to execute all MongoDb native queries via JDBC.
 
 
-## DbSchema Features 
+## DbSchema Main Features for MongoDb
+
+* Structure discovery and diagrams 
+* Relational Data Browse and Editor
+* Query Editor
+* Visual Query Builder
+* Random Data Generator
+* Data Loader
+ 
 
 DbSchema reads sample JSon documents from the database and builds diagrams showing the JSon structure. We consider that each collection documents have similar structure.
 
