@@ -246,11 +246,18 @@ public class MongoPreparedStatement implements PreparedStatement {
                 return scan;
             }
         }
+        if ( "db".equals( name ) && con.getCatalog() != null ){
+            for ( JMongoDatabase scan : con.getDatabases() ){
+                if ( scan.getName().equalsIgnoreCase( con.getCatalog() )){
+                    return scan;
+                }
+            }
+        }
         return null;
     }
 
-    private static final Pattern PATTERN_UPDATE = Pattern.compile("UPDATE\\s+(.*)\\.(.*)", Pattern.CASE_INSENSITIVE );
-    private static final Pattern PATTERN_DELETE = Pattern.compile("DELETE\\s+FROM\\s+(.*)\\.(.*)", Pattern.CASE_INSENSITIVE );
+    private static final Pattern PATTERN_UPDATE = Pattern.compile("UPDATE\\s+(.*)", Pattern.CASE_INSENSITIVE );
+    private static final Pattern PATTERN_DELETE = Pattern.compile("DELETE\\s+FROM\\s+(.*)", Pattern.CASE_INSENSITIVE );
     private static final String ERROR_MESSAGE = "Allowed statements: update(<dbname>.<collectionName>) or delete(<dbname>.<collectionName>). Before calling this do setObject(0,<dbobject>).";
 
     @Override
@@ -265,7 +272,7 @@ public class MongoPreparedStatement implements PreparedStatement {
                 Matcher matcher = PATTERN_UPDATE.matcher( sql );
                 final Object id = documentParam.get("_id");
                 if ( matcher.matches() ){
-                    JMongoCollection collection = getCollectionMandatory(matcher.group(1), matcher.group(2), true);
+                    JMongoCollection collection = getCollectionMandatory(matcher.group(1), true);
                     if (id == null) {
                         collection.insertOne(documentParam);
                     } else {
@@ -275,7 +282,7 @@ public class MongoPreparedStatement implements PreparedStatement {
                 }
                 matcher = PATTERN_DELETE.matcher( sql );
                 if ( matcher.matches() ){
-                    JMongoCollection collection = getCollectionMandatory(matcher.group(1), matcher.group(2), false);
+                    JMongoCollection collection = getCollectionMandatory(matcher.group(1), false);
                     collection.deleteOne( (Map)(new Document().append("_id", id)) );
                     return 1;
                 }
@@ -284,15 +291,33 @@ public class MongoPreparedStatement implements PreparedStatement {
         throw new SQLException( ERROR_MESSAGE );
     }
 
-    private JMongoCollection getCollectionMandatory( String databaseName, String collectionName, boolean createCollectionIfMissing ) throws SQLException {
-        JMongoDatabase mongoDatabase = getDatabase(databaseName);
-        if ( mongoDatabase == null ) throw new SQLException( "Cannot find database '" + databaseName + "'.");
-        JMongoCollection collection = mongoDatabase.getCollection( collectionName);
-        if ( collection == null && createCollectionIfMissing ) {
-            mongoDatabase.createCollection( collectionName );
-            collection = mongoDatabase.getCollection( collectionName);
+    private static final Pattern PATTERN_DB_IDENTIFIER = Pattern.compile("client\\.getDatabase\\('(.*)'\\).(.*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL );
+    private static final Pattern PATTERN_COLLECTION_IDENTIFIER = Pattern.compile("getCollection\\('(.*)'\\).(.*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL );
+    private static final Pattern PATTERN_DOT = Pattern.compile("(.*)\\.(.*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL );
+
+
+    private JMongoCollection getCollectionMandatory( String collectionRef, boolean createCollectionIfMissing ) throws SQLException {
+        JMongoDatabase mongoDatabase = null;
+        Matcher matcherDbIdentifier = PATTERN_DB_IDENTIFIER.matcher( collectionRef );
+        Matcher matcherDbDot = PATTERN_DOT.matcher( collectionRef );
+        if ( matcherDbIdentifier.matches() ){
+            mongoDatabase = getDatabase( matcherDbIdentifier.group(1));
+            collectionRef = matcherDbIdentifier.group(2);
+        } else if ( matcherDbDot.matches() ){
+            mongoDatabase = getDatabase( matcherDbDot.group(1));
+            collectionRef = matcherDbDot.group(2);
         }
-        if ( collection == null ) throw new SQLException( "Cannot find collection '" + collectionName + "'.");
+        if ( mongoDatabase == null ) throw new SQLException( "Cannot find database '" + collectionRef + "'.");
+        Matcher matcherCollectionIdentifier = PATTERN_COLLECTION_IDENTIFIER.matcher( collectionRef );
+        if ( matcherCollectionIdentifier.matches() ){
+            collectionRef = matcherDbIdentifier.group(1);
+        }
+        JMongoCollection collection = mongoDatabase.getCollection( collectionRef );
+        if ( collection == null && createCollectionIfMissing ) {
+            mongoDatabase.createCollection( collectionRef );
+            collection = mongoDatabase.getCollection( collectionRef);
+        }
+        if ( collection == null ) throw new SQLException( "Cannot find collection '" + collectionRef + "'.");
         return collection;
     }
 
@@ -769,57 +794,3 @@ public class MongoPreparedStatement implements PreparedStatement {
 }
 
 
-
-
-/*
-try {
-ScriptEngineManager engineManager = new ScriptEngineManager();
-ScriptEngine engine = engineManager.getEngineByName("nashorn");
-//NashornScriptEngineFactory nsef = new NashornScriptEngineFactory();
-//ScriptEngine engine = nsef.getScriptEngine( BasicDBObject.class.getClassLoader() );
-for ( DB db : con.getDatabases() ){
-    engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE).put(db.getName(), db);
-}
-Object obj = engine.eval(sql);
-if ( obj instanceof DBCursor){
-    lastResultSet = new NoSqlCursorResultSet( (DBCursor)obj );
-} else if ( obj instanceof AggregationOutput ){
-    lastResultSet = new NoSqlAggregateResultSet( (AggregationOutput)obj );
-} else if ( obj instanceof List){
-    lastResultSet = new NoSqlListResultSet( (List)obj );
-} else if ( obj instanceof BasicDBObject ){
-    lastResultSet = new NoSqlObjectResultSet( (BasicDBObject)obj );
-}
-System.out.println("Succeed ! " +  ( obj != null ? obj.getClass().getName() : "NULL" ));
-return lastResultSet;
-} catch ( ScriptException ex ){
-System.out.println("Exception at " + ex.getLineNumber() + ", " + ex.getColumnNumber() + " " + ex.getMessage());
-} catch ( Exception ex ){
-ex.printStackTrace();
-}
-return null;
-
-else {
-
-ScriptEngineManager factory = new ScriptEngineManager();
-// create a JavaScript engine
-try {
-    ScriptEngine engine = factory.getEngineByName("JavaScript");
-    for ( DB db : con.getDatabases() ){
-        engine.put( db.getName(), new Jongo( db ) );
-        for ( String colName : db.getCollectionNames() ){
-            engine.put( db.getName() + "." + colName, db.getCollection( colName ) );
-        }
-    }
-    // evaluate JavaScript code from String
-    Object obj = engine.eval( sql);
-    if ( obj != null ) System.out.println("Got " + obj.getClass().getName());
-    if ( obj instanceof DBCursor){
-        lastResultSet = new NoSqlJSonResultSet( (DBCursor)obj );
-    }
-    return lastResultSet;
-} catch ( ScriptException ex ){
-    throw new SQLException(ex);
-}
-}
-*/
