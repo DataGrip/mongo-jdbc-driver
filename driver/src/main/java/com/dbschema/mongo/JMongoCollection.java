@@ -57,6 +57,10 @@ public class JMongoCollection<TDocument> {
         return new JFindIterable<TDocument>( nativeCollection.find( JMongoUtil.parse(str) ) );
     }
 
+    public JFindIterable find(String str, String proj) {
+        return new JFindIterable<TDocument>( nativeCollection.find( JMongoUtil.parse(str) ).projection( JMongoUtil.parse( proj )) );
+    }
+
     public <TResult> JFindIterable find(String str, Class aClass) {
         return new JFindIterable<TDocument>( nativeCollection.find( JMongoUtil.parse(str), aClass ));
     }
@@ -65,6 +69,15 @@ public class JMongoCollection<TDocument> {
         JMongoUtil.doConversions(map);
         return new JFindIterable<TDocument>( nativeCollection.find(new Document( map )));
     }
+    public JFindIterable find( Map map, Map proj ){
+        JMongoUtil.doConversions(map);
+        JMongoUtil.doConversions(proj);
+        return new JFindIterable<TDocument>( nativeCollection.find(new Document( map )).projection( new Document( proj )));
+    }
+    public JFindIterable find(Bson bson, Bson proj) {
+        return new JFindIterable( nativeCollection.find( bson ) ).projection( proj );
+    }
+
 
     public DeleteResult delete(String str) {
         return deleteOne( str );
