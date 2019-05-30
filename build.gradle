@@ -1,0 +1,96 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+        jcenter()
+    }
+    dependencies {
+        classpath "gradle.plugin.install4j.install4j:gradle_plugin:7.0.8"
+    }
+}
+plugins{
+    id 'org.hidetake.ssh' version '2.7.1'
+}
+apply plugin: 'application'
+apply plugin: 'distribution'
+
+repositories {
+    mavenCentral()
+}
+
+
+dependencies {
+    compile "org.mongodb:mongo-java-driver:3.10.2"
+    testCompile 'junit:junit:4.12'
+}
+
+jar {
+    archiveName ="mongojdbc${version}.jar"
+    manifest {
+        attributes 'Main-Class': 'com.dbschema.MongoJdbcDriver'
+        attributes 'Specification-Version': "$version"
+        attributes 'Specification-Vendor': "Wise Coders"
+        attributes 'Implementation-Vendor-Id': "dbschema.com"
+        attributes 'Implementation-Vendor': "Wise Coders"
+        attributes 'Implementation-Version': new Date().format( 'yyMMdd' )
+    }
+}
+
+
+task zip(type: Zip, dependsOn:['clean','jar']) {
+    archiveName 'MongoDbJdbcDriver.zip'
+    from configurations.runtime.allArtifacts.files
+    from configurations.runtime
+}
+
+remotes {
+    webServer {
+        host = websiteHost
+        user = websiteUser
+        password = websitePassword
+    }
+}
+
+task uploadWeb {
+    doLast {
+        ssh.settings {
+            knownHosts = allowAnyHosts
+            fileTransfer = 'scp'
+        }
+        ssh.run {
+            session(remotes.webServer) {
+                fileTree("$buildDir/distributions").visit { FileVisitDetails details ->
+                    println "Copy $details.file.path ..."
+                    put from: "$details.file.path", into: 'web/jdbc-drivers'
+                }
+            }
+        }
+    }
+}
+
+/* EXTRACT COMPLETION KEYWORDS. THIS SHOULD PRINT ON SCREEN SOME TEXT
+def listMethodNames = { clz ->
+                def result = []
+                clz.metaClass.methods.each { method ->
+                  if ( method.isPublic() && ( !'equals'.equals(method.name) && !'notify'.equals(method.name) && !'notifyAll'.equals(method.name) && !'wait'.equals(method.name) && !'hashCode'.equals(method.name) )){
+                    StringBuilder sbParams = new StringBuilder()
+                    for( Class paramType : method.nativeParameterTypes ){
+                      if ( sbParams.length() > 0 ) sbParams.append(", ")
+                      if ( 'Map'.equals(paramType.getSimpleName()) || 'Bson'.equals(paramType.getSimpleName())){
+                       sbParams.append("{ }")
+                      } else {
+                       sbParams.append(paramType.getSimpleName())
+                      }
+                    }
+                    result.add( "${clz.getSimpleName()}|${method.name}(${sbParams})|${method.returnType.getSimpleName()}\\n\\" )
+                    //println "${clz.getSimpleName()}|${method.name}(${method.nativeParameterTypes*.getSimpleName().join( ', ' )})|${method.returnType.getSimpleName()}\\n\\"
+                  }
+                }
+                for ( String str : result.unique() ){
+                 println str
+               }
+            }
+            listMethodNames( com.dbschema.mongo.JMongoDatabase.class )
+            listMethodNames( com.dbschema.mongo.JMongoCollection.class )
+            listMethodNames( com.dbschema.mongo.JFindIterable.class )
+ */
