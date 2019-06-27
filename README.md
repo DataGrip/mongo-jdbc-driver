@@ -63,10 +63,14 @@ DbSchema reads sample JSon documents from the database and builds diagrams showi
 ![mongodb1.png](https://bitbucket.org/repo/BELRaG/images/282491526-mongodb1.png)
 
 Use the Query Editor to edit and execute MongoDb queries in the native language:
+
 ![mongodb2.png](https://bitbucket.org/repo/BELRaG/images/2249668125-mongodb2.png)
 
 
-The best DbSchema features is about Relational Data Browse, where you can explore data from one or more collections. Collections may bind one with another using virtual relations ( if one field value points to a certain document from another collection ). This is shown as a line between collections ( see here master and slave ). Then data from both collections can be explored. Clicking a document in the first collection will update the second collection with the matching documents.
+Using Relational Data Browse you can explore data from multiple collections simultaneously. 
+Collections may bind one with another using virtual relations ( if one field value points to a certain document from another collection ). 
+This is shown as a line between collections ( see here master and slave ). T
+hen data from both collections can be explored. Clicking a document in the first collection will update the second collection with the matching documents.
 
 ![mongo3.png](https://bitbucket.org/repo/BELRaG/images/2228714881-mongo3.png)
 

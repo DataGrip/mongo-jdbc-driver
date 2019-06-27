@@ -65,13 +65,13 @@ public class MongoJdbcDriver implements Driver
 
 
     /**
-     * URLs accepted are of the form: jdbc:mongodb://<server>[:27017]/<db-name>
+     * URLs accepted are of the form: jdbc:mongodb[+srv]://<server>[:27017]/<db-name>
      *
      * @see java.sql.Driver#acceptsURL(java.lang.String)
      */
     @Override
     public boolean acceptsURL(String url) throws SQLException {
-        return url.startsWith("mongodb:") || url.startsWith("jdbc:mongodb:");
+        return url.startsWith("mongodb") || url.startsWith("jdbc:mongodb");
     }
 
     /**

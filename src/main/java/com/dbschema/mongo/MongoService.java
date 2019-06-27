@@ -6,7 +6,6 @@ import com.dbschema.schema.MetaCollection;
 import com.dbschema.schema.MetaField;
 import org.bson.types.ObjectId;
 
-import java.net.UnknownHostException;
 import java.util.*;
 
 public class MongoService implements Service {
@@ -20,7 +19,7 @@ public class MongoService implements Service {
     public static final List<String> createdDatabases = new ArrayList<String>();
 
 
-    public MongoService(final String uri, final Properties prop, final ScanStrategy scanStrategy) throws UnknownHostException {
+    public MongoService(final String uri, final Properties prop, final ScanStrategy scanStrategy) {
         this.uri = uri;
         this.scanStrategy = scanStrategy;
         client = new JMongoClient( uri );

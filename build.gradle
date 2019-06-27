@@ -43,6 +43,13 @@ task zip(type: Zip, dependsOn:['clean','jar']) {
     from configurations.runtime
 }
 
+task copyInDbSchema(type: Copy,dependsOn:['clean','jar']) {
+    from configurations.runtime.allArtifacts.files
+    from configurations.runtime
+    into "${project.projectDir}/../dbs-gradle/src/dist/drivers/MongoDb/"
+}
+
+
 remotes {
     webServer {
         host = websiteHost
