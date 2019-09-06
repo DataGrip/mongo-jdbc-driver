@@ -34,9 +34,7 @@ public class MetaCollection extends MetaJson {
                 discoverCollectionFirstRecords( mongoCollection, Integer.MAX_VALUE);
                 break;
             default :
-                if( discoverCollectionFirstRecords( mongoCollection, 30 ) ){
-                    discoverCollectionRandomRecords( mongoCollection, 100 );
-                }
+                discoverCollectionFirstRecords( mongoCollection, 10 );
                 break;
         }
         discoverIndexes( mongoCollection );

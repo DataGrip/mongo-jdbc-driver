@@ -106,7 +106,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
         // every collection "table" has two columns - "_id" column which is the primary key, and a "document"
         // column which is the JSON document corresponding to the "_id". An "_id" value can be specified on
         // insert, or it can be omitted, in which case MongoDB generates a unique value.
-        MetaCollection collection = con.getService().getMetaCollection(catalogName, tableNamePattern);
+        MetaCollection collection = con.getService().getMetaCollection(schemaName, tableNamePattern);
 
         ArrayResultSet result = new ArrayResultSet();
         result.setColumnNames(new String[] { "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
@@ -117,7 +117,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
 
         if ( collection != null ){
             for ( MetaField field : collection.fields){
-                if ( columnNamePattern == null || columnNamePattern.equals( field.name )){
+                if ( columnNamePattern == null || columnNamePattern.equals( field.name ) || "%".equals(columnNamePattern)){
                     exportColumnsRecursive(collection, result, field);
                 }
             }
