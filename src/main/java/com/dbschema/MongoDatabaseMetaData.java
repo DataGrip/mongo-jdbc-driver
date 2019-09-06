@@ -12,9 +12,9 @@ import java.util.List;
  */
 public class MongoDatabaseMetaData implements DatabaseMetaData
 {
+    private static final String DB_NAME = "Mongo";
     private final MongoConnection con;
 
-    private final static ArrayResultSet EMPTY_RESULT_SET = new ArrayResultSet();
     public final static String OBJECT_ID_TYPE_NAME = "OBJECT_ID";
     public final static String DOCUMENT_TYPE_NAME = "DOCUMENT";
 
@@ -31,8 +31,12 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
     @Override
     public ResultSet getSchemas() throws SQLException
     {
+        List<String> mongoDbs = con.getService().getDatabaseNames();
         ArrayResultSet retVal = new ArrayResultSet();
-        retVal.setColumnNames(new String[] { "TABLE_SCHEMA", "TABLE_CATALOG" });
+        retVal.setColumnNames(new String[]{"TABLE_SCHEM", "TABLE_CATALOG"});
+        for (String mongoDb : mongoDbs) {
+            retVal.addRow(new String[]{mongoDb, DB_NAME});
+        }
         return retVal;
     }
 
@@ -40,16 +44,12 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
      * @see java.sql.DatabaseMetaData#getCatalogs()
      */
     @Override
-    public ResultSet getCatalogs() throws SQLException
+    public ResultSet getCatalogs()
     {
-        List<String> mongoDbs = con.getService().getDatabaseNames();
         ArrayResultSet retVal = new ArrayResultSet();
         retVal.setColumnNames(new String[] { "TABLE_CAT" });
-        for (String mongoDb : mongoDbs) {
-            retVal.addRow(new String[] { mongoDb });
-        }
+        retVal.addRow(new String[]{DB_NAME});
         return retVal;
-
     }
 
 
@@ -65,25 +65,24 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
         resultSet.setColumnNames(new String[]{"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME",
                 "TABLE_TYPE", "REMARKS", "TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "SELF_REFERENCING_COL_NAME",
                 "REF_GENERATION"});
-        if ( catalogName == null ){
+        if (schemaPattern == null) {
             for ( String cat : con.getService().getDatabaseNames() ) {
                 for (String tableName : con.getService().getCollectionNames( cat ) ) {
-                    resultSet.addRow( createTableRow( catalogName, tableName) );
+                    resultSet.addRow(createTableRow(null, tableName));
                 }
             }
         } else {
-            for (String tableName : con.getService().getCollectionNames( catalogName ) ) {
-                resultSet.addRow( createTableRow( catalogName, tableName) );
+            for (String tableName : con.getService().getCollectionNames(schemaPattern)) {
+                resultSet.addRow(createTableRow(schemaPattern, tableName));
             }
         }
         return resultSet;
-
     }
 
     private String[] createTableRow( String catalogName, String tableName ){
         String[] data = new String[10];
-        data[0] = catalogName; // TABLE_CAT
-        data[1] = ""; // TABLE_SCHEM
+        data[0] = null; // TABLE_CAT
+        data[1] = catalogName; // TABLE_SCHEM
         data[2] = tableName; // TABLE_NAME
         data[3] = "TABLE"; // TABLE_TYPE
         data[4] = ""; // REMARKS
@@ -1185,7 +1184,12 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
     public ResultSet getProcedureColumns(String catalogName, String schemaPattern, String procedureNamePattern,
                                          String columnNamePattern) throws SQLException
     {
-        return EMPTY_RESULT_SET;
+        return empty();
+    }
+
+    private static ResultSet empty()
+    {
+        return new ArrayResultSet();
     }
 
     /**
@@ -1230,7 +1234,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
     @Override
     public ResultSet getVersionColumns(String catalogName, String schemaName, String table) throws SQLException
     {
-        return EMPTY_RESULT_SET;
+        return empty();
     }
 
     @Override
@@ -1340,7 +1344,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
     public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable,
                                        String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException
     {
-        return EMPTY_RESULT_SET;
+        return empty();
     }
 
 

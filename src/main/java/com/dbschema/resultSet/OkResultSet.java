@@ -27,7 +27,7 @@ public class OkResultSet extends ResultSetIterator {
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
-        return new MongoResultSetMetaData("Result", new String[]{"map"},  new int[]{Types.JAVA_OBJECT},new int[]{300});
+        return new MongoResultSetMetaData("Result", new String[]{"map"}, new int[]{Types.JAVA_OBJECT});
     }
 
 }

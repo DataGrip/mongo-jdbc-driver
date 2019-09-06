@@ -402,26 +402,17 @@ public class ArrayResultSet implements ResultSet
 	public ResultSetMetaData getMetaData() throws SQLException
 	{
 		checkClosed();
+
+        if (data == null) {
+            return new MongoResultSetMetaData(tableName, new String[0], new int[0]);
+        }
 		
-        int[] columnDisplaySizes = new int[columnNames.length];
         int[] columnJavaTypes = new int[columnNames.length];
-		for (int i = 0; i < columnDisplaySizes.length; i++) {
-            columnDisplaySizes[i] = columnNames[i].length();
+        for (int i = 0; i < columnNames.length; i++) {
             columnJavaTypes[i] = Types.VARCHAR;
 		}
-		for (Object[] row : data) {
-			for ( int columnIdx = 0; columnIdx < row.length; columnIdx++) {
-				if (row[columnIdx] != null) {
-					int datalength = row[columnIdx].toString().length();
-					if (datalength > columnDisplaySizes[columnIdx]) {
-						columnDisplaySizes[columnIdx] = datalength;
-					}
-				}
-			}
-			
-		}
-		
-		return new MongoResultSetMetaData(tableName, columnNames, columnJavaTypes, columnDisplaySizes);
+
+        return new MongoResultSetMetaData(tableName, columnNames, columnJavaTypes);
 	}
 
 	public Object getObject(int columnIndex) throws SQLException

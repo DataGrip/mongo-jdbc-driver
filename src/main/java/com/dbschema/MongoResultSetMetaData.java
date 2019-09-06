@@ -10,13 +10,11 @@ public class MongoResultSetMetaData implements ResultSetMetaData
 	private final String tableName;
     private final String[] columnNames;
     private final int[] javaTypes;
-    private final int[] displaySizes;
 
-	public MongoResultSetMetaData(String tableName, String[] columnNames, int[] javaTypes, int[] displaySizes)
+	public MongoResultSetMetaData(String tableName, String[] columnNames, int[] javaTypes)
 	{
 		this.tableName = tableName;
 		this.columnNames = columnNames;
-		this.displaySizes = displaySizes;
         this.javaTypes = javaTypes;
 	}
 
@@ -85,9 +83,9 @@ public class MongoResultSetMetaData implements ResultSetMetaData
 	 * @see java.sql.ResultSetMetaData#getColumnDisplaySize(int)
 	 */
 	@Override
-	public int getColumnDisplaySize(int column) throws SQLException
-	{
-		return displaySizes[column - 1];
+	public int getColumnDisplaySize(int column)
+    {
+		return 0;
 	}
 
 	/**
