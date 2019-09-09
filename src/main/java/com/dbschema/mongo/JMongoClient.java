@@ -1,14 +1,15 @@
 package com.dbschema.mongo;
 
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientURI;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
-import com.mongodb.client.ListDatabasesIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoIterable;
-import org.bson.Document;
 
-import java.util.List;
+import java.util.Properties;
+
+import static com.dbschema.mongo.JMongoUtil.nullize;
 
 
 public class JMongoClient {
@@ -16,38 +17,34 @@ public class JMongoClient {
     private final MongoClient mongoClient;
     public final String databaseName;
 
-    public JMongoClient( String uri ){
-        // TODO HERE CAN FIND DATABASE FROM URI
-        final MongoClientURI clientURI = new MongoClientURI(uri);
-        this.databaseName = clientURI.getDatabase();
-        this.mongoClient = new MongoClient(clientURI );
+    public JMongoClient(String uri, Properties prop)
+    {
+        ConnectionString connectionString = new ConnectionString(uri);
+        databaseName = nullize(connectionString.getDatabase());
+        MongoClientSettings.Builder builder = MongoClientSettings.builder()
+                .applyConnectionString(connectionString);
+        if (prop != null && prop.getProperty("user") != null && prop.getProperty("password") != null) {
+            builder.credential(
+                    MongoCredential.createCredential(prop.getProperty("user"),
+                            databaseName == null ? "admin" : databaseName,
+                            prop.getProperty("password").toCharArray())
+            );
+        }
+        this.mongoClient = MongoClients.create(builder.build());
     }
 
-    public MongoClientOptions getMongoClientOptions() {
-        return mongoClient.getMongoClientOptions();
-    }
-
-    public List<MongoCredential> getCredentialsList() {
-        return mongoClient.getCredentialsList();
-    }
-
-    public MongoIterable<String> listDatabaseNames() {
+    public MongoIterable<String> listDatabaseNames()
+    {
         return mongoClient.listDatabaseNames();
     }
 
-    public ListDatabasesIterable<Document> listDatabases() {
-        return mongoClient.listDatabases();
+    public JMongoDatabase getDatabase(String databaseName)
+    {
+        return new JMongoDatabase(mongoClient.getDatabase(databaseName));
     }
 
-    public <T> ListDatabasesIterable<T> listDatabases(Class<T> clazz) {
-        return mongoClient.listDatabases(clazz);
-    }
-
-    public JMongoDatabase getDatabase(String databaseName) {
-        return new JMongoDatabase( mongoClient.getDatabase(databaseName));
-    }
-
-    public void testConnectivity(){
-        mongoClient.getAddress();
+    public void testConnectivity()
+    {
+        mongoClient.getClusterDescription();
     }
 }

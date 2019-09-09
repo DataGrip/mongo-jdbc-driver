@@ -70,6 +70,8 @@ public class JMongoUtil {
             return array;
     }
 
-
+    static String nullize(String text) {
+        return text == null || text.isEmpty() ? null : text;
+    }
 
 }

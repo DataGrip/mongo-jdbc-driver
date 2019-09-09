@@ -39,6 +39,12 @@ public class JAggregateIterable<TResult> implements com.mongodb.client.MongoIter
         return aggregateIterable.iterator();
     }
 
+    @Override
+    public MongoCursor<TResult> cursor()
+    {
+        return aggregateIterable.cursor();
+    }
+
     public TResult first() {
         return aggregateIterable.first();
     }

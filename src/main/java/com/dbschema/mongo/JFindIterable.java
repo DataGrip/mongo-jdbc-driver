@@ -127,6 +127,12 @@ public class JFindIterable<TResult> implements com.mongodb.client.MongoIterable<
         return findIterable.iterator();
     }
 
+    @Override
+    public MongoCursor<TResult> cursor()
+    {
+        return findIterable.cursor();
+    }
+
     public TResult first() {
         return findIterable.first();
     }

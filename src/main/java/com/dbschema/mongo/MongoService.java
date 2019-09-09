@@ -22,7 +22,7 @@ public class MongoService implements Service {
     public MongoService(final String uri, final Properties prop, final ScanStrategy scanStrategy) {
         this.uri = uri;
         this.scanStrategy = scanStrategy;
-        client = new JMongoClient( uri );
+        client = new JMongoClient(uri, prop);
     }
 
     @Override
