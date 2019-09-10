@@ -21,6 +21,7 @@ repositories {
 
 dependencies {
     compile "org.mongodb:mongo-java-driver:3.11.0"
+    compile group: 'org.jetbrains', name: 'annotations', version: '15.0'
     testCompile 'junit:junit:4.12'
 }
 

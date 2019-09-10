@@ -7,19 +7,31 @@ import com.mongodb.MongoCredential;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoIterable;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.dbschema.mongo.JMongoUtil.nullize;
 
 
 public class JMongoClient {
+    private static final Pattern AUTH_MECH_PATTERN = Pattern.compile("([?&])authMechanism=([\\w_-]+)&?");
 
     private final MongoClient mongoClient;
     public final String databaseName;
 
     public JMongoClient(String uri, Properties prop)
     {
+        Matcher matcher = AUTH_MECH_PATTERN.matcher(uri);
+        AuthenticationMechanism authMechanism = null;
+        if (matcher.find()) {
+            String group = matcher.group();
+            uri = uri.replace(group, matcher.group(1));
+            if (uri.endsWith("?") || uri.endsWith("&")) uri = uri.substring(0, uri.length() - 1);
+            authMechanism = AuthenticationMechanism.fromMechanismName(matcher.group(2));
+        }
         ConnectionString connectionString = new ConnectionString(uri);
         databaseName = nullize(connectionString.getDatabase());
         MongoClientSettings.Builder builder = MongoClientSettings.builder()
@@ -29,13 +41,13 @@ public class JMongoClient {
             String password = prop.getProperty("password");
             MongoCredential credentialsFromUrl = connectionString.getCredential();
             String source = credentialsFromUrl == null ? "$external" : credentialsFromUrl.getSource();
-            AuthenticationMechanism mechanism = credentialsFromUrl == null ? null : credentialsFromUrl.getAuthenticationMechanism();
-            builder.credential(createCredential(mechanism, user, source, password == null ? null : password.toCharArray()));
+            builder.credential(createCredential(authMechanism, user, source, password == null ? null : password.toCharArray()));
         }
         this.mongoClient = MongoClients.create(builder.build());
     }
 
-    private MongoCredential createCredential(AuthenticationMechanism mechanism, String user, String source, char[] password) {
+    private MongoCredential createCredential(@Nullable AuthenticationMechanism mechanism, String user, String source, char[] password) {
+        if (mechanism == null) return MongoCredential.createCredential(user, source, password);
         switch (mechanism) {
             case GSSAPI:
                 return MongoCredential.createGSSAPICredential(user);
