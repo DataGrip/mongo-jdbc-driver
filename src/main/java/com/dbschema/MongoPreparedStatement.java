@@ -10,6 +10,7 @@ import com.dbschema.resultSet.OkResultSet;
 import com.dbschema.resultSet.ResultSetIterator;
 import com.mongodb.AggregationOutput;
 import com.mongodb.BasicDBObject;
+import com.mongodb.client.MongoIterable;
 import com.mongodb.client.model.UpdateOptions;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.bson.Document;
@@ -35,6 +36,7 @@ public class MongoPreparedStatement implements PreparedStatement {
     private boolean isClosed = false;
     private int maxRows = -1;
     private final String query;
+    private int fetchSize = -1;
 
     public MongoPreparedStatement(final MongoConnection con) {
         this.con = con;
@@ -147,14 +149,15 @@ public class MongoPreparedStatement implements PreparedStatement {
                     "var ISODate = function( str ) { return new java.text.SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\").parse(str);}";
             engine.eval(script);
             Object obj = engine.eval(query);
-            if ( obj instanceof Iterable){
-                lastResultSet = new ResultSetIterator( ((Iterable)obj).iterator() );
-            } else if ( obj instanceof Iterator){
-                lastResultSet = new ResultSetIterator( (Iterator)obj );
-            } else if ( obj instanceof AggregationOutput ){
-                lastResultSet = new AggregateResultSet( (AggregationOutput)obj );
-            } else if ( obj instanceof JMongoCollection ){
-                lastResultSet = new ResultSetIterator( ((JMongoCollection)obj).find() );
+            if (obj instanceof Iterable) {
+                if (obj instanceof MongoIterable) ((MongoIterable<?>) obj).batchSize(fetchSize);
+                lastResultSet = new ResultSetIterator(((Iterable<?>) obj).iterator());
+            } else if (obj instanceof Iterator) {
+                lastResultSet = new ResultSetIterator((Iterator<?>) obj);
+            } else if (obj instanceof AggregationOutput) {
+                lastResultSet = new AggregateResultSet((AggregationOutput) obj);
+            } else if (obj instanceof JMongoCollection) {
+                lastResultSet = new ResultSetIterator(((JMongoCollection<?>) obj).find());
             }
             return lastResultSet;
         } catch ( Throwable ex ){
@@ -414,11 +417,14 @@ public class MongoPreparedStatement implements PreparedStatement {
     }
 
     @Override
-    public void setFetchSize(final int rows) throws SQLException{}
+    public void setFetchSize(int rows) throws SQLException {
+        if (rows <= 1) throw new SQLException("Fetch size must be > 1. Actual: " + rows);
+        fetchSize = rows;
+    }
 
     @Override
-    public int getFetchSize() throws SQLException {
-        return 0;
+    public int getFetchSize() {
+        return fetchSize;
     }
 
     @Override
