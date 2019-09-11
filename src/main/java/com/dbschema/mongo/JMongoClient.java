@@ -35,7 +35,8 @@ public class JMongoClient {
         ConnectionString connectionString = new ConnectionString(uri);
         databaseNameFromUrl = nullize(connectionString.getDatabase());
         MongoClientSettings.Builder builder = MongoClientSettings.builder()
-                .applyConnectionString(connectionString);
+                .applyConnectionString(connectionString)
+                .applyToConnectionPoolSettings(b -> b.maxSize(1));
         if (prop != null && (prop.getProperty("user") != null || prop.getProperty("password") != null)) {
             String user = prop.getProperty("user");
             String password = prop.getProperty("password");
