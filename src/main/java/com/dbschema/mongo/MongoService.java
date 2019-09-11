@@ -4,6 +4,7 @@ import com.dbschema.Service;
 import com.dbschema.mongo.parser.ScanStrategy;
 import com.dbschema.schema.MetaCollection;
 import com.dbschema.schema.MetaField;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import java.util.*;
@@ -82,7 +83,9 @@ public class MongoService implements Service {
 
     @Override
     public String getVersion(){
-        return "1.1";
+        JMongoDatabase db = client.getDatabase("test");
+        Document info = db.runCommand(new Document("buildinfo", null));
+        return info.getString("version");
     }
 
 

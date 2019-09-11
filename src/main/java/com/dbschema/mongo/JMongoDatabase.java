@@ -11,6 +11,7 @@ import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -96,6 +97,13 @@ public class JMongoDatabase extends AbstractJSObject {
         return mongoDatabase.listCollectionNames();
     }
 
+    private Iterable<String> version()
+    {
+        Document info = mongoDatabase.runCommand(new Document("buildinfo", null));
+        String v = info.getString("version");
+        return v == null ? null : Collections.singletonList(v);
+    }
+
     public ListCollectionsIterable<Document> listCollections() {
         return mongoDatabase.listCollections();
     }
@@ -128,7 +136,8 @@ public class JMongoDatabase extends AbstractJSObject {
                 "listCollections".equals(name)||
                 "listCollectionNames".equals(name)||
                 "drop".equals(name)||
-                "runCommand".equals(name);
+                "runCommand".equals(name) ||
+                "version".equals(name);
     }
 
     @Override
@@ -171,6 +180,8 @@ public class JMongoDatabase extends AbstractJSObject {
                                 return listCollectionNames();
                             case "listCollections":
                                 return listCollections();
+                            case "version":
+                                return version();
                         }
                         return ( args.length == 1 ) ? getCollection(String.valueOf(args[0])) : null;
                     }

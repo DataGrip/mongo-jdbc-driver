@@ -451,7 +451,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
      */
     public String getDriverVersion() throws SQLException
     {
-        return "1.0";
+        return "1.4";
     }
 
     /**
@@ -467,7 +467,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
      */
     public int getDriverMinorVersion()
     {
-        return 0;
+        return 4;
     }
 
     public boolean usesLocalFiles() throws SQLException
@@ -1542,7 +1542,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
      */
     @Override
     public int getJDBCMajorVersion() throws SQLException {
-        return 1;
+        return 4;
     }
 
     /**
@@ -1550,7 +1550,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
      */
     @Override
     public int getJDBCMinorVersion() throws SQLException {
-        return 0;
+        return 2;
     }
 
     /**
