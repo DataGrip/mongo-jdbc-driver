@@ -33,6 +33,7 @@ public class ResultSetIterator implements ResultSet {
 
     @Override
     public Object getObject(int columnIndex) throws SQLException {
+        if (columnIndex != 1) throw new SQLException("Invalid column index: " + columnIndex);
         return actual;
     }
 
@@ -64,7 +65,8 @@ public class ResultSetIterator implements ResultSet {
 
     @Override
     public String getString(int columnIndex) throws SQLException {
-        return null;
+        Object o = getObject(columnIndex);
+        return o instanceof String ? (String) o : null;
     }
 
     @Override

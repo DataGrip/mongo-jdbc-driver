@@ -629,7 +629,7 @@ public class MongoPreparedStatement implements PreparedStatement {
 
     @Override
     public boolean execute() throws SQLException {
-        return false;
+        return query != null && execute(query);
     }
 
     @Override

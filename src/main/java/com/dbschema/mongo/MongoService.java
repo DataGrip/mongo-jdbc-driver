@@ -6,6 +6,7 @@ import com.dbschema.schema.MetaCollection;
 import com.dbschema.schema.MetaField;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -90,7 +91,7 @@ public class MongoService implements Service {
 
 
     @Override
-    public MetaCollection getMetaCollection(String catalogName, String collectionName){
+    public MetaCollection getMetaCollection(@NotNull String catalogName, String collectionName){
         if ( collectionName == null || collectionName.length() == 0 ) return null;
         int idx = collectionName.indexOf('.');
         if ( idx > -1 ) collectionName = collectionName.substring(0, idx );

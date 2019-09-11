@@ -180,7 +180,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
         result.setColumnNames(new String[] { "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
                 "KEY_SEQ", "PK_NAME" });
 
-        MetaCollection collection = con.getService().getMetaCollection(catalogName, tableNamePattern);
+        MetaCollection collection = con.getService().getMetaCollection(schemaName, tableNamePattern);
         if ( collection != null ){
             for ( MetaIndex index : collection.metaIndexes){
                 if ( index.pk ) {
@@ -249,7 +249,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
                 "INDEX_QUALIFIER", "INDEX_NAME", "TYPE", "ORDINAL_POSITION", "COLUMN_NAME", "ASC_OR_DESC",
                 "CARDINALITY", "PAGES", "FILTER_CONDITION"});
 
-        MetaCollection collection = con.getService().getMetaCollection(catalogName, tableNamePattern);
+        MetaCollection collection = con.getService().getMetaCollection(schemaName, tableNamePattern);
 
         if ( collection != null ){
             for ( MetaIndex index : collection.metaIndexes){
@@ -1246,7 +1246,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
         result.setColumnNames(new String[]{"PKTABLE_CAT", "PKTABLE_SCHEMA", "PKTABLE_NAME", "PKCOLUMN_NAME", "FKTABLE_CAT", "FKTABLE_SCHEM",
                 "FKTABLE_NAME", "FKCOLUMN_NAME", "KEY_SEQ", "UPDATE_RULE", "DELETE_RULE", "FK_NAME", "PK_NAME", "DEFERRABILITY"});
 
-        MetaCollection pkCollection = con.getService().getMetaCollection(catalogName, tableNamePattern);
+        MetaCollection pkCollection = con.getService().getMetaCollection(schemaName, tableNamePattern);
         if ( pkCollection != null ){
             for ( MetaCollection fromCollection : con.getService().getMetaCollections() ){
                 for ( MetaField fromFiled : fromCollection.fields ){
@@ -1300,7 +1300,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
                 "FKTABLE_NAME", "FKCOLUMN_NAME", "KEY_SEQ", "UPDATE_RULE", "DELETE_RULE", "FK_NAME", "PK_NAME", "DEFERRABILITY"});
 
 
-        MetaCollection fromCollection = con.getService().getMetaCollection(catalogName, tableNamePattern);
+        MetaCollection fromCollection = con.getService().getMetaCollection(schemaName, tableNamePattern);
         if ( fromCollection != null ){
             for ( MetaField fromFiled : fromCollection.fields ){
                 getImportedKeysRecursive(result, fromFiled);
