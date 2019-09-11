@@ -40,7 +40,9 @@ public class JMongoClient {
             String user = prop.getProperty("user");
             String password = prop.getProperty("password");
             MongoCredential credentialsFromUrl = connectionString.getCredential();
-            String source = credentialsFromUrl == null ? "$external" : credentialsFromUrl.getSource();
+            String source = credentialsFromUrl != null ?
+                    credentialsFromUrl.getSource() :
+                    databaseName != null ? databaseName : "$external";
             builder.credential(createCredential(authMechanism, user, source, password == null ? null : password.toCharArray()));
         }
         this.mongoClient = MongoClients.create(builder.build());
