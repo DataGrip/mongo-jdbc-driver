@@ -11,7 +11,7 @@ import java.util.concurrent.Executor;
 
 public class MongoConnection implements Connection
 {
-    private String catalog;
+    private String schema;
 	private Service service;
 	private boolean isClosed = false;
 	private boolean isReadOnly = false;
@@ -19,11 +19,11 @@ public class MongoConnection implements Connection
 
 	public MongoConnection(Service service) throws UnknownHostException {
 		this.service = service;
-        setCatalog( service.getCurrentDatabaseName() );
+        setSchema(service.getDatabaseNameFromUrl());
 	}
 
     public String getCatalog(){
-        return catalog;
+        return null;
     }
 
 	public Service getService() {
@@ -148,7 +148,6 @@ public class MongoConnection implements Connection
 
     @Override
 	public void setCatalog(String catalog) {
-		this.catalog = catalog;
 	}
 
     @Override
@@ -374,12 +373,13 @@ public class MongoConnection implements Connection
 	}
 
     @Override
-    public void setSchema(String schema) throws SQLException {
+    public void setSchema(String schema) {
+        this.schema = schema;
     }
 
     @Override
-    public String getSchema() throws SQLException {
-        return null;  
+    public String getSchema() {
+        return schema;
     }
 
     @Override

@@ -84,7 +84,7 @@ public class MongoPreparedStatement implements PreparedStatement {
             if ( ( db.startsWith("\"") && db.endsWith("\"")) || ( db.startsWith("'") && db.endsWith("'"))){
                 db = db.substring( 1, db.length()-1);
             }
-            con.setCatalog( db );
+            con.setSchema(db);
             return new OkResultSet();
         }
         Matcher matcherCreateDatabase = PATTERN_CREATE_DATABASE.matcher( query );
@@ -106,13 +106,13 @@ public class MongoPreparedStatement implements PreparedStatement {
             if ( PATTERN_SHOW_COLLECTIONS.matcher( query ).matches()){
                 ArrayResultSet result = new ArrayResultSet();
                 result.setColumnNames(new String[]{"COLLECTION_NAME"});
-                for ( String str : con.getService().getCollectionNames(con.getCatalog()) ){
+                for (String str : con.getService().getCollectionNames(con.getSchema())) {
                     result.addRow( new String[]{ str });
                 }
                 return lastResultSet = result;
             }
             if ( PATTERN_SHOW_USERS.matcher( query ).matches()){
-                query = "db.runCommand(\"{usersInfo:'" + con.getCatalog() + "'}\")";
+                query = "db.runCommand(\"{usersInfo:'" + con.getSchema() + "'}\")";
             }
             if ( PATTERN_SHOW_PROFILE.matcher( query ).matches() || PATTERN_SHOW_RULES.matcher( query ).matches() ){
                 throw new SQLException("Not yet implemented in this driver.");
@@ -136,13 +136,14 @@ public class MongoPreparedStatement implements PreparedStatement {
             final Bindings binding = engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE);
             for ( JMongoDatabase db : con.getDatabases() ){
                 binding.put( db.getName(), db);
-                if ( con.getCatalog() != null && con.getCatalog().equals(db.getName())){
+                if (con.getSchema() != null && con.getSchema().equals(db.getName())) {
                     binding.put( "db", db );
                     dbIsSet = true;
                 }
             }
-            if ( !dbIsSet ){
-                binding.put( "db", con.getDatabase("admin"));
+            if (!dbIsSet) {
+                String currentSchemaName = con.getSchema();
+                binding.put("db", con.getDatabase(currentSchemaName));
             }
             binding.put("client", con);
             final String script = "var ObjectId = function( oid ) { return new org.bson.types.ObjectId( oid );}\n" +
@@ -249,9 +250,9 @@ public class MongoPreparedStatement implements PreparedStatement {
                 return scan;
             }
         }
-        if ( "db".equals( name ) && con.getCatalog() != null ){
+        if ("db".equals(name) && con.getSchema() != null) {
             for ( JMongoDatabase scan : con.getDatabases() ){
-                if ( scan.getName().equalsIgnoreCase( con.getCatalog() )){
+                if (scan.getName().equalsIgnoreCase(con.getSchema())) {
                     return scan;
                 }
             }

@@ -8,29 +8,29 @@ import java.util.List;
 
 public interface Service {
 
-    public String getURI();
+    String getURI();
 
-    public String getCurrentDatabaseName();
+    String getDatabaseNameFromUrl();
 
-	public JMongoDatabase getDatabase(String dbName);
+    JMongoDatabase getDatabase(String dbName);
 
-    public MetaCollection discoverCollection(String catalog, String collectionName );
+    MetaCollection discoverCollection(String catalog, String collectionName);
 
-	public List<String> getDatabaseNames();
+    List<String> getDatabaseNames();
 
-    public List<JMongoDatabase> getDatabases();
+    List<JMongoDatabase> getDatabases();
 
-    public void discoverReferences();
+    void discoverReferences();
 
-    public void clear();
+    void clear();
 
-    public List<String> getCollectionNames(String catalog);
+    List<String> getCollectionNames(String catalog);
 
-    public MetaCollection getMetaCollection(String catalogName, String collectionName);
+    MetaCollection getMetaCollection(String catalogName, String collectionName);
 
-    public Collection<MetaCollection> getMetaCollections();
+    Collection<MetaCollection> getMetaCollections();
 
-    public String getVersion();
+    String getVersion();
 
 
 }

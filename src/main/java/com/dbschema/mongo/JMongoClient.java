@@ -20,7 +20,7 @@ public class JMongoClient {
     private static final Pattern AUTH_MECH_PATTERN = Pattern.compile("([?&])authMechanism=([\\w_-]+)&?");
 
     private final MongoClient mongoClient;
-    public final String databaseName;
+    public final String databaseNameFromUrl;
 
     public JMongoClient(String uri, Properties prop)
     {
@@ -33,7 +33,7 @@ public class JMongoClient {
             authMechanism = AuthenticationMechanism.fromMechanismName(matcher.group(2));
         }
         ConnectionString connectionString = new ConnectionString(uri);
-        databaseName = nullize(connectionString.getDatabase());
+        databaseNameFromUrl = nullize(connectionString.getDatabase());
         MongoClientSettings.Builder builder = MongoClientSettings.builder()
                 .applyConnectionString(connectionString);
         if (prop != null && (prop.getProperty("user") != null || prop.getProperty("password") != null)) {
@@ -42,7 +42,7 @@ public class JMongoClient {
             MongoCredential credentialsFromUrl = connectionString.getCredential();
             String source = credentialsFromUrl != null ?
                     credentialsFromUrl.getSource() :
-                    databaseName != null ? databaseName : "$external";
+                    databaseNameFromUrl != null ? databaseNameFromUrl : "$external";
             builder.credential(createCredential(authMechanism, user, source, password == null ? null : password.toCharArray()));
         }
         this.mongoClient = MongoClients.create(builder.build());

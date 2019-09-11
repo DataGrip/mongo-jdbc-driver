@@ -28,9 +28,9 @@ public class MongoService implements Service {
     }
 
     @Override
-    public String getCurrentDatabaseName() {
+    public String getDatabaseNameFromUrl() {
         // SEE THIS TO SEE HOW DATABASE NAME IS USED : http://api.mongodb.org/java/current/com/mongodb/MongoClientURI.html
-        return client.databaseName != null ? client.databaseName : "admin";
+        return client.databaseNameFromUrl != null ? client.databaseNameFromUrl : "admin";
     }
 
     @Override
@@ -44,7 +44,7 @@ public class MongoService implements Service {
                 names.add( c );
             }
         } catch ( Throwable ex ){
-            names.add( getCurrentDatabaseName() );
+            names.add(getDatabaseNameFromUrl());
         }
         for ( String str : createdDatabases ){
             if ( !names.contains( str )){
