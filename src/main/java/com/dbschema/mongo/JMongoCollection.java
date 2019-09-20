@@ -1,6 +1,7 @@
 package com.dbschema.mongo;
 
 
+import com.dbschema.resultSet.ArrayResultSet;
 import com.mongodb.MongoNamespace;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
@@ -14,6 +15,7 @@ import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,12 +47,12 @@ public class JMongoCollection<TDocument> {
     }
 
 
-    public long count(String str) {
-        return nativeCollection.count( JMongoUtil.parse(str) );
+    public ResultSet count(String str) {
+        return wrapInResultSet("count", nativeCollection.countDocuments(JMongoUtil.parse(str)));
     }
 
-    public long count(String str, CountOptions countOptions) {
-        return nativeCollection.count( JMongoUtil.parse(str), countOptions);
+    public ResultSet count(String str, CountOptions countOptions) {
+        return wrapInResultSet("count", nativeCollection.countDocuments( JMongoUtil.parse(str), countOptions));
     }
 
     public JFindIterable find(String str) {
@@ -248,16 +250,20 @@ public class JMongoCollection<TDocument> {
         return this;
     }
 
-    public long count() {
-        return nativeCollection.count();
+    public ResultSet count() {
+        return wrapInResultSet("count", nativeCollection.countDocuments());
     }
 
-    public long count(Bson bson) {
-        return nativeCollection.count( bson );
+    private ResultSet wrapInResultSet(String columnName, Object value) {
+        return new ArrayResultSet(new String[][]{{value.toString()}}, new String[]{columnName});
     }
 
-    public long count(Bson bson, CountOptions countOptions) {
-        return nativeCollection.count( bson, countOptions);
+    public ResultSet count(Bson bson) {
+        return wrapInResultSet("count", nativeCollection.countDocuments(bson));
+    }
+
+    public ResultSet count(Bson bson, CountOptions countOptions) {
+        return wrapInResultSet("count", nativeCollection.countDocuments(bson, countOptions));
     }
 
     public <TResult> DistinctIterable distinct(String s, Class<TResult> aClass) {

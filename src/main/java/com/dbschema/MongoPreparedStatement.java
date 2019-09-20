@@ -159,6 +159,8 @@ public class MongoPreparedStatement implements PreparedStatement {
                 lastResultSet = new AggregateResultSet((AggregationOutput) obj);
             } else if (obj instanceof JMongoCollection) {
                 lastResultSet = new ResultSetIterator(((JMongoCollection<?>) obj).find());
+            } else if (obj instanceof ResultSet) {
+                lastResultSet = (ResultSet) obj;
             }
             return lastResultSet;
         } catch ( Throwable ex ){
