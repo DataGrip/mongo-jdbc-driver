@@ -46,6 +46,9 @@ public class JMongoClient {
                     databaseNameFromUrl != null ? databaseNameFromUrl : "$external";
             builder.credential(createCredential(authMechanism, user, source, password == null ? null : password.toCharArray()));
         }
+        if (prop != null && "true".equals(prop.getProperty("ssl"))) {
+            builder.applyToSslSettings(s -> s.enabled(true));
+        }
         this.mongoClient = MongoClients.create(builder.build());
     }
 
