@@ -6,6 +6,8 @@ import org.bson.types.ObjectId;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.dbschema.mongo.JMongoUtil.escapeChars;
+
 public class MetaField {
 
     public final MetaJson parentJson;
@@ -23,21 +25,22 @@ public class MetaField {
         this.type = type;
     }
 
-    public void addObjectId(ObjectId objectId){
-        if ( objectIds.size() < 4 ){
-            objectIds.add( objectId );
+    public void addObjectId(ObjectId objectId) {
+        if (objectIds.size() < 4) {
+            objectIds.add(objectId);
         }
     }
 
-    public String getNameWithPath(){
-        return ( parentJson != null && !(parentJson instanceof MetaCollection ) ? parentJson.getNameWithPath() + "." + name : name );
+    public String getNameWithPath() {
+        String qualifier = parentJson != null && !(parentJson instanceof MetaCollection) ? parentJson.getNameWithPath() + "." : "";
+        return qualifier + escapeChars(name, '\\', '.');
     }
 
-    public String getPkColumnName(){
+    public String getPkColumnName() {
         String pkColumnName = name;
         final int idx = pkColumnName.lastIndexOf('.');
-        if ( idx > 0 ){
-            pkColumnName = pkColumnName.substring( idx + 1 );
+        if (idx > 0) {
+            pkColumnName = pkColumnName.substring(idx + 1);
         }
         return pkColumnName;
     }

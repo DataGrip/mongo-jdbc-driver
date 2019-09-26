@@ -4,7 +4,10 @@ import com.dbschema.resultSet.ArrayResultSet;
 import com.dbschema.schema.*;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Mongo databases are equivalent to catalogs for this driver. Schemas aren't used. Mongo collections are
@@ -97,11 +100,10 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
 
     /**
      * @see java.sql.DatabaseMetaData#getColumns(java.lang.String, java.lang.String, java.lang.String,
-     *      java.lang.String)
+     * java.lang.String)
      */
     @Override
-    public ResultSet getColumns(String catalogName, String schemaName, String tableNamePattern, String columnNamePattern) throws SQLException
-    {
+    public ResultSet getColumns(String catalogName, String schemaName, String tableNamePattern, String columnNamePattern) throws SQLException {
         // As far as this driver implementation goes, every "table" in MongoDB is actually a collection, and
         // every collection "table" has two columns - "_id" column which is the primary key, and a "document"
         // column which is the JSON document corresponding to the "_id". An "_id" value can be specified on
@@ -109,51 +111,65 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
         MetaCollection collection = con.getService().getMetaCollection(schemaName, tableNamePattern);
 
         ArrayResultSet result = new ArrayResultSet();
-        result.setColumnNames(new String[] { "TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
-                "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE", "BUFFER_LENGTH", "DECIMAL_DIGITS", "NUM_PREC_RADIX",
-                "NULLABLE", "REMARKS", "COLUMN_DEF", "SQL_DATA_TYPE", "SQL_DATETIME_SUB", "CHAR_OCTET_LENGTH",
-                "ORDINAL_POSITION", "IS_NULLABLE", "SCOPE_CATLOG", "SCOPE_SCHEMA", "SCOPE_TABLE",
-                "SOURCE_DATA_TYPE", "IS_AUTOINCREMENT" });
+        result.setColumnNames(new String[]{"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
+          "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE", "BUFFER_LENGTH", "DECIMAL_DIGITS", "NUM_PREC_RADIX",
+          "NULLABLE", "REMARKS", "COLUMN_DEF", "SQL_DATA_TYPE", "SQL_DATETIME_SUB", "CHAR_OCTET_LENGTH",
+          "ORDINAL_POSITION", "IS_NULLABLE", "SCOPE_CATLOG", "SCOPE_SCHEMA", "SCOPE_TABLE",
+          "SOURCE_DATA_TYPE", "IS_AUTOINCREMENT"});
 
-        if ( collection != null ){
-            for ( MetaField field : collection.fields){
-                if ( columnNamePattern == null || columnNamePattern.equals( field.name ) || "%".equals(columnNamePattern)){
-                    exportColumnsRecursive(collection, result, field);
+        Map<String, String[]> columnsData = new HashMap<>();
+        if (collection != null) {
+            for (MetaField field : collection.fields) {
+                if (columnNamePattern == null || columnNamePattern.equals(field.name) || "%".equals(columnNamePattern)) {
+                    exportColumnsRecursive(collection, columnsData, field);
                 }
             }
+        }
+        ArrayList<String[]> columns = new ArrayList<>(columnsData.values());
+        columns.sort((o1, o2) -> {
+            String n1 = o1[3];
+            String n2 = o2[3];
+            if ("_id".equals(n1)) return -1;
+            if ("_id".equals(n2)) return 1;
+            return n1.compareTo(n2);
+        });
+        for (String[] column : columns) {
+            result.addRow(column);
         }
         return result;
     }
 
-    private void exportColumnsRecursive(MetaCollection collection, ArrayResultSet result, MetaField field) {
-        result.addRow(new String[] { collection.name, // "TABLE_CAT",
-                null, // "TABLE_SCHEMA",
-                collection.name, // "TABLE_NAME", (i.e. MongoDB Collection Name)
-                field.getNameWithPath(), // "COLUMN_NAME",
-                "" + field.type, // "DATA_TYPE",
-                field.typeName, // "TYPE_NAME",
-                "800", // "COLUMN_SIZE",
-                "0", // "BUFFER_LENGTH", (not used)
-                "0", // "DECIMAL_DIGITS",
-                "10", // "NUM_PREC_RADIX",
-                "" + ( field.isMandatory() ? columnNoNulls : columnNullable ), // "NULLABLE",
-                "", // "REMARKS",
-                "", // "COLUMN_DEF",
-                "0", // "SQL_DATA_TYPE", (not used)
-                "0", // "SQL_DATETIME_SUB", (not used)
-                "800", // "CHAR_OCTET_LENGTH",
-                "1", // "ORDINAL_POSITION",
-                "NO", // "IS_NULLABLE",
-                null, // "SCOPE_CATLOG", (not a REF type)
-                null, // "SCOPE_SCHEMA", (not a REF type)
-                null, // "SCOPE_TABLE", (not a REF type)
-                null, // "SOURCE_DATA_TYPE", (not a DISTINCT or REF type)
-                "NO" // "IS_AUTOINCREMENT" (can be auto-generated, but can also be specified)
+    private void exportColumnsRecursive(MetaCollection collection, Map<String, String[]> columnsData, MetaField field) {
+        String name = field.getNameWithPath();
+        columnsData.put(name, new String[]{
+          collection.name, // "TABLE_CAT",
+          null, // "TABLE_SCHEMA",
+          collection.name, // "TABLE_NAME", (i.e. MongoDB Collection Name)
+          name, // "COLUMN_NAME",
+          "" + field.type, // "DATA_TYPE",
+          field.typeName, // "TYPE_NAME",
+          null, // "COLUMN_SIZE",
+          null, // "BUFFER_LENGTH", (not used)
+          null, // "DECIMAL_DIGITS",
+          null, // "NUM_PREC_RADIX",
+          "" + (field.isMandatory() ? columnNoNulls : columnNullable), // "NULLABLE",
+          null, // "REMARKS",
+          null, // "COLUMN_DEF",
+          null, // "SQL_DATA_TYPE", (not used)
+          null, // "SQL_DATETIME_SUB", (not used)
+          null, // "CHAR_OCTET_LENGTH",
+          null, // "ORDINAL_POSITION",
+          "YES", // "IS_NULLABLE",
+          null, // "SCOPE_CATLOG", (not a REF type)
+          null, // "SCOPE_SCHEMA", (not a REF type)
+          null, // "SCOPE_TABLE", (not a REF type)
+          null, // "SOURCE_DATA_TYPE", (not a DISTINCT or REF type)
+          "NO" // "IS_AUTOINCREMENT" (can be auto-generated, but can also be specified)
         });
-        if( field instanceof MetaJson){
-            MetaJson json = (MetaJson)field;
-            for ( MetaField children : json.fields){
-                exportColumnsRecursive( collection, result,  children );
+        if (field instanceof MetaJson) {
+            MetaJson json = (MetaJson) field;
+            for (MetaField children : json.fields) {
+                exportColumnsRecursive(collection, columnsData, children);
             }
         }
     }
