@@ -17,6 +17,7 @@ import static com.dbschema.mongo.JMongoUtil.nullize;
 
 
 public class JMongoClient {
+    public static final String DEFAULT_DB = "admin";
     private static final Pattern AUTH_MECH_PATTERN = Pattern.compile("([?&])authMechanism=([\\w_-]+)&?");
 
     private final MongoClient mongoClient;
@@ -43,7 +44,7 @@ public class JMongoClient {
             MongoCredential credentialsFromUrl = connectionString.getCredential();
             String source = credentialsFromUrl != null ?
                     credentialsFromUrl.getSource() :
-                    databaseNameFromUrl != null ? databaseNameFromUrl : "$external";
+                    databaseNameFromUrl != null ? databaseNameFromUrl : DEFAULT_DB;
             builder.credential(createCredential(authMechanism, user, source, password == null ? null : password.toCharArray()));
         }
         if (prop != null && "true".equals(prop.getProperty("ssl"))) {
