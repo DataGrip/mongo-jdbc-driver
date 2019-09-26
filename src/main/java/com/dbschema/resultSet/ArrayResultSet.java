@@ -564,8 +564,7 @@ public class ArrayResultSet implements ResultSet
 	/**
 	 * @see java.sql.ResultSet#getType()
 	 */
-	public int getType() throws SQLException
-	{
+	public int getType() {
 		return ResultSet.TYPE_FORWARD_ONLY;
 	}
 

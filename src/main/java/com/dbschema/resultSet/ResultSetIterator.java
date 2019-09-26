@@ -318,27 +318,27 @@ public class ResultSetIterator implements ResultSet {
 
     @Override
     public boolean absolute(int row) throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public boolean relative(int rows) throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public boolean previous() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public void setFetchDirection(int direction) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public int getFetchDirection() throws SQLException {
-        return 0;
+        return ResultSet.FETCH_FORWARD;
     }
 
     @Override
@@ -353,7 +353,7 @@ public class ResultSetIterator implements ResultSet {
 
     @Override
     public int getType() throws SQLException {
-        return 0;
+        return ResultSet.TYPE_FORWARD_ONLY;
     }
 
     @Override
@@ -363,17 +363,17 @@ public class ResultSetIterator implements ResultSet {
 
     @Override
     public boolean rowUpdated() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public boolean rowInserted() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public boolean rowDeleted() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
