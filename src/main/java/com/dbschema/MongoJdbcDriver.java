@@ -11,6 +11,10 @@ import java.sql.*;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.dbschema.mongo.JMongoClient.removeParameter;
 
 
 /**
@@ -20,8 +24,8 @@ import java.util.logging.Logger;
  * jdbc:mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
  * The URL excepting the jdbc: prefix is passed as it is to the MongoDb native Java driver.
  */
-public class MongoJdbcDriver implements Driver
-{
+public class MongoJdbcDriver implements Driver {
+    private static final Pattern FETCH_DOCUMENTS_FOR_META_PATTERN = Pattern.compile("([?&])fetch_documents_for_metainfo=(\\d+)&?");
     private DriverPropertyInfoHelper propertyInfoHelper = new DriverPropertyInfoHelper();
 
     static {
@@ -41,26 +45,27 @@ public class MongoJdbcDriver implements Driver
      * The URL excepting the jdbc: prefix is passed as it is to the MongoDb native Java driver.
      */
     public Connection connect(String url, Properties info) throws SQLException {
-        if ( url != null && acceptsURL( url )){
-            ScanStrategy scan = ScanStrategy.fast;
-            for (ScanStrategy s : ScanStrategy.values() ){
-                if ( url.contains( "?scan=" + s ) || url.contains( "&scan=" + s )){
-                    scan = s;
-                    url = url.replaceFirst("\\?scan=" + s, "" ).replaceFirst("&scan=" + s, "");
-                }
-            }
-            try	{
-                if ( url.startsWith("jdbc:")) {
-                    url = url.substring("jdbc:".length());
-                }
-                final MongoService service = new MongoService(url, info, scan );
-
-                return new MongoConnection(service);
-            } catch (UnknownHostException e) {
-                throw new SQLException("Unexpected exception: " + e.getMessage(), e);
+        if (url == null || !acceptsURL(url)) return null;
+        Matcher matcher = FETCH_DOCUMENTS_FOR_META_PATTERN.matcher(url);
+        int fetchDocumentsForMeta = 0;
+        if (matcher.find()) {
+            url = removeParameter(url, matcher);
+            try {
+                fetchDocumentsForMeta = Integer.parseInt(matcher.group(2));
+                if (fetchDocumentsForMeta < 0) fetchDocumentsForMeta = 0;
+            } catch (NumberFormatException ignored) {
             }
         }
-        return null;
+        try {
+            if (url.startsWith("jdbc:")) {
+                url = url.substring("jdbc:".length());
+            }
+            final MongoService service = new MongoService(url, info, fetchDocumentsForMeta);
+
+            return new MongoConnection(service);
+        } catch (UnknownHostException e) {
+            throw new SQLException("Unexpected exception: " + e.getMessage(), e);
+        }
     }
 
 

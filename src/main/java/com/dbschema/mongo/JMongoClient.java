@@ -7,6 +7,7 @@ import com.mongodb.MongoCredential;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoIterable;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Properties;
@@ -28,9 +29,7 @@ public class JMongoClient {
         Matcher matcher = AUTH_MECH_PATTERN.matcher(uri);
         AuthenticationMechanism authMechanism = null;
         if (matcher.find()) {
-            String group = matcher.group();
-            uri = uri.replace(group, matcher.group(1));
-            if (uri.endsWith("?") || uri.endsWith("&")) uri = uri.substring(0, uri.length() - 1);
+            uri = removeParameter(uri, matcher);
             authMechanism = AuthenticationMechanism.fromMechanismName(matcher.group(2));
         }
         ConnectionString connectionString = new ConnectionString(uri);
@@ -51,6 +50,14 @@ public class JMongoClient {
             builder.applyToSslSettings(s -> s.enabled(true));
         }
         this.mongoClient = MongoClients.create(builder.build());
+    }
+
+    @NotNull
+    public static String removeParameter(@NotNull String uri, @NotNull Matcher matcher) {
+        String group = matcher.group();
+        uri = uri.replace(group, matcher.group(1));
+        if (uri.endsWith("?") || uri.endsWith("&")) uri = uri.substring(0, uri.length() - 1);
+        return uri;
     }
 
     private MongoCredential createCredential(@Nullable AuthenticationMechanism mechanism, String user, String source, char[] password) {

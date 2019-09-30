@@ -1,7 +1,6 @@
 package com.dbschema.mongo;
 
 import com.dbschema.Service;
-import com.dbschema.mongo.parser.ScanStrategy;
 import com.dbschema.schema.MetaCollection;
 import com.dbschema.schema.MetaField;
 import org.bson.Document;
@@ -14,16 +13,16 @@ public class MongoService implements Service {
 
     private final JMongoClient client;
     private String uri;
-    protected final HashMap<String,MetaCollection> metaCollections = new HashMap<String,MetaCollection>();
-    private final ScanStrategy scanStrategy;
+    private final HashMap<String, MetaCollection> metaCollections = new HashMap<>();
+    private final int fetchDocumentsForMeta;
 
     // USE STATIC SO OPENING A NEW CONNECTION WILL REMEMBER THIS
-    public static final List<String> createdDatabases = new ArrayList<String>();
+    public static final List<String> createdDatabases = new ArrayList<>();
 
 
-    public MongoService(final String uri, final Properties prop, final ScanStrategy scanStrategy) {
+    public MongoService(final String uri, final Properties prop, final int fetchDocumentsForMeta) {
         this.uri = uri;
-        this.scanStrategy = scanStrategy;
+        this.fetchDocumentsForMeta = fetchDocumentsForMeta;
         client = new JMongoClient(uri, prop);
     }
 
@@ -37,7 +36,7 @@ public class MongoService implements Service {
     public List<String> getDatabaseNames() {
         client.testConnectivity();
 
-        final List<String> names = new ArrayList<String>();
+        final List<String> names = new ArrayList<>();
         try {
             // THIS OFTEN THROWS EXCEPTION BECAUSE OF MISSING RIGHTS. IN THIS CASE WE ONLY ADD CURRENT KNOWN DB.
             for ( String c : client.listDatabaseNames() ){
@@ -61,7 +60,7 @@ public class MongoService implements Service {
 
     @Override
     public List<JMongoDatabase> getDatabases() {
-        final List<JMongoDatabase> list = new ArrayList<JMongoDatabase>();
+        final List<JMongoDatabase> list = new ArrayList<>();
 
         for ( String dbName : getDatabaseNames() ){
             list.add( getDatabase(dbName));
@@ -116,7 +115,7 @@ public class MongoService implements Service {
 
     @Override
     public List<String> getCollectionNames(String catalog) {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         try {
             JMongoDatabase db = client.getDatabase(catalog);
             if ( db != null ){
@@ -139,9 +138,9 @@ public class MongoService implements Service {
         final JMongoDatabase mongoDatabase = getDatabase(dbOrCatalog);
         if ( mongoDatabase != null ){
             try {
-                final JMongoCollection mongoCollection = mongoDatabase.getCollection( collectionName );
+                final JMongoCollection<?> mongoCollection = mongoDatabase.getCollection(collectionName);
                 if ( mongoCollection != null ){
-                    return new MetaCollection( mongoCollection, dbOrCatalog, collectionName, scanStrategy );
+                    return new MetaCollection(mongoCollection, dbOrCatalog, collectionName, fetchDocumentsForMeta);
                 }
             } catch ( Throwable ex ){
                 System.out.println("Error discovering collection " + dbOrCatalog + "." + collectionName + ". " + ex );
@@ -152,10 +151,10 @@ public class MongoService implements Service {
     }
 
 
-    public JMongoCollection getJMongoCollection( String databaseName, String collectionName ){
-        final JMongoDatabase mongoDatabase = client.getDatabase( databaseName );
-        if ( mongoDatabase != null ){
-            return mongoDatabase.getCollection( collectionName );
+    private JMongoCollection<?> getJMongoCollection(String databaseName, String collectionName) {
+        final JMongoDatabase mongoDatabase = client.getDatabase(databaseName);
+        if (mongoDatabase != null) {
+            return mongoDatabase.getCollection(collectionName);
         }
         return null;
     }
@@ -168,18 +167,18 @@ public class MongoService implements Service {
         if ( !referencesDiscovered){
             try {
                 referencesDiscovered = true;
-                final List<MetaField> unsolvedFields = new ArrayList<MetaField>();
-                final List<MetaField> solvedFields = new ArrayList<MetaField>();
-                for ( MetaCollection collection : metaCollections.values() ){
+                final List<MetaField> unsolvedFields = new ArrayList<>();
+                final List<MetaField> solvedFields = new ArrayList<>();
+                for (MetaCollection collection : metaCollections.values()) {
                     collection.collectFieldsWithObjectId(unsolvedFields);
                 }
-                if ( !unsolvedFields.isEmpty() ){
-                    for ( MetaCollection collection : metaCollections.values() ){
-                        final JMongoCollection mongoCollection = getJMongoCollection( collection.db, collection.name );
-                        if ( mongoCollection != null ){
-                            for ( MetaField metaField : unsolvedFields ){
-                                for ( ObjectId objectId : metaField.objectIds){
-                                    final Map<String,Object> query = new HashMap<String,Object>(); //new BasicDBObject();
+                if (!unsolvedFields.isEmpty()) {
+                    for (MetaCollection collection : metaCollections.values()) {
+                        final JMongoCollection<?> mongoCollection = getJMongoCollection(collection.db, collection.name);
+                        if (mongoCollection != null) {
+                            for (MetaField metaField : unsolvedFields) {
+                                for (ObjectId objectId : metaField.objectIds) {
+                                    final Map<String, Object> query = new HashMap<>(); //new BasicDBObject();
                                     query.put("_id", objectId );
                                     if ( !solvedFields.contains( metaField ) && mongoCollection.find( query ).iterator().hasNext() ){
                                         solvedFields.add( metaField );

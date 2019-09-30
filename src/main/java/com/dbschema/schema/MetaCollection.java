@@ -2,7 +2,6 @@ package com.dbschema.schema;
 
 import com.dbschema.mongo.JFindIterable;
 import com.dbschema.mongo.JMongoCollection;
-import com.dbschema.mongo.parser.ScanStrategy;
 import com.mongodb.client.ListIndexesIterable;
 import com.mongodb.client.MongoCursor;
 import org.bson.types.ObjectId;
@@ -20,24 +19,12 @@ public class MetaCollection extends MetaJson {
     public final String db;
     public final List<MetaIndex> metaIndexes = new ArrayList<MetaIndex>();
 
-    public MetaCollection( final JMongoCollection mongoCollection, final String db, final String name, final ScanStrategy strategy ){
-        super( null, name, TYPE_MAP);
+    public MetaCollection(final JMongoCollection mongoCollection, final String db, final String name, final int fetchDocumentsForMeta) {
+        super(null, name, TYPE_MAP);
         this.db = db;
 
-        switch ( strategy ){
-            case medium:
-                if( discoverCollectionFirstRecords( mongoCollection, 300 ) ){
-                    discoverCollectionRandomRecords( mongoCollection, 300 );
-                }
-                break;
-            case full:
-                discoverCollectionFirstRecords( mongoCollection, Integer.MAX_VALUE);
-                break;
-            default :
-                discoverCollectionFirstRecords( mongoCollection, 10 );
-                break;
-        }
-        discoverIndexes( mongoCollection );
+        discoverCollectionFirstRecords(mongoCollection, fetchDocumentsForMeta);
+        discoverIndexes(mongoCollection);
 
     }
 
