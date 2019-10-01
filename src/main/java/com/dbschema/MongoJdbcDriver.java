@@ -14,6 +14,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.dbschema.DriverPropertyInfoHelper.FETCH_DOCUMENTS_FOR_METAINFO;
+import static com.dbschema.DriverPropertyInfoHelper.FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT;
 import static com.dbschema.mongo.JMongoClient.removeParameter;
 
 
@@ -25,7 +27,7 @@ import static com.dbschema.mongo.JMongoClient.removeParameter;
  * The URL excepting the jdbc: prefix is passed as it is to the MongoDb native Java driver.
  */
 public class MongoJdbcDriver implements Driver {
-    private static final Pattern FETCH_DOCUMENTS_FOR_META_PATTERN = Pattern.compile("([?&])fetch_documents_for_metainfo=(\\d+)&?");
+    private static final Pattern FETCH_DOCUMENTS_FOR_META_PATTERN = Pattern.compile("([?&])" + FETCH_DOCUMENTS_FOR_METAINFO +"=(\\d+)&?");
     private DriverPropertyInfoHelper propertyInfoHelper = new DriverPropertyInfoHelper();
 
     static {
@@ -46,16 +48,24 @@ public class MongoJdbcDriver implements Driver {
      */
     public Connection connect(String url, Properties info) throws SQLException {
         if (url == null || !acceptsURL(url)) return null;
+
+        int fetchDocumentsForMeta = FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT;
+        if (info.getProperty(FETCH_DOCUMENTS_FOR_METAINFO) != null) {
+            try {
+                fetchDocumentsForMeta = Integer.parseInt(info.getProperty(FETCH_DOCUMENTS_FOR_METAINFO));
+            } catch (NumberFormatException ignored) {
+            }
+        }
         Matcher matcher = FETCH_DOCUMENTS_FOR_META_PATTERN.matcher(url);
-        int fetchDocumentsForMeta = 0;
         if (matcher.find()) {
             url = removeParameter(url, matcher);
             try {
                 fetchDocumentsForMeta = Integer.parseInt(matcher.group(2));
-                if (fetchDocumentsForMeta < 0) fetchDocumentsForMeta = 0;
             } catch (NumberFormatException ignored) {
             }
         }
+        if (fetchDocumentsForMeta < 0) fetchDocumentsForMeta = 0;
+
         try {
             if (url.startsWith("jdbc:")) {
                 url = url.substring("jdbc:".length());

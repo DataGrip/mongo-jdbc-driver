@@ -6,14 +6,12 @@ import java.util.ArrayList;
 public class DriverPropertyInfoHelper
 {
     public static final String CONNECTIONS_PER_HOST = "connectionsPerHost";
-
     public static final String CONNECT_TIMEOUT = "connectTimeout";
-
     public static final String CURSOR_FINALIZER_ENABLED = "cursorFinalizerEnabled";
-
     public static final String READ_PREFERENCE = "readPreference";
-
     public static final String SOCKET_TIMEOUT = "socketTimeout";
+    static final String FETCH_DOCUMENTS_FOR_METAINFO = "fetch_documents_for_metainfo";
+    public static final int FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT = 10;
 
     /** I DISABLE THIS WHEN MIGRATING TO GRADLE
     public MongoOptions getMongoOptions(Properties props)
@@ -67,16 +65,19 @@ public class DriverPropertyInfoHelper
 
         addPropInfo(propInfos, CURSOR_FINALIZER_ENABLED, "true", "Sets whether there is a a finalize "
                 + "method created that cleans up instances of DBCursor that the client does not close. If you "
-                + "are careful to always call the close method of DBCursor, then this can safely be set to false.",
+                        + "are careful to always call the close method of DBCursor, then this can safely be set to false.",
                 null);
 
         addPropInfo(propInfos, READ_PREFERENCE, "primary",
-                "represents preferred replica set members to which a query or command can be sent", new String[] {
-                "primary", "primary preferred", "secondary", "secondary preferred", "nearest" });
+                "represents preferred replica set members to which a query or command can be sent", new String[]{
+                        "primary", "primary preferred", "secondary", "secondary preferred", "nearest"});
 
         addPropInfo(propInfos, SOCKET_TIMEOUT, "0", "The socket timeout in milliseconds It is used for "
                 + "I/O socket read and write operations "
                 + "Socket.setSoTimeout(int) Default is 0 and means no timeout.", null);
+
+        addPropInfo(propInfos, FETCH_DOCUMENTS_FOR_METAINFO, Integer.toString(FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT), "Number of documents that will be fetched per collection in order" +
+                "to return meta information from DatabaseMetaData.getColumns method.", null);
 
         return propInfos.toArray(new DriverPropertyInfo[propInfos.size()]);
     }
