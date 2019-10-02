@@ -3,6 +3,7 @@ package com.dbschema.mongo;
 import com.dbschema.Service;
 import com.dbschema.schema.MetaCollection;
 import com.dbschema.schema.MetaField;
+import com.mongodb.MongoSecurityException;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
@@ -82,10 +83,15 @@ public class MongoService implements Service {
 
 
     @Override
-    public String getVersion(){
-        JMongoDatabase db = client.getDatabase("test");
-        Document info = db.runCommand(new Document("buildinfo", null));
-        return info.getString("version");
+    public String getVersion() {
+        String databaseName = client.databaseNameFromUrl != null ? client.databaseNameFromUrl : "test";
+        JMongoDatabase db = client.getDatabase(databaseName);
+        try {
+            Document info = db.runCommand(new Document("buildinfo", null));
+            return info.getString("version");
+        } catch (MongoSecurityException e) {
+            return null;
+        }
     }
 
 

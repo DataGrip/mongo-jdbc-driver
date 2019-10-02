@@ -20,18 +20,26 @@ import static com.dbschema.mongo.JMongoUtil.nullize;
 public class JMongoClient {
     public static final String DEFAULT_DB = "admin";
     private static final Pattern AUTH_MECH_PATTERN = Pattern.compile("([?&])authMechanism=([\\w_-]+)&?");
+    private static final Pattern AUTH_SOURCE_PATTERN = Pattern.compile("([?&])authSource=([\\w_-]+)&?");
 
     private final MongoClient mongoClient;
     public final String databaseNameFromUrl;
 
-    public JMongoClient(String uri, Properties prop)
-    {
-        Matcher matcher = AUTH_MECH_PATTERN.matcher(uri);
+    public JMongoClient(String uri, Properties prop) {
         AuthenticationMechanism authMechanism = null;
+        Matcher matcher = AUTH_MECH_PATTERN.matcher(uri);
         if (matcher.find()) {
             uri = removeParameter(uri, matcher);
             authMechanism = AuthenticationMechanism.fromMechanismName(matcher.group(2));
         }
+
+        String authSource = null;
+        matcher = AUTH_SOURCE_PATTERN.matcher(uri);
+        if (matcher.find()) {
+            uri = removeParameter(uri, matcher);
+            authSource = matcher.group(2);
+        }
+
         ConnectionString connectionString = new ConnectionString(uri);
         databaseNameFromUrl = nullize(connectionString.getDatabase());
         MongoClientSettings.Builder builder = MongoClientSettings.builder()
@@ -43,7 +51,8 @@ public class JMongoClient {
             MongoCredential credentialsFromUrl = connectionString.getCredential();
             String source = credentialsFromUrl != null ?
                     credentialsFromUrl.getSource() :
-                    databaseNameFromUrl != null ? databaseNameFromUrl : DEFAULT_DB;
+                    authSource != null ? authSource :
+                            databaseNameFromUrl != null ? databaseNameFromUrl : DEFAULT_DB;
             builder.credential(createCredential(authMechanism, user, source, password == null ? null : password.toCharArray()));
         }
         if (prop != null && "true".equals(prop.getProperty("ssl"))) {
