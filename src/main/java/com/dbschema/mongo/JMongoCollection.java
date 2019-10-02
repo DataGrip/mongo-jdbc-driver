@@ -29,34 +29,35 @@ public class JMongoCollection<TDocument> {
         this.nativeCollection = nativeCollection;
     }
 
-    public void insert( String str ){
-        insertOne( str );
+    public void insert(String str) {
+        insertOne(str);
     }
 
-    public void insertOne( String str ){
-        nativeCollection.insertOne((TDocument)JMongoUtil.parse(str));
+    public void insertOne(String str) {
+        nativeCollection.insertOne((TDocument) JMongoUtil.parse(str));
     }
 
-    public void insert( Map map ){
-        insertOne( map );
+    public void insert(Map map) {
+        insertOne(map);
     }
 
-    public void insertOne( Map map ){
+    public void insertOne(Map map) {
         JMongoUtil.doConversions(map);
-        nativeCollection.insertOne( (TDocument)(new Document( map )) );
+        nativeCollection.insertOne((TDocument) (new Document(map)));
     }
 
 
-    public ResultSet count(String str) {
-        return wrapInResultSet("count", nativeCollection.countDocuments(JMongoUtil.parse(str)));
+    public ResultSet count(Map<?, ?> map) {
+        //noinspection unchecked
+        return wrapInResultSet("count", nativeCollection.countDocuments(new Document((Map<String, Object>) map)));
     }
 
     public ResultSet count(String str, CountOptions countOptions) {
-        return wrapInResultSet("count", nativeCollection.countDocuments( JMongoUtil.parse(str), countOptions));
+        return wrapInResultSet("count", nativeCollection.countDocuments(JMongoUtil.parse(str), countOptions));
     }
 
     public JFindIterable find(String str) {
-        return new JFindIterable<TDocument>( nativeCollection.find( JMongoUtil.parse(str) ) );
+        return new JFindIterable<TDocument>(nativeCollection.find(JMongoUtil.parse(str)));
     }
 
     public JFindIterable find(String str, String proj) {
