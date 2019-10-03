@@ -467,7 +467,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData
      */
     public String getDriverVersion() throws SQLException
     {
-        return "1.4";
+        return "1.5";
     }
 
     /**
