@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class JMongoService implements Service {
+public class MongoJService implements JService {
 
   private final JMongoClient client;
   private String uri;
@@ -20,7 +20,7 @@ public class JMongoService implements Service {
   public static final List<String> createdDatabases = new ArrayList<>();
 
 
-  public JMongoService(final String uri, final Properties prop, final int fetchDocumentsForMeta) {
+  public MongoJService(final String uri, final Properties prop, final int fetchDocumentsForMeta) {
     this.uri = uri;
     this.fetchDocumentsForMeta = fetchDocumentsForMeta;
     client = new JMongoClient(uri, prop);

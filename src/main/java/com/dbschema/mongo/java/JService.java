@@ -6,7 +6,7 @@ import com.dbschema.mongo.schema.MetaCollection;
 import java.util.Collection;
 import java.util.List;
 
-public interface Service {
+public interface JService {
 
   String getURI();
 

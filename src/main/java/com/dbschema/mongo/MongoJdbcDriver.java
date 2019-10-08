@@ -1,6 +1,7 @@
 package com.dbschema.mongo;
 
-import com.dbschema.mongo.java.JMongoService;
+import com.dbschema.mongo.java.MongoJService;
+import com.dbschema.mongo.shell.MongoShellService;
 
 import java.sql.*;
 import java.util.Properties;
@@ -67,9 +68,7 @@ public class MongoJdbcDriver implements Driver {
     if (url.startsWith("jdbc:")) {
       url = url.substring("jdbc:".length());
     }
-    final JMongoService service = new JMongoService(url, info, fetchDocumentsForMeta);
-
-    return new MongoConnection(service);
+    return new MongoConnection(new MongoJService(url, info, fetchDocumentsForMeta), new MongoShellService());
   }
 
 

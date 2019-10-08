@@ -2,8 +2,8 @@ package com.dbschema.mongo;
 
 import com.dbschema.mongo.java.JMongoCollection;
 import com.dbschema.mongo.java.JMongoDatabase;
-import com.dbschema.mongo.java.JMongoService;
-import com.dbschema.resultSet.AggregateResultSet;
+import com.dbschema.mongo.java.MongoJService;
+import com.dbschema.mongo.resultSet.AggregateResultSet;
 import com.dbschema.mongo.resultSet.ArrayResultSet;
 import com.dbschema.mongo.resultSet.OkResultSet;
 import com.dbschema.mongo.resultSet.ResultSetIterator;
@@ -30,20 +30,20 @@ import java.util.regex.Pattern;
 
 public class MongoPreparedStatement implements PreparedStatement {
 
-  private final MongoConnection con;
+  private final MongoConnection connection;
   private ResultSet lastResultSet;
   private boolean isClosed = false;
   private int maxRows = -1;
   private final String query;
   private int fetchSize = -1;
 
-  public MongoPreparedStatement(final MongoConnection con) {
-    this.con = con;
+  public MongoPreparedStatement(final MongoConnection connection) {
+    this.connection = connection;
     this.query = null;
   }
 
-  public MongoPreparedStatement(final MongoConnection con, String query) {
-    this.con = con;
+  public MongoPreparedStatement(final MongoConnection connection, String query) {
+    this.connection = connection;
     this.query = query;
   }
 
@@ -84,21 +84,21 @@ public class MongoPreparedStatement implements PreparedStatement {
       if ((db.startsWith("\"") && db.endsWith("\"")) || (db.startsWith("'") && db.endsWith("'"))) {
         db = db.substring(1, db.length() - 1);
       }
-      con.setSchema(db);
+      connection.setSchema(db);
       return new OkResultSet();
     }
     Matcher matcherCreateDatabase = PATTERN_CREATE_DATABASE.matcher(query);
     if (matcherCreateDatabase.matches()) {
       final String dbName = matcherCreateDatabase.group(1);
-      con.getDatabase(dbName);
-      JMongoService.createdDatabases.add(dbName);
+      connection.getJService().getDatabase(dbName);
+      MongoJService.createdDatabases.add(dbName);
       return new OkResultSet();
     }
     if (query.toLowerCase().startsWith("show ")) {
       if (PATTERN_SHOW_DATABASES.matcher(query).matches() || PATTERN_SHOW_DBS.matcher(query).matches()) {
         ArrayResultSet result = new ArrayResultSet();
         result.setColumnNames(new String[]{"DATABASE_NAME"});
-        for (String str : con.getDatabaseNames()) {
+        for (String str : connection.getJService().getDatabaseNames()) {
           result.addRow(new String[]{str});
         }
         return lastResultSet = result;
@@ -106,13 +106,13 @@ public class MongoPreparedStatement implements PreparedStatement {
       if (PATTERN_SHOW_COLLECTIONS.matcher(query).matches()) {
         ArrayResultSet result = new ArrayResultSet();
         result.setColumnNames(new String[]{"COLLECTION_NAME"});
-        for (String str : con.getService().getCollectionNames(con.getSchema())) {
+        for (String str : connection.getJService().getCollectionNames(connection.getSchema())) {
           result.addRow(new String[]{str});
         }
         return lastResultSet = result;
       }
       if (PATTERN_SHOW_USERS.matcher(query).matches()) {
-        query = "db.runCommand(\"{usersInfo:'" + con.getSchema() + "'}\")";
+        query = "db.runCommand(\"{usersInfo:'" + connection.getSchema() + "'}\")";
       }
       if (PATTERN_SHOW_PROFILE.matcher(query).matches() || PATTERN_SHOW_RULES.matcher(query).matches()) {
         throw new SQLException("Not yet implemented in this driver.");
@@ -135,18 +135,18 @@ public class MongoPreparedStatement implements PreparedStatement {
       ScriptEngine engine = nsef.getScriptEngine(BasicDBObject.class.getClassLoader());
       boolean dbIsSet = false;
       final Bindings binding = engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE);
-      for (JMongoDatabase db : con.getDatabases()) {
+      for (JMongoDatabase db : connection.getJService().getDatabases()) {
         binding.put(db.getName(), db);
-        if (con.getSchema() != null && con.getSchema().equals(db.getName())) {
+        if (connection.getSchema() != null && connection.getSchema().equals(db.getName())) {
           binding.put("db", db);
           dbIsSet = true;
         }
       }
       if (!dbIsSet) {
-        String currentSchemaName = con.getSchema();
-        binding.put("db", con.getDatabase(currentSchemaName));
+        String currentSchemaName = connection.getSchema();
+        binding.put("db", connection.getJService().getDatabase(currentSchemaName));
       }
-      binding.put("client", con);
+      binding.put("client", connection);
       final String script = "var ObjectId = function( oid ) { return new org.bson.types.ObjectId( oid );}\n" +
           "var ISODate = function( str ) { return new java.text.SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\").parse(str);}";
       engine.eval(script);
@@ -234,14 +234,14 @@ public class MongoPreparedStatement implements PreparedStatement {
   }
 
   private JMongoDatabase getDatabase(String name) {
-    for (JMongoDatabase scan : con.getDatabases()) {
+    for (JMongoDatabase scan : connection.getJService().getDatabases()) {
       if (scan.getName().equalsIgnoreCase(name)) {
         return scan;
       }
     }
-    if ("db".equals(name) && con.getSchema() != null) {
-      for (JMongoDatabase scan : con.getDatabases()) {
-        if (scan.getName().equalsIgnoreCase(con.getSchema())) {
+    if ("db".equals(name) && connection.getSchema() != null) {
+      for (JMongoDatabase scan : connection.getJService().getDatabases()) {
+        if (scan.getName().equalsIgnoreCase(connection.getSchema())) {
           return scan;
         }
       }
@@ -448,7 +448,7 @@ public class MongoPreparedStatement implements PreparedStatement {
   @Override
   public Connection getConnection() throws SQLException {
     checkClosed();
-    return this.con;
+    return this.connection;
   }
 
   @Override

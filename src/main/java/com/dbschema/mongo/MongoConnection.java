@@ -1,32 +1,38 @@
 package com.dbschema.mongo;
 
-import com.dbschema.mongo.java.JMongoDatabase;
-import com.dbschema.mongo.java.Service;
+import com.dbschema.mongo.java.JService;
+import com.dbschema.mongo.shell.ShellService;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.*;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
 public class MongoConnection implements Connection {
+  private final JService jService;
+  private final ShellService shellService;
   private String schema;
-  private Service service;
   private boolean isClosed = false;
   private boolean isReadOnly = false;
 
 
-  public MongoConnection(Service service) {
-    this.service = service;
-    setSchema(service.getDatabaseNameFromUrl());
+  public MongoConnection(@NotNull JService jService, @NotNull ShellService shellService) {
+    this.jService = jService;
+    this.shellService = shellService;
+    setSchema(jService.getDatabaseNameFromUrl());
   }
 
   public String getCatalog() {
     return null;
   }
 
-  public Service getService() {
-    return service;
+  public JService getJService() {
+    return jService;
+  }
+
+  public ShellService getShellService() {
+    return shellService;
   }
 
   @Override
@@ -335,21 +341,8 @@ public class MongoConnection implements Connection {
   }
 
   public String getUrl() {
-    return service.getURI();
+    return jService.getURI();
   }
-
-  public List<JMongoDatabase> getDatabases() {
-    return service.getDatabases();
-  }
-
-  public List<String> getDatabaseNames() {
-    return service.getDatabaseNames();
-  }
-
-  public JMongoDatabase getDatabase(String name) {
-    return service.getDatabase(name);
-  }
-
 
   private void checkClosed() throws SQLException {
     if (isClosed) {
