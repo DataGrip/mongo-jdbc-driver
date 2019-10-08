@@ -2,6 +2,9 @@ package com.dbschema.mongo;
 
 import com.dbschema.mongo.java.MongoJService;
 import com.dbschema.mongo.shell.MongoShellService;
+import com.mongodb.AuthenticationMechanism;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoCredential;
 
 import java.sql.*;
 import java.util.Properties;
@@ -12,6 +15,7 @@ import java.util.regex.Pattern;
 
 import static com.dbschema.mongo.DriverPropertyInfoHelper.FETCH_DOCUMENTS_FOR_METAINFO;
 import static com.dbschema.mongo.DriverPropertyInfoHelper.FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT;
+import static com.dbschema.mongo.Util.nullize;
 import static com.dbschema.mongo.java.JMongoClient.removeParameter;
 
 
@@ -25,6 +29,9 @@ import static com.dbschema.mongo.java.JMongoClient.removeParameter;
 public class MongoJdbcDriver implements Driver {
   private static final Pattern FETCH_DOCUMENTS_FOR_META_PATTERN = Pattern.compile("([?&])" + FETCH_DOCUMENTS_FOR_METAINFO + "=(\\d+)&?");
   private DriverPropertyInfoHelper propertyInfoHelper = new DriverPropertyInfoHelper();
+  public static final String DEFAULT_DB = "admin";
+  private static final Pattern AUTH_MECH_PATTERN = Pattern.compile("([?&])authMechanism=([\\w_-]+)&?");
+  private static final Pattern AUTH_SOURCE_PATTERN = Pattern.compile("([?&])authSource=([\\w_-]+)&?");
 
   static {
     try {
@@ -68,7 +75,33 @@ public class MongoJdbcDriver implements Driver {
     if (url.startsWith("jdbc:")) {
       url = url.substring("jdbc:".length());
     }
-    return new MongoConnection(new MongoJService(url, info, fetchDocumentsForMeta), new MongoShellService());
+
+    ConnectionString connectionString = new ConnectionString(url);
+    AuthenticationMechanism authMechanism = null;
+    matcher = AUTH_MECH_PATTERN.matcher(url);
+    if (matcher.find()) {
+      url = removeParameter(url, matcher);
+      authMechanism = AuthenticationMechanism.fromMechanismName(matcher.group(2));
+    }
+    String authSource = null;
+    matcher = AUTH_SOURCE_PATTERN.matcher(url);
+    if (matcher.find()) {
+      url = removeParameter(url, matcher);
+      authSource = matcher.group(2);
+    }
+    String databaseNameFromUrl = nullize(connectionString.getDatabase());
+    MongoCredential credentialsFromUrl = connectionString.getCredential();
+    String source = credentialsFromUrl != null ? credentialsFromUrl.getSource() :
+                    authSource != null ? authSource :
+                    databaseNameFromUrl != null ? databaseNameFromUrl :
+                    DEFAULT_DB;
+
+    String username = info.getProperty("user");
+    String password = info.getProperty("password");
+    ConnectionParameters parameters = new ConnectionParameters(username, password == null ? null : password.toCharArray(),
+        source, databaseNameFromUrl, authMechanism);
+
+    return new MongoConnection(new MongoJService(url, info, parameters, fetchDocumentsForMeta), new MongoShellService(parameters));
   }
 
 

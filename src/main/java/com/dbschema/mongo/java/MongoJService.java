@@ -1,5 +1,6 @@
 package com.dbschema.mongo.java;
 
+import com.dbschema.mongo.ConnectionParameters;
 import com.dbschema.mongo.schema.MetaCollection;
 import com.dbschema.mongo.schema.MetaField;
 import com.mongodb.MongoSecurityException;
@@ -20,10 +21,10 @@ public class MongoJService implements JService {
   public static final List<String> createdDatabases = new ArrayList<>();
 
 
-  public MongoJService(final String uri, final Properties prop, final int fetchDocumentsForMeta) {
+  public MongoJService(@NotNull String uri, @NotNull Properties prop, @NotNull ConnectionParameters parameters, int fetchDocumentsForMeta) {
     this.uri = uri;
     this.fetchDocumentsForMeta = fetchDocumentsForMeta;
-    client = new JMongoClient(uri, prop);
+    client = new JMongoClient(uri, prop, parameters);
   }
 
   @Override

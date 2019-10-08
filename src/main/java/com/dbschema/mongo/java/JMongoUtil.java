@@ -56,10 +56,6 @@ public class JMongoUtil {
     return array;
   }
 
-  static String nullize(String text) {
-    return text == null || text.isEmpty() ? null : text;
-  }
-
   @NotNull
   public static String escapeChars(@NotNull final String str, final char... character) {
     final StringBuilder buf = new StringBuilder(str);

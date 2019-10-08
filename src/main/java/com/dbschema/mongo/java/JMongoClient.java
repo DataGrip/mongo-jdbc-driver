@@ -1,5 +1,6 @@
 package com.dbschema.mongo.java;
 
+import com.dbschema.mongo.ConnectionParameters;
 import com.mongodb.AuthenticationMechanism;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -12,50 +13,22 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Properties;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static com.dbschema.mongo.java.JMongoUtil.nullize;
 
 
 public class JMongoClient {
-  public static final String DEFAULT_DB = "admin";
-  private static final Pattern AUTH_MECH_PATTERN = Pattern.compile("([?&])authMechanism=([\\w_-]+)&?");
-  private static final Pattern AUTH_SOURCE_PATTERN = Pattern.compile("([?&])authSource=([\\w_-]+)&?");
-
   private final MongoClient mongoClient;
   public final String databaseNameFromUrl;
 
-  public JMongoClient(String uri, Properties prop) {
-    AuthenticationMechanism authMechanism = null;
-    Matcher matcher = AUTH_MECH_PATTERN.matcher(uri);
-    if (matcher.find()) {
-      uri = removeParameter(uri, matcher);
-      authMechanism = AuthenticationMechanism.fromMechanismName(matcher.group(2));
-    }
-
-    String authSource = null;
-    matcher = AUTH_SOURCE_PATTERN.matcher(uri);
-    if (matcher.find()) {
-      uri = removeParameter(uri, matcher);
-      authSource = matcher.group(2);
-    }
-
+  public JMongoClient(@NotNull String uri, @NotNull Properties prop, @NotNull ConnectionParameters parameters) {
     ConnectionString connectionString = new ConnectionString(uri);
-    databaseNameFromUrl = nullize(connectionString.getDatabase());
+    databaseNameFromUrl = parameters.database;
     MongoClientSettings.Builder builder = MongoClientSettings.builder()
         .applyConnectionString(connectionString)
         .applyToConnectionPoolSettings(b -> b.maxSize(1));
-    if (prop != null && (prop.getProperty("user") != null || prop.getProperty("password") != null)) {
-      String user = prop.getProperty("user");
-      String password = prop.getProperty("password");
-      MongoCredential credentialsFromUrl = connectionString.getCredential();
-      String source = credentialsFromUrl != null ?
-          credentialsFromUrl.getSource() :
-          authSource != null ? authSource :
-              databaseNameFromUrl != null ? databaseNameFromUrl : DEFAULT_DB;
-      builder.credential(createCredential(authMechanism, user, source, password == null ? null : password.toCharArray()));
+    if (parameters.username != null || parameters.password != null) {
+      builder.credential(createCredential(parameters.mechanism, parameters.username, parameters.authSource, parameters.password));
     }
-    if (prop != null && "true".equals(prop.getProperty("ssl"))) {
+    if ("true".equals(prop.getProperty("ssl"))) {
       builder.applyToSslSettings(s -> s.enabled(true));
     }
     this.mongoClient = MongoClients.create(builder.build());
