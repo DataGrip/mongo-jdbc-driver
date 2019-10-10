@@ -30,9 +30,9 @@ public class ListResultSet implements ResultSet {
     this.columnNames = columnNames;
   }
 
-  public ListResultSet(Object[] row, String[] columnNames) {
+  public ListResultSet(Object value, String[] columnNames) {
     this.data = new ArrayList<>();
-    this.data.add(row);
+    this.data.add(new Object[]{value});
     this.columnNames = columnNames;
   }
 
@@ -298,7 +298,7 @@ public class ListResultSet implements ResultSet {
 
     int[] columnJavaTypes = new int[columnNames.length];
     for (int i = 0; i < columnNames.length; i++) {
-      columnJavaTypes[i] = Types.VARCHAR;
+      columnJavaTypes[i] = Types.OTHER;
     }
 
     return new MongoResultSetMetaData(tableName, columnNames, columnJavaTypes);

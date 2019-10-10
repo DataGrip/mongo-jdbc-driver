@@ -1,7 +1,7 @@
 package com.dbschema.mongo.schema;
 
-import com.dbschema.mongo.java.JFindIterable;
-import com.dbschema.mongo.java.JMongoCollection;
+import com.dbschema.mongo.nashorn.JFindIterable;
+import com.dbschema.mongo.nashorn.JMongoCollection;
 import com.mongodb.client.ListIndexesIterable;
 import com.mongodb.client.MongoCursor;
 import org.bson.types.ObjectId;

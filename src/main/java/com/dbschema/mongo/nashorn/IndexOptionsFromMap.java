@@ -1,4 +1,4 @@
-package com.dbschema.mongo.java;
+package com.dbschema.mongo.nashorn;
 
 import com.mongodb.client.model.IndexOptions;
 

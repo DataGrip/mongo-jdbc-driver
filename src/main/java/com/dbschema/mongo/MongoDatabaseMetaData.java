@@ -30,7 +30,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    */
   @Override
   public ResultSet getSchemas() {
-    List<String> mongoDbs = con.getJService().getDatabaseNames();
+    List<String> mongoDbs = con.getService().getDatabaseNames();
     ListResultSet retVal = new ListResultSet();
     retVal.setColumnNames("TABLE_SCHEM", "TABLE_CATALOG");
     for (String mongoDb : mongoDbs) {
@@ -61,14 +61,14 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
         "TABLE_TYPE", "REMARKS", "TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "SELF_REFERENCING_COL_NAME",
         "REF_GENERATION");
     if (schemaPattern == null) {
-      for (String cat : con.getJService().getDatabaseNames()) {
-        for (String tableName : con.getJService().getCollectionNames(cat)) {
+      for (String cat : con.getService().getDatabaseNames()) {
+        for (String tableName : con.getService().getCollectionNames(cat)) {
           resultSet.addRow(createTableRow(null, tableName));
         }
       }
     }
     else {
-      for (String tableName : con.getJService().getCollectionNames(schemaPattern)) {
+      for (String tableName : con.getService().getCollectionNames(schemaPattern)) {
         resultSet.addRow(createTableRow(schemaPattern, tableName));
       }
     }
@@ -101,7 +101,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     // every collection "table" has two columns - "_id" column which is the primary key, and a "document"
     // column which is the JSON document corresponding to the "_id". An "_id" value can be specified on
     // insert, or it can be omitted, in which case MongoDB generates a unique value.
-    MetaCollection collection = con.getJService().getMetaCollection(schemaName, tableNamePattern);
+    MetaCollection collection = con.getService().getMetaCollection(schemaName, tableNamePattern);
 
     ListResultSet result = new ListResultSet();
     result.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
@@ -187,7 +187,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     ListResultSet result = new ListResultSet();
     result.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME", "KEY_SEQ", "PK_NAME");
 
-    MetaCollection collection = con.getJService().getMetaCollection(schemaName, tableNamePattern);
+    MetaCollection collection = con.getService().getMetaCollection(schemaName, tableNamePattern);
     if (collection != null) {
       for (MetaIndex index : collection.metaIndexes) {
         if (index.pk) {
@@ -254,7 +254,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     result.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "NON_UNIQUE", "INDEX_QUALIFIER", "INDEX_NAME",
         "TYPE", "ORDINAL_POSITION", "COLUMN_NAME", "ASC_OR_DESC", "CARDINALITY", "PAGES", "FILTER_CONDITION");
 
-    MetaCollection collection = con.getJService().getMetaCollection(schemaName, tableNamePattern);
+    MetaCollection collection = con.getService().getMetaCollection(schemaName, tableNamePattern);
 
     if (collection != null) {
       for (MetaIndex index : collection.metaIndexes) {
@@ -431,7 +431,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * @see java.sql.DatabaseMetaData#getDatabaseProductVersion()
    */
   public String getDatabaseProductVersion() {
-    final String version = con.getJService().getVersion();
+    final String version = con.getService().getVersion();
     return version != null ? version : "Unknown";
   }
 
@@ -1118,16 +1118,16 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getExportedKeys(String catalogName, String schemaName, String tableNamePattern) {
-    con.getJService().discoverReferences();
+    con.getService().discoverReferences();
 
 
     ListResultSet result = new ListResultSet();
     result.setColumnNames("PKTABLE_CAT", "PKTABLE_SCHEMA", "PKTABLE_NAME", "PKCOLUMN_NAME", "FKTABLE_CAT", "FKTABLE_SCHEM",
         "FKTABLE_NAME", "FKCOLUMN_NAME", "KEY_SEQ", "UPDATE_RULE", "DELETE_RULE", "FK_NAME", "PK_NAME", "DEFERRABILITY");
 
-    MetaCollection pkCollection = con.getJService().getMetaCollection(schemaName, tableNamePattern);
+    MetaCollection pkCollection = con.getService().getMetaCollection(schemaName, tableNamePattern);
     if (pkCollection != null) {
-      for (MetaCollection fromCollection : con.getJService().getMetaCollections()) {
+      for (MetaCollection fromCollection : con.getService().getMetaCollections()) {
         for (MetaField fromFiled : fromCollection.fields) {
           getExportedKeysRecursive(result, pkCollection, fromCollection, fromFiled);
         }
@@ -1170,7 +1170,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    */
   @Override
   public ResultSet getImportedKeys(String catalogName, String schemaName, String tableNamePattern) {
-    con.getJService().discoverReferences();
+    con.getService().discoverReferences();
 
 
     ListResultSet result = new ListResultSet();
@@ -1178,7 +1178,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
         "FKTABLE_NAME", "FKCOLUMN_NAME", "KEY_SEQ", "UPDATE_RULE", "DELETE_RULE", "FK_NAME", "PK_NAME", "DEFERRABILITY");
 
 
-    MetaCollection fromCollection = con.getJService().getMetaCollection(schemaName, tableNamePattern);
+    MetaCollection fromCollection = con.getService().getMetaCollection(schemaName, tableNamePattern);
     if (fromCollection != null) {
       for (MetaField fromFiled : fromCollection.fields) {
         getImportedKeysRecursive(result, fromFiled);

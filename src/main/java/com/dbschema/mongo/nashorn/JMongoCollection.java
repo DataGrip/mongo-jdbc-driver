@@ -1,4 +1,4 @@
-package com.dbschema.mongo.java;
+package com.dbschema.mongo.nashorn;
 
 
 import com.dbschema.mongo.resultSet.ListResultSet;
@@ -276,7 +276,7 @@ public class JMongoCollection<TDocument> {
   }
 
   private ResultSet wrapInResultSet(String columnName, Object value) {
-    return new ListResultSet(new Object[]{value.toString()}, new String[]{columnName});
+    return new ListResultSet(value.toString(), new String[]{columnName});
   }
 
   public ResultSet count(Bson bson) {

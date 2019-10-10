@@ -1,6 +1,8 @@
-package com.dbschema.mongo.java;
+package com.dbschema.mongo;
 
-import com.dbschema.mongo.ConnectionParameters;
+import com.dbschema.mongo.nashorn.JMongoClient;
+import com.dbschema.mongo.nashorn.JMongoCollection;
+import com.dbschema.mongo.nashorn.JMongoDatabase;
 import com.dbschema.mongo.schema.MetaCollection;
 import com.dbschema.mongo.schema.MetaField;
 import com.mongodb.MongoSecurityException;
@@ -10,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class MongoJService implements JService {
+public class MongoService {
 
   private final JMongoClient client;
   private String uri;
@@ -21,19 +23,17 @@ public class MongoJService implements JService {
   public static final List<String> createdDatabases = new ArrayList<>();
 
 
-  public MongoJService(@NotNull String uri, @NotNull Properties prop, @NotNull ConnectionParameters parameters, int fetchDocumentsForMeta) {
+  public MongoService(@NotNull String uri, @NotNull Properties prop, @NotNull MongoConnectionParameters parameters, int fetchDocumentsForMeta) {
     this.uri = uri;
     this.fetchDocumentsForMeta = fetchDocumentsForMeta;
     client = new JMongoClient(uri, prop, parameters);
   }
 
-  @Override
   public String getDatabaseNameFromUrl() {
     // SEE THIS TO SEE HOW DATABASE NAME IS USED : http://api.mongodb.org/java/current/com/mongodb/MongoClientURI.html
     return client.databaseNameFromUrl != null ? client.databaseNameFromUrl : "admin";
   }
 
-  @Override
   public List<String> getDatabaseNames() {
     client.testConnectivity();
 
@@ -55,12 +55,10 @@ public class MongoJService implements JService {
     return names;
   }
 
-  @Override
   public JMongoDatabase getDatabase(String dbName) {
     return client.getDatabase(dbName);
   }
 
-  @Override
   public List<JMongoDatabase> getDatabases() {
     final List<JMongoDatabase> list = new ArrayList<>();
 
@@ -70,13 +68,11 @@ public class MongoJService implements JService {
     return list;
   }
 
-  @Override
   public Collection<MetaCollection> getMetaCollections() {
     return metaCollections.values();
   }
 
 
-  @Override
   public String getVersion() {
     String databaseName = client.databaseNameFromUrl != null ? client.databaseNameFromUrl : "test";
     JMongoDatabase db = client.getDatabase(databaseName);
@@ -90,7 +86,6 @@ public class MongoJService implements JService {
   }
 
 
-  @Override
   public MetaCollection getMetaCollection(@NotNull String catalogName, String collectionName) {
     if (collectionName == null || collectionName.length() == 0) return null;
     int idx = collectionName.indexOf('.');
@@ -108,13 +103,11 @@ public class MongoJService implements JService {
 
   }
 
-  @Override
   public String getURI() {
     return uri;
   }
 
 
-  @Override
   public List<String> getCollectionNames(String catalog) {
     List<String> list = new ArrayList<>();
     try {
@@ -135,7 +128,6 @@ public class MongoJService implements JService {
   }
 
 
-  @Override
   public MetaCollection discoverCollection(String dbOrCatalog, String collectionName) {
     final JMongoDatabase mongoDatabase = getDatabase(dbOrCatalog);
     if (mongoDatabase != null) {
@@ -165,7 +157,6 @@ public class MongoJService implements JService {
 
   private boolean referencesDiscovered = false;
 
-  @Override
   public void discoverReferences() {
     if (!referencesDiscovered) {
       try {

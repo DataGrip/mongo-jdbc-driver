@@ -1,8 +1,8 @@
-package com.dbschema.mongo.java;
+package com.dbschema.mongo.nashorn;
 
-import com.dbschema.mongo.java.parser.JsonLoaderCallback;
-import com.dbschema.mongo.java.parser.JsonParseException;
-import com.dbschema.mongo.java.parser.JsonParser;
+import com.dbschema.mongo.nashorn.parser.JsonLoaderCallback;
+import com.dbschema.mongo.nashorn.parser.JsonParseException;
+import com.dbschema.mongo.nashorn.parser.JsonParser;
 import org.bson.Document;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;

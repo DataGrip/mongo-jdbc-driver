@@ -1,7 +1,7 @@
 package com.dbschema.mongo;
 
-import com.dbschema.mongo.java.JService;
-import com.dbschema.mongo.shell.ShellService;
+import com.dbschema.mongo.nashorn.NashornScriptEngine;
+import com.dbschema.mongo.shell.MongoShellScriptEngine;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.*;
@@ -10,29 +10,28 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 
 public class MongoConnection implements Connection {
-  private final JService jService;
-  private final ShellService shellService;
+  private final MongoService service;
+  private final ScriptEngine scriptEngine;
   private String schema;
   private boolean isClosed = false;
   private boolean isReadOnly = false;
 
-
-  public MongoConnection(@NotNull JService jService, @NotNull ShellService shellService) {
-    this.jService = jService;
-    this.shellService = shellService;
-    setSchema(jService.getDatabaseNameFromUrl());
+  public MongoConnection(@NotNull String url, @NotNull Properties info, @NotNull MongoConnectionParameters parameters, int fetchDocumentsForMeta, boolean useMongoShell) throws SQLInvalidAuthorizationSpecException {
+    this.service = new MongoService(url, info, parameters, fetchDocumentsForMeta);
+    this.scriptEngine = useMongoShell ? new MongoShellScriptEngine(parameters) : new NashornScriptEngine(this);
+    setSchema(service.getDatabaseNameFromUrl());
   }
 
   public String getCatalog() {
     return null;
   }
 
-  public JService getJService() {
-    return jService;
+  public MongoService getService() {
+    return service;
   }
 
-  public ShellService getShellService() {
-    return shellService;
+  public ScriptEngine getScriptEngine() {
+    return scriptEngine;
   }
 
   @Override
@@ -341,7 +340,7 @@ public class MongoConnection implements Connection {
   }
 
   public String getUrl() {
-    return jService.getURI();
+    return service.getURI();
   }
 
   private void checkClosed() throws SQLException {

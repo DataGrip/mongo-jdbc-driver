@@ -6,7 +6,7 @@ import org.bson.types.ObjectId;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.dbschema.mongo.java.JMongoUtil.escapeChars;
+import static com.dbschema.mongo.nashorn.JMongoUtil.escapeChars;
 
 public class MetaField {
 

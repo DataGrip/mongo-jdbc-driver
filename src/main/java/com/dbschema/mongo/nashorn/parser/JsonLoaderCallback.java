@@ -1,4 +1,4 @@
-package com.dbschema.mongo.java.parser;
+package com.dbschema.mongo.nashorn.parser;
 
 
 import java.util.*;

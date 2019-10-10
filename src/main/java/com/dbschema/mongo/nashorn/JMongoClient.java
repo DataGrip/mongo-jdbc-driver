@@ -1,6 +1,6 @@
-package com.dbschema.mongo.java;
+package com.dbschema.mongo.nashorn;
 
-import com.dbschema.mongo.ConnectionParameters;
+import com.dbschema.mongo.MongoConnectionParameters;
 import com.mongodb.AuthenticationMechanism;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -19,7 +19,7 @@ public class JMongoClient {
   private final MongoClient mongoClient;
   public final String databaseNameFromUrl;
 
-  public JMongoClient(@NotNull String uri, @NotNull Properties prop, @NotNull ConnectionParameters parameters) {
+  public JMongoClient(@NotNull String uri, @NotNull Properties prop, @NotNull MongoConnectionParameters parameters) {
     ConnectionString connectionString = new ConnectionString(uri);
     databaseNameFromUrl = parameters.database;
     MongoClientSettings.Builder builder = MongoClientSettings.builder()

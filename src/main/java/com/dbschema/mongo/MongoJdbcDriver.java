@@ -1,7 +1,5 @@
 package com.dbschema.mongo;
 
-import com.dbschema.mongo.java.MongoJService;
-import com.dbschema.mongo.shell.MongoShellService;
 import com.mongodb.AuthenticationMechanism;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoCredential;
@@ -13,10 +11,9 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.dbschema.mongo.DriverPropertyInfoHelper.FETCH_DOCUMENTS_FOR_METAINFO;
-import static com.dbschema.mongo.DriverPropertyInfoHelper.FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT;
+import static com.dbschema.mongo.DriverPropertyInfoHelper.*;
 import static com.dbschema.mongo.Util.nullize;
-import static com.dbschema.mongo.java.JMongoClient.removeParameter;
+import static com.dbschema.mongo.nashorn.JMongoClient.removeParameter;
 
 
 /**
@@ -50,7 +47,7 @@ public class MongoJdbcDriver implements Driver {
    * jdbc:mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
    * The URL excepting the jdbc: prefix is passed as it is to the MongoDb native Java driver.
    */
-  public Connection connect(String url, Properties info) {
+  public Connection connect(String url, Properties info) throws SQLInvalidAuthorizationSpecException {
     if (url == null || !acceptsURL(url)) return null;
 
     int fetchDocumentsForMeta = FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT;
@@ -60,6 +57,10 @@ public class MongoJdbcDriver implements Driver {
       }
       catch (NumberFormatException ignored) {
       }
+    }
+    boolean useMongoShell = USE_MONGO_SHELL_DEFAULT;
+    if (info.getProperty(USE_MONGO_SHELL) != null) {
+      useMongoShell = Boolean.parseBoolean(info.getProperty(USE_MONGO_SHELL));
     }
     Matcher matcher = FETCH_DOCUMENTS_FOR_META_PATTERN.matcher(url);
     if (matcher.find()) {
@@ -98,10 +99,10 @@ public class MongoJdbcDriver implements Driver {
 
     String username = info.getProperty("user");
     String password = info.getProperty("password");
-    ConnectionParameters parameters = new ConnectionParameters(username, password == null ? null : password.toCharArray(),
+    MongoConnectionParameters parameters = new MongoConnectionParameters(username, password == null ? null : password.toCharArray(),
         source, databaseNameFromUrl, authMechanism);
 
-    return new MongoConnection(new MongoJService(url, info, parameters, fetchDocumentsForMeta), new MongoShellService(parameters));
+    return new MongoConnection(url, info, parameters, fetchDocumentsForMeta, useMongoShell);
   }
 
 

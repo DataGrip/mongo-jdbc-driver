@@ -1,5 +1,7 @@
 package com.dbschema.mongo;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
+
 import java.sql.DriverPropertyInfo;
 import java.util.ArrayList;
 
@@ -11,6 +13,8 @@ public class DriverPropertyInfoHelper {
   public static final String SOCKET_TIMEOUT = "socketTimeout";
   static final String FETCH_DOCUMENTS_FOR_METAINFO = "fetch_documents_for_metainfo";
   public static final int FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT = 10;
+  static final String USE_MONGO_SHELL = "use_mongo_shell";
+  static final boolean USE_MONGO_SHELL_DEFAULT = true;
 
 
   public DriverPropertyInfo[] getPropertyInfo() {
@@ -40,6 +44,8 @@ public class DriverPropertyInfoHelper {
 
     addPropInfo(propInfos, FETCH_DOCUMENTS_FOR_METAINFO, Integer.toString(FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT), "Number of documents that will be fetched per collection in order" +
         "to return meta information from DatabaseMetaData.getColumns method.", null);
+
+    addPropInfo(propInfos, USE_MONGO_SHELL, Boolean.toString(USE_MONGO_SHELL_DEFAULT), "Use Mongo shell to run commands. If set to false then Nashorn is used", null);
 
     return propInfos.toArray(new DriverPropertyInfo[0]);
   }
