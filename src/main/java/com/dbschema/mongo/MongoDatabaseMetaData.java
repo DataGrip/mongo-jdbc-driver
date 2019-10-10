@@ -1,6 +1,6 @@
 package com.dbschema.mongo;
 
-import com.dbschema.mongo.resultSet.ArrayResultSet;
+import com.dbschema.mongo.resultSet.ListResultSet;
 import com.dbschema.mongo.schema.*;
 
 import java.sql.*;
@@ -31,8 +31,8 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
   @Override
   public ResultSet getSchemas() {
     List<String> mongoDbs = con.getJService().getDatabaseNames();
-    ArrayResultSet retVal = new ArrayResultSet();
-    retVal.setColumnNames(new String[]{"TABLE_SCHEM", "TABLE_CATALOG"});
+    ListResultSet retVal = new ListResultSet();
+    retVal.setColumnNames("TABLE_SCHEM", "TABLE_CATALOG");
     for (String mongoDb : mongoDbs) {
       retVal.addRow(new String[]{mongoDb, DB_NAME});
     }
@@ -44,8 +44,8 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    */
   @Override
   public ResultSet getCatalogs() {
-    ArrayResultSet retVal = new ArrayResultSet();
-    retVal.setColumnNames(new String[]{"TABLE_CAT"});
+    ListResultSet retVal = new ListResultSet();
+    retVal.setColumnNames("TABLE_CAT");
     retVal.addRow(new String[]{DB_NAME});
     return retVal;
   }
@@ -56,10 +56,10 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * java.lang.String[])
    */
   public ResultSet getTables(String catalogName, String schemaPattern, String tableNamePattern, String[] types) {
-    ArrayResultSet resultSet = new ArrayResultSet();
-    resultSet.setColumnNames(new String[]{"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME",
+    ListResultSet resultSet = new ListResultSet();
+    resultSet.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME",
         "TABLE_TYPE", "REMARKS", "TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "SELF_REFERENCING_COL_NAME",
-        "REF_GENERATION"});
+        "REF_GENERATION");
     if (schemaPattern == null) {
       for (String cat : con.getJService().getDatabaseNames()) {
         for (String tableName : con.getJService().getCollectionNames(cat)) {
@@ -103,12 +103,12 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     // insert, or it can be omitted, in which case MongoDB generates a unique value.
     MetaCollection collection = con.getJService().getMetaCollection(schemaName, tableNamePattern);
 
-    ArrayResultSet result = new ArrayResultSet();
-    result.setColumnNames(new String[]{"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
+    ListResultSet result = new ListResultSet();
+    result.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
         "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE", "BUFFER_LENGTH", "DECIMAL_DIGITS", "NUM_PREC_RADIX",
         "NULLABLE", "REMARKS", "COLUMN_DEF", "SQL_DATA_TYPE", "SQL_DATETIME_SUB", "CHAR_OCTET_LENGTH",
         "ORDINAL_POSITION", "IS_NULLABLE", "SCOPE_CATLOG", "SCOPE_SCHEMA", "SCOPE_TABLE",
-        "SOURCE_DATA_TYPE", "IS_AUTOINCREMENT"});
+        "SOURCE_DATA_TYPE", "IS_AUTOINCREMENT");
 
     Map<String, String[]> columnsData = new HashMap<>();
     if (collection != null) {
@@ -184,9 +184,8 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
      *
      */
 
-    ArrayResultSet result = new ArrayResultSet();
-    result.setColumnNames(new String[]{"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
-        "KEY_SEQ", "PK_NAME"});
+    ListResultSet result = new ListResultSet();
+    result.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME", "KEY_SEQ", "PK_NAME");
 
     MetaCollection collection = con.getJService().getMetaCollection(schemaName, tableNamePattern);
     if (collection != null) {
@@ -251,10 +250,9 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
      *      (may be <code>null</code>)
      *  </OL>
      */
-    ArrayResultSet result = new ArrayResultSet();
-    result.setColumnNames(new String[]{"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "NON_UNIQUE",
-        "INDEX_QUALIFIER", "INDEX_NAME", "TYPE", "ORDINAL_POSITION", "COLUMN_NAME", "ASC_OR_DESC",
-        "CARDINALITY", "PAGES", "FILTER_CONDITION"});
+    ListResultSet result = new ListResultSet();
+    result.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "NON_UNIQUE", "INDEX_QUALIFIER", "INDEX_NAME",
+        "TYPE", "ORDINAL_POSITION", "COLUMN_NAME", "ASC_OR_DESC", "CARDINALITY", "PAGES", "FILTER_CONDITION");
 
     MetaCollection collection = con.getJService().getMetaCollection(schemaName, tableNamePattern);
 
@@ -326,11 +324,11 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
             *	<LI><B>NUM_PREC_RADIX</B> int => usually 2 or 10
             *  </OL>
         */
-    ArrayResultSet retVal = new ArrayResultSet();
-    retVal.setColumnNames(new String[]{"TYPE_NAME", "DATA_TYPE", "PRECISION", "LITERAL_PREFIX",
+    ListResultSet retVal = new ListResultSet();
+    retVal.setColumnNames("TYPE_NAME", "DATA_TYPE", "PRECISION", "LITERAL_PREFIX",
         "LITERAL_SUFFIX", "CREATE_PARAMS", "NULLABLE", "CASE_SENSITIVE", "SEARCHABLE",
         "UNSIGNED_ATTRIBUTE", "FIXED_PREC_SCALE", "AUTO_INCREMENT", "LOCAL_TYPE_NAME", "MINIMUM_SCALE",
-        "MAXIMUM_SCALE", "SQL_DATA_TYPE", "SQL_DATETIME_SUB", "NUM_PREC_RADIX"});
+        "MAXIMUM_SCALE", "SQL_DATA_TYPE", "SQL_DATETIME_SUB", "NUM_PREC_RADIX");
 
     retVal.addRow(new String[]{OBJECT_ID_TYPE_NAME, // "TYPE_NAME",
         "" + Types.VARCHAR, // "DATA_TYPE",
@@ -1060,9 +1058,9 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * @see java.sql.DatabaseMetaData#getProcedures(java.lang.String, java.lang.String, java.lang.String)
    */
   public ResultSet getProcedures(String catalogName, String schemaPattern, String procedureNamePattern) {
-    ArrayResultSet retVal = new ArrayResultSet();
-    retVal.setColumnNames(new String[]{"PROCEDURE_CAT", "PROCEDURE_SCHEMA", "PROCEDURE_NAME", "REMARKS",
-        "PROCEDURE_TYPE", "SPECIFIC_NAME"});
+    ListResultSet retVal = new ListResultSet();
+    retVal.setColumnNames("PROCEDURE_CAT", "PROCEDURE_SCHEMA", "PROCEDURE_NAME", "REMARKS",
+        "PROCEDURE_TYPE", "SPECIFIC_NAME");
     return retVal;
   }
 
@@ -1077,7 +1075,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
   }
 
   private static ResultSet empty() {
-    return new ArrayResultSet();
+    return new ListResultSet();
   }
 
   /**
@@ -1085,7 +1083,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    */
   @Override
   public ResultSet getTableTypes() {
-    ArrayResultSet result = new ArrayResultSet();
+    ListResultSet result = new ListResultSet();
     result.addRow(new String[]{"COLLECTION"});
     return result;
   }
@@ -1123,9 +1121,9 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     con.getJService().discoverReferences();
 
 
-    ArrayResultSet result = new ArrayResultSet();
-    result.setColumnNames(new String[]{"PKTABLE_CAT", "PKTABLE_SCHEMA", "PKTABLE_NAME", "PKCOLUMN_NAME", "FKTABLE_CAT", "FKTABLE_SCHEM",
-        "FKTABLE_NAME", "FKCOLUMN_NAME", "KEY_SEQ", "UPDATE_RULE", "DELETE_RULE", "FK_NAME", "PK_NAME", "DEFERRABILITY"});
+    ListResultSet result = new ListResultSet();
+    result.setColumnNames("PKTABLE_CAT", "PKTABLE_SCHEMA", "PKTABLE_NAME", "PKCOLUMN_NAME", "FKTABLE_CAT", "FKTABLE_SCHEM",
+        "FKTABLE_NAME", "FKCOLUMN_NAME", "KEY_SEQ", "UPDATE_RULE", "DELETE_RULE", "FK_NAME", "PK_NAME", "DEFERRABILITY");
 
     MetaCollection pkCollection = con.getJService().getMetaCollection(schemaName, tableNamePattern);
     if (pkCollection != null) {
@@ -1138,7 +1136,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     return result;
   }
 
-  private void getExportedKeysRecursive(ArrayResultSet result, MetaCollection pkCollection, MetaCollection fromCollection, MetaField fromFiled) {
+  private void getExportedKeysRecursive(ListResultSet result, MetaCollection pkCollection, MetaCollection fromCollection, MetaField fromFiled) {
     for (MetaReference iReference : fromFiled.references) {
       if (iReference.pkCollection == pkCollection) {
 
@@ -1175,9 +1173,9 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     con.getJService().discoverReferences();
 
 
-    ArrayResultSet result = new ArrayResultSet();
-    result.setColumnNames(new String[]{"PKTABLE_CAT", "PKTABLE_SCHEM", "PKTABLE_NAME", "PKCOLUMN_NAME", "FKTABLE_CAT", "FKTABLE_SCHEM",
-        "FKTABLE_NAME", "FKCOLUMN_NAME", "KEY_SEQ", "UPDATE_RULE", "DELETE_RULE", "FK_NAME", "PK_NAME", "DEFERRABILITY"});
+    ListResultSet result = new ListResultSet();
+    result.setColumnNames("PKTABLE_CAT", "PKTABLE_SCHEM", "PKTABLE_NAME", "PKCOLUMN_NAME", "FKTABLE_CAT", "FKTABLE_SCHEM",
+        "FKTABLE_NAME", "FKCOLUMN_NAME", "KEY_SEQ", "UPDATE_RULE", "DELETE_RULE", "FK_NAME", "PK_NAME", "DEFERRABILITY");
 
 
     MetaCollection fromCollection = con.getJService().getMetaCollection(schemaName, tableNamePattern);
@@ -1189,7 +1187,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     return result;
   }
 
-  private void getImportedKeysRecursive(ArrayResultSet result, MetaField fromFiled) {
+  private void getImportedKeysRecursive(ListResultSet result, MetaField fromFiled) {
     for (MetaReference reference : fromFiled.references) {
 
       result.addRow(new String[]{
@@ -1299,9 +1297,8 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    */
   @Override
   public ResultSet getUDTs(String catalogName, String schemaPattern, String typeNamePattern, int[] types) {
-    ArrayResultSet retVal = new ArrayResultSet();
-    retVal.setColumnNames(new String[]{"TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "CLASS_NAME", "DATA_TYPE",
-        "REMARKS", "BASE_TYPE",});
+    ListResultSet retVal = new ListResultSet();
+    retVal.setColumnNames("TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "CLASS_NAME", "DATA_TYPE", "REMARKS", "BASE_TYPE");
     return retVal;
   }
 
@@ -1347,9 +1344,8 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    */
   @Override
   public ResultSet getSuperTypes(String catalogName, String schemaPattern, String typeNamePattern) {
-    ArrayResultSet retVal = new ArrayResultSet();
-    retVal.setColumnNames(new String[]{"TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "SUPERTYPE_CAT",
-        "SUPERTYPE_SCHEM", "SUPERTYPE_NAME"});
+    ListResultSet retVal = new ListResultSet();
+    retVal.setColumnNames("TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "SUPERTYPE_CAT", "SUPERTYPE_SCHEM", "SUPERTYPE_NAME");
     return retVal;
   }
 
@@ -1358,8 +1354,8 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    */
   @Override
   public ResultSet getSuperTables(String catalogName, String schemaPattern, String tableNamePattern) {
-    ArrayResultSet retVal = new ArrayResultSet();
-    retVal.setColumnNames(new String[]{"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "SUPERTABLE_NAME"});
+    ListResultSet retVal = new ListResultSet();
+    retVal.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "SUPERTABLE_NAME");
     return retVal;
   }
 
@@ -1370,11 +1366,11 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
   @Override
   public ResultSet getAttributes(String catalogName, String schemaPattern, String typeNamePattern,
                                  String attributeNamePattern) {
-    ArrayResultSet retVal = new ArrayResultSet();
-    retVal.setColumnNames(new String[]{"TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "ATTR_NAME", "DATA_TYPE",
+    ListResultSet retVal = new ListResultSet();
+    retVal.setColumnNames("TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "ATTR_NAME", "DATA_TYPE",
         "ATTR_TYPE_NAME", "ATTR_SIZE", "DECIMAL_DIGITS", "NUM_PREC_RADIX", "NULLABLE", "REMARKS",
         "ATTR_DEF", "SQL_DATA_TYPE", "SQL_DATETIME_SUB", "CHAR_OCTET_LENGTH", "ORDINAL_POSITION",
-        "IS_NULLABLE", "SCOPE_CATALOG", "SCOPE_SCHEMA", "SCOPE_TABLE", "SOURCE_DATA_TYPE"});
+        "IS_NULLABLE", "SCOPE_CATALOG", "SCOPE_SCHEMA", "SCOPE_TABLE", "SOURCE_DATA_TYPE");
     return retVal;
   }
 
@@ -1460,8 +1456,8 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    */
   @Override
   public ResultSet getSchemas(String catalogName, String schemaPattern) {
-    ArrayResultSet retVal = new ArrayResultSet();
-    retVal.setColumnNames(new String[]{"TABLE_SCHEM", "TABLE_CATALOG"});
+    ListResultSet retVal = new ListResultSet();
+    retVal.setColumnNames("TABLE_SCHEM", "TABLE_CATALOG");
     return retVal;
   }
 

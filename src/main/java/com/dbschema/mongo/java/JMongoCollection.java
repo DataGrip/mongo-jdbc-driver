@@ -1,7 +1,7 @@
 package com.dbschema.mongo.java;
 
 
-import com.dbschema.mongo.resultSet.ArrayResultSet;
+import com.dbschema.mongo.resultSet.ListResultSet;
 import com.mongodb.MongoNamespace;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
@@ -276,7 +276,7 @@ public class JMongoCollection<TDocument> {
   }
 
   private ResultSet wrapInResultSet(String columnName, Object value) {
-    return new ArrayResultSet(new String[][]{{value.toString()}}, new String[]{columnName});
+    return new ListResultSet(new Object[]{value.toString()}, new String[]{columnName});
   }
 
   public ResultSet count(Bson bson) {
@@ -320,46 +320,6 @@ public class JMongoCollection<TDocument> {
   public <TResult> AggregateIterable<TResult> aggregate(List<? extends Bson> bsons, Class<TResult> aClass) {
     return nativeCollection.aggregate(bsons, aClass);
   }
-
-    /*
-   Sample:
-local.words.drop()
-
-local.words.insertOne({word: 'bla'});
-local.words.insertOne({word: 'cla'});
-local.words.insertOne({word: 'zla'});
-
-local.words.find()
-
-local.words.mapReduce(
-   "function map() { \r\n" +
-   " emit(this.word, {count: 1}) \r\n" +
-   "}",
-   " function reduce(key, values) { \r\n" +
-   "    var count = 0 \r\n" +
-   "    for (var i = 0; i < values.length; i++) \r\n" +
-   "        count += values[i].count \r\n" +
-   "    return {count: count} \r\n" +
-   "}"
-   // , "mrresult"
-)
-
-OR
-
-
-var m =function map() {
-emit(this.word, {count: 5})
-}
-var r=function reduce(key, values) {
-       var count = 5
-       for (var i = 0; i < values.length; i++)
-           count += values[i].count
-       return {count: count}
-   }
-local.words.mapReduce(m, r );
-
-
-    */
 
   public MapReduceIterable<TDocument> mapReduce(String s, String s1) {
     return nativeCollection.mapReduce(s, s1);

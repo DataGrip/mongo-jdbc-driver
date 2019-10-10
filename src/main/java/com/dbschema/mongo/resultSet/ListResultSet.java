@@ -7,61 +7,44 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
 
-public class ArrayResultSet implements ResultSet {
-  private Object[][] data = null;
-
-  private String[] columnNames = null;
-
+public class ListResultSet implements ResultSet {
+  private final List<Object[]> data;
+  private String[] columnNames;
   private int currentRow = -1;
-
   private String tableName = null;
-
   private boolean isClosed = false;
 
   private MongoPreparedStatement statement = null;
 
-  public ArrayResultSet() {
+  public ListResultSet() {
+    this(new ArrayList<>(), new String[0]);
   }
 
-  public ArrayResultSet(String[][] data, String[] columnNames) {
-    if (data != null && data.length > 0 && data[0] != null) {
-      int numRows = data.length;
-      int numColumns = data[0].length;
-      this.data = new String[numRows][numColumns];
-      for (int i = 0; i < numRows; i++) {
-        this.data[i] = Arrays.copyOf(data[i], data[i].length);
-      }
-
-    }
+  public ListResultSet(List<Object[]> data, String[] columnNames) {
+    this.data = data;
     this.columnNames = columnNames;
   }
 
-  public void setColumnNames(String[] columnNames) {
-    this.columnNames = Arrays.copyOf(columnNames, columnNames.length);
+  public ListResultSet(Object[] row, String[] columnNames) {
+    this.data = new ArrayList<>();
+    this.data.add(row);
+    this.columnNames = columnNames;
+  }
+
+  public void setColumnNames(String... columnNames) {
+    this.columnNames = columnNames;
   }
 
   public void addRow(Object[] columnValues) {
-    if (data == null) {
-      data = new String[1][columnValues.length];
-      data[0] = Arrays.copyOf(columnValues, columnValues.length);
-    }
-    else {
-      int numRows = data.length;
-      Object[][] newdata = new String[numRows + 1][data[0].length];
-      for (int i = 0; i < numRows; i++) {
-        newdata[i] = Arrays.copyOf(data[i], data[i].length);
-      }
-      newdata[numRows] = Arrays.copyOf(columnValues, columnValues.length);
-      data = newdata;
-    }
+    data.add(columnValues);
   }
 
   public <T> T unwrap(Class<T> iface) {
-
     return null;
   }
 
@@ -76,7 +59,7 @@ public class ArrayResultSet implements ResultSet {
     if (data == null) {
       return false;
     }
-    if (currentRow < data.length - 1) {
+    if (currentRow < data.size() - 1) {
       currentRow++;
       return true;
     }
@@ -99,14 +82,14 @@ public class ArrayResultSet implements ResultSet {
   }
 
   public String getString(int columnIndex) throws SQLException {
-    if (currentRow >= data.length) {
+    if (currentRow >= data.size()) {
       throw new SQLException("ResultSet exhausted, request currentRow = " + currentRow);
     }
     int adjustedColumnIndex = columnIndex - 1;
-    if (adjustedColumnIndex >= data[currentRow].length) {
+    if (adjustedColumnIndex >= data.get(currentRow).length) {
       throw new SQLException("Column index does not exist: " + columnIndex);
     }
-    final Object val = data[currentRow][adjustedColumnIndex];
+    final Object val = data.get(currentRow)[adjustedColumnIndex];
     return val != null ? val.toString() : null;
   }
 
@@ -322,14 +305,14 @@ public class ArrayResultSet implements ResultSet {
   }
 
   public Object getObject(int columnIndex) throws SQLException {
-    if (currentRow >= data.length) {
+    if (currentRow >= data.size()) {
       throw new SQLException("ResultSet exhausted, request currentRow = " + currentRow);
     }
     int adjustedColumnIndex = columnIndex - 1;
-    if (adjustedColumnIndex >= data[currentRow].length) {
+    if (adjustedColumnIndex >= data.get(currentRow).length) {
       throw new SQLException("Column index does not exist: " + columnIndex);
     }
-    return data[currentRow][adjustedColumnIndex];
+    return data.get(currentRow)[adjustedColumnIndex];
   }
 
   public Object getObject(String columnLabel) {

@@ -4,7 +4,7 @@ import com.dbschema.mongo.java.JMongoCollection;
 import com.dbschema.mongo.java.JMongoDatabase;
 import com.dbschema.mongo.java.MongoJService;
 import com.dbschema.mongo.resultSet.AggregateResultSet;
-import com.dbschema.mongo.resultSet.ArrayResultSet;
+import com.dbschema.mongo.resultSet.ListResultSet;
 import com.dbschema.mongo.resultSet.OkResultSet;
 import com.dbschema.mongo.resultSet.ResultSetIterator;
 import com.mongodb.AggregationOutput;
@@ -96,16 +96,16 @@ public class MongoPreparedStatement implements PreparedStatement {
     }
     if (query.toLowerCase().startsWith("show ")) {
       if (PATTERN_SHOW_DATABASES.matcher(query).matches() || PATTERN_SHOW_DBS.matcher(query).matches()) {
-        ArrayResultSet result = new ArrayResultSet();
-        result.setColumnNames(new String[]{"DATABASE_NAME"});
+        ListResultSet result = new ListResultSet();
+        result.setColumnNames("DATABASE_NAME");
         for (String str : connection.getJService().getDatabaseNames()) {
           result.addRow(new String[]{str});
         }
         return lastResultSet = result;
       }
       if (PATTERN_SHOW_COLLECTIONS.matcher(query).matches()) {
-        ArrayResultSet result = new ArrayResultSet();
-        result.setColumnNames(new String[]{"COLLECTION_NAME"});
+        ListResultSet result = new ListResultSet();
+        result.setColumnNames("COLLECTION_NAME");
         for (String str : connection.getJService().getCollectionNames(connection.getSchema())) {
           result.addRow(new String[]{str});
         }
