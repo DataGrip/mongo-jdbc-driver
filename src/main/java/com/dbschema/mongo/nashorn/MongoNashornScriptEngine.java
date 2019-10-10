@@ -1,20 +1,21 @@
 package com.dbschema.mongo.nashorn;
 
 import com.dbschema.mongo.MongoConnection;
+import com.dbschema.mongo.MongoScriptEngine;
 import com.dbschema.mongo.MongoService;
-import com.dbschema.mongo.ScriptEngine;
 import com.dbschema.mongo.resultSet.AggregateResultSet;
 import com.dbschema.mongo.resultSet.ListResultSet;
 import com.dbschema.mongo.resultSet.ResultSetIterator;
 import com.mongodb.AggregationOutput;
-import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoIterable;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -26,7 +27,7 @@ import static com.dbschema.mongo.Util.ok;
 /**
  * @author Liudmila Kornilova
  **/
-public class NashornScriptEngine implements ScriptEngine {
+public class MongoNashornScriptEngine implements MongoScriptEngine {
   private static final Pattern PATTERN_USE_DATABASE = Pattern.compile("USE\\s+(.*)", Pattern.CASE_INSENSITIVE);
   private static final Pattern PATTERN_CREATE_DATABASE = Pattern.compile("CREATE\\s+DATABASE\\s*'(.*)'\\s*", Pattern.CASE_INSENSITIVE);
   private static final Pattern PATTERN_SHOW_DATABASES = Pattern.compile("SHOW\\s+DATABASES\\s*", Pattern.CASE_INSENSITIVE);
@@ -36,10 +37,50 @@ public class NashornScriptEngine implements ScriptEngine {
   private static final Pattern PATTERN_SHOW_RULES = Pattern.compile("SHOW\\s+RULES\\s*", Pattern.CASE_INSENSITIVE);
   private static final Pattern PATTERN_SHOW_PROFILE = Pattern.compile("SHOW\\s+PROFILE\\s*", Pattern.CASE_INSENSITIVE);
 
-  private final MongoConnection connection;
+  @Language("JavaScript")
+  private static final String STARTUP_SCRIPT = "var ObjectId = function( oid ) { return new org.bson.types.ObjectId( oid );}\n" +
+      "var ISODate = function( str ) { return new java.text.SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\").parse(str);}";
 
-  public NashornScriptEngine(@NotNull MongoConnection connection) {
+  private final MongoConnection connection;
+  private ScriptEngine engine;
+
+  public MongoNashornScriptEngine(@NotNull MongoConnection connection) {
     this.connection = connection;
+  }
+
+  private ScriptEngine getEngine() throws SQLException {
+    if (engine == null) {
+      try {
+        Class.forName("jdk.nashorn.api.scripting.NashornScriptEngineFactory");
+      }
+      catch (ClassNotFoundException ex) {
+        throw new SQLException(
+            "Error: Java 1.8 or later from Oracle is required.\n" +
+                "MongoDb JDBC driver uses the Nashorn JavaScript engine delivered with Java.\n" +
+                "Check in DbSchema Help/About Dialog the current Java version.\n" +
+                "Cause : " + ex);
+      }
+      try {
+        NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+        engine = factory.getScriptEngine(MongoNashornScriptEngine.class.getClassLoader());
+        engine.eval(STARTUP_SCRIPT);
+      }
+      catch (Throwable t) {
+        throw new SQLException(t);
+      }
+    }
+    updateBindings(engine);
+    return engine;
+  }
+
+  private void updateBindings(@NotNull ScriptEngine engine) {
+    final Bindings binding = engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE);
+    for (JMongoDatabase db : connection.getService().getDatabases()) {
+      binding.put(db.getName(), db);
+      if (connection.getSchema() != null && connection.getSchema().equals(db.getName())) {
+        binding.put("db", db);
+      }
+    }
   }
 
   @Nullable
@@ -86,38 +127,9 @@ public class NashornScriptEngine implements ScriptEngine {
       }
       throw new SQLException("Invalid command : " + query);
     }
-    try {
-      Class.forName("jdk.nashorn.api.scripting.NashornScriptEngineFactory");
-    }
-    catch (ClassNotFoundException ex) {
-      throw new SQLException(
-          "Error: Java 1.8 or later from Oracle is required.\n" +
-              "MongoDb JDBC driver uses the Nashorn JavaScript engine delivered with Java.\n" +
-              "Check in DbSchema Help/About Dialog the current Java version.\n" +
-              "Cause : " + ex);
-    }
 
     try {
-      NashornScriptEngineFactory nsef = new NashornScriptEngineFactory();
-      javax.script.ScriptEngine engine = nsef.getScriptEngine(BasicDBObject.class.getClassLoader());
-      boolean dbIsSet = false;
-      final Bindings binding = engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE);
-      for (JMongoDatabase db : connection.getService().getDatabases()) {
-        binding.put(db.getName(), db);
-        if (connection.getSchema() != null && connection.getSchema().equals(db.getName())) {
-          binding.put("db", db);
-          dbIsSet = true;
-        }
-      }
-      if (!dbIsSet) {
-        String currentSchemaName = connection.getSchema();
-        binding.put("db", connection.getService().getDatabase(currentSchemaName));
-      }
-      binding.put("client", connection);
-      final String script = "var ObjectId = function( oid ) { return new org.bson.types.ObjectId( oid );}\n" +
-          "var ISODate = function( str ) { return new java.text.SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\").parse(str);}";
-      engine.eval(script);
-      Object obj = engine.eval(query);
+      Object obj = getEngine().eval(query);
       if (obj instanceof Iterable) {
         if (obj instanceof MongoIterable) ((MongoIterable<?>) obj).batchSize(fetchSize);
         return new ResultSetIterator(((Iterable<?>) obj).iterator());
@@ -134,7 +146,7 @@ public class NashornScriptEngine implements ScriptEngine {
       else if (obj instanceof ResultSet) {
         return (ResultSet) obj;
       }
-      return null;
+      return ok(obj);
     }
     catch (Throwable ex) {
       ex.printStackTrace();

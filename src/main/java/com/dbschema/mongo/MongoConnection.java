@@ -1,6 +1,6 @@
 package com.dbschema.mongo;
 
-import com.dbschema.mongo.nashorn.NashornScriptEngine;
+import com.dbschema.mongo.nashorn.MongoNashornScriptEngine;
 import com.dbschema.mongo.shell.MongoShellScriptEngine;
 import org.jetbrains.annotations.NotNull;
 
@@ -11,14 +11,14 @@ import java.util.concurrent.Executor;
 
 public class MongoConnection implements Connection {
   private final MongoService service;
-  private final ScriptEngine scriptEngine;
+  private final MongoScriptEngine scriptEngine;
   private String schema;
   private boolean isClosed = false;
   private boolean isReadOnly = false;
 
   public MongoConnection(@NotNull String url, @NotNull Properties info, @NotNull MongoConnectionParameters parameters, int fetchDocumentsForMeta, boolean useMongoShell) throws SQLInvalidAuthorizationSpecException {
     this.service = new MongoService(url, info, parameters, fetchDocumentsForMeta);
-    this.scriptEngine = useMongoShell ? new MongoShellScriptEngine(parameters) : new NashornScriptEngine(this);
+    this.scriptEngine = useMongoShell ? new MongoShellScriptEngine(parameters) : new MongoNashornScriptEngine(this);
     setSchema(service.getDatabaseNameFromUrl());
   }
 
@@ -30,7 +30,7 @@ public class MongoConnection implements Connection {
     return service;
   }
 
-  public ScriptEngine getScriptEngine() {
+  public MongoScriptEngine getScriptEngine() {
     return scriptEngine;
   }
 

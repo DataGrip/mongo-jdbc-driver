@@ -9,7 +9,7 @@ import java.sql.SQLException;
 /**
  * @author Liudmila Kornilova
  **/
-public interface ScriptEngine {
+public interface MongoScriptEngine {
   @Nullable
   ResultSet execute(@NotNull String query, int fetchSize) throws SQLException;
 }

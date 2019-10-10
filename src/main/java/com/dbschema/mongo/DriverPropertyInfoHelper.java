@@ -1,7 +1,5 @@
 package com.dbschema.mongo;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
-
 import java.sql.DriverPropertyInfo;
 import java.util.ArrayList;
 
@@ -14,7 +12,7 @@ public class DriverPropertyInfoHelper {
   static final String FETCH_DOCUMENTS_FOR_METAINFO = "fetch_documents_for_metainfo";
   public static final int FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT = 10;
   static final String USE_MONGO_SHELL = "use_mongo_shell";
-  static final boolean USE_MONGO_SHELL_DEFAULT = true;
+  static final boolean USE_MONGO_SHELL_DEFAULT = false;
 
 
   public DriverPropertyInfo[] getPropertyInfo() {

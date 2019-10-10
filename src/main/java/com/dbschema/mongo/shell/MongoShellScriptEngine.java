@@ -1,7 +1,7 @@
 package com.dbschema.mongo.shell;
 
 import com.dbschema.mongo.MongoConnectionParameters;
-import com.dbschema.mongo.ScriptEngine;
+import com.dbschema.mongo.MongoScriptEngine;
 import org.bson.BsonInvalidOperationException;
 import org.bson.Document;
 import org.bson.json.JsonParseException;
@@ -22,7 +22,7 @@ import static com.dbschema.mongo.Util.ok;
 /**
  * @author Liudmila Kornilova
  **/
-public class MongoShellScriptEngine implements ScriptEngine {
+public class MongoShellScriptEngine implements MongoScriptEngine {
   private final MongoConnectionParameters parameters;
 
   public MongoShellScriptEngine(@NotNull MongoConnectionParameters parameters) {
