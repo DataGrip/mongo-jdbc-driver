@@ -9,10 +9,10 @@ public class DriverPropertyInfoHelper {
   public static final String CURSOR_FINALIZER_ENABLED = "cursorFinalizerEnabled";
   public static final String READ_PREFERENCE = "readPreference";
   public static final String SOCKET_TIMEOUT = "socketTimeout";
-  static final String FETCH_DOCUMENTS_FOR_METAINFO = "fetch_documents_for_metainfo";
+  public static final String FETCH_DOCUMENTS_FOR_METAINFO = "fetch_documents_for_metainfo";
   public static final int FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT = 10;
-  static final String USE_MONGO_SHELL = "use_mongo_shell";
-  static final boolean USE_MONGO_SHELL_DEFAULT = false;
+  public static final String USE_MONGO_SHELL = "use_mongo_shell";
+  public static final boolean USE_MONGO_SHELL_DEFAULT = false;
 
 
   public DriverPropertyInfo[] getPropertyInfo() {

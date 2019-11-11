@@ -1,5 +1,8 @@
-package com.dbschema.mongo;
+package com.dbschema;
 
+import com.dbschema.mongo.DriverPropertyInfoHelper;
+import com.dbschema.mongo.MongoConnection;
+import com.dbschema.mongo.MongoConnectionParameters;
 import com.mongodb.AuthenticationMechanism;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoCredential;
