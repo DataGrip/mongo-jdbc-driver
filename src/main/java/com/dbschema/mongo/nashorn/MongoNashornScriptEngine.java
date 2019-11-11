@@ -77,9 +77,10 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
     final Bindings binding = engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE);
     for (JMongoDatabase db : connection.getService().getDatabases()) {
       binding.put(db.getName(), db);
-      if (connection.getSchema() != null && connection.getSchema().equals(db.getName())) {
-        binding.put("db", db);
-      }
+    }
+    String currentDatabase = connection.getSchema();
+    if (currentDatabase != null) {
+      binding.put("db", connection.getService().getDatabase(currentDatabase));
     }
   }
 
