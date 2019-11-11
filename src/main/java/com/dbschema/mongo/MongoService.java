@@ -10,6 +10,7 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.SQLException;
 import java.util.*;
 
 public class MongoService {
@@ -73,15 +74,15 @@ public class MongoService {
   }
 
 
-  public String getVersion() {
-    String databaseName = client.databaseNameFromUrl != null ? client.databaseNameFromUrl : "test";
-    JMongoDatabase db = client.getDatabase(databaseName);
+  @NotNull
+  public String getVersion() throws SQLException {
+    JMongoDatabase db = client.getDatabase("test");
     try {
       Document info = db.runCommand(new Document("buildinfo", null));
       return info.getString("version");
     }
     catch (MongoSecurityException e) {
-      return null;
+      throw new SQLException(e);
     }
   }
 

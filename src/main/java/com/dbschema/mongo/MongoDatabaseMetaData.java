@@ -2,6 +2,7 @@ package com.dbschema.mongo;
 
 import com.dbschema.mongo.resultSet.ListResultSet;
 import com.dbschema.mongo.schema.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -430,9 +431,9 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
   /**
    * @see java.sql.DatabaseMetaData#getDatabaseProductVersion()
    */
-  public String getDatabaseProductVersion() {
-    final String version = con.getService().getVersion();
-    return version != null ? version : "Unknown";
+  @NotNull
+  public String getDatabaseProductVersion() throws SQLException {
+    return con.getService().getVersion();
   }
 
   /**
@@ -1394,16 +1395,28 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * @see java.sql.DatabaseMetaData#getDatabaseMajorVersion()
    */
   @Override
-  public int getDatabaseMajorVersion() {
-    return Integer.parseInt((getDatabaseProductVersion().split("\\."))[0]);
+  public int getDatabaseMajorVersion() throws SQLException {
+    String version = getDatabaseProductVersion();
+    try {
+      return Integer.parseInt((version.split("\\."))[0]);
+    }
+    catch (NumberFormatException e) {
+      throw new SQLException("Unable to parse major version. Version: " + version);
+    }
   }
 
   /**
    * @see java.sql.DatabaseMetaData#getDatabaseMinorVersion()
    */
   @Override
-  public int getDatabaseMinorVersion() {
-    return Integer.parseInt((getDatabaseProductVersion().split("\\."))[1]);
+  public int getDatabaseMinorVersion() throws SQLException {
+    String version = getDatabaseProductVersion();
+    try {
+      return Integer.parseInt(version.split("\\.")[1]);
+    }
+    catch (NumberFormatException e) {
+      throw new SQLException("Unable to parse minor version. Version: " + version);
+    }
   }
 
   /**
