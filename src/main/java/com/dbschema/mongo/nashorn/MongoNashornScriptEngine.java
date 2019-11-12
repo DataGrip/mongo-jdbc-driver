@@ -131,7 +131,10 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
 
     try {
       Object obj = getEngine().eval(query);
-      if (obj instanceof Iterable) {
+      if (obj == null) {
+        return null;
+      }
+      else if (obj instanceof Iterable) {
         if (obj instanceof MongoIterable) ((MongoIterable<?>) obj).batchSize(fetchSize);
         return new ResultSetIterator(((Iterable<?>) obj).iterator());
       }
