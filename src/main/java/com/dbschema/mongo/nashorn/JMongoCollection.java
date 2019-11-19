@@ -5,11 +5,14 @@ import com.dbschema.mongo.resultSet.ListResultSet;
 import com.mongodb.MongoNamespace;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
-import com.mongodb.bulk.BulkWriteResult;
-import com.mongodb.client.*;
+import com.mongodb.client.DistinctIterable;
+import com.mongodb.client.ListIndexesIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.*;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
+import jdk.nashorn.api.scripting.AbstractJSObject;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistry;
@@ -17,17 +20,133 @@ import org.bson.conversions.Bson;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings({"unused", "UnusedReturnValue"})
-public class JMongoCollection<TDocument> {
+import static com.dbschema.mongo.nashorn.MemberFunction.func;
+import static com.dbschema.mongo.nashorn.MemberFunction.voidFunc;
 
-
+public class JMongoCollection<TDocument> extends AbstractJSObject {
   private final MongoCollection<TDocument> nativeCollection;
+  private final String name;
+  private final MongoDatabase mongoDatabase;
+  private final MongoJSObject delegate;
 
-  public JMongoCollection(MongoCollection<TDocument> nativeCollection) {
+  public JMongoCollection(MongoCollection<TDocument> nativeCollection, String name, MongoDatabase mongoDatabase, Class<TDocument> tDocumentClass) {
     this.nativeCollection = nativeCollection;
+    this.name = name;
+    this.mongoDatabase = mongoDatabase;
+    delegate = new MongoJSObject(Arrays.asList(
+        voidFunc("insert",     this::insert, String.class),
+        voidFunc("insert",     this::insert, Map.class),
+        voidFunc("insert",     this::insert, String.class),
+        voidFunc("insertOne",  this::insertOne, String.class),
+        voidFunc("insertOne",  this::insertOne, String.class),
+        voidFunc("insertOne",  this::insertOne, tDocumentClass),
+        voidFunc("insertMany", nativeCollection::insertMany, List.class),
+        voidFunc("insertMany", nativeCollection::insertMany, List.class, InsertManyOptions.class),
+        voidFunc("drop",       nativeCollection::drop),
+        voidFunc("dropIndex",  nativeCollection::dropIndex, String.class),
+        voidFunc("dropIndex",  nativeCollection::dropIndex, Bson.class),
+        voidFunc("dropIndexes",nativeCollection::dropIndexes),
+        voidFunc("renameCollection", this::renameCollection, String.class),
+        voidFunc("renameCollection", nativeCollection::renameCollection, MongoNamespace.class),
+        voidFunc("renameCollection", nativeCollection::renameCollection, MongoNamespace.class, RenameCollectionOptions.class),
+        func("count",      this::count, Map.class),
+        func("count",      this::count, String.class, CountOptions.class),
+        func("count",      this::count),
+        func("count",      this::count, Bson.class),
+        func("count",      this::count, Bson.class, CountOptions.class),
+        func("find",       this::find, String.class),
+        func("find",       this::find, String.class, String.class),
+        func("find",       this::find, String.class, Class.class),
+        func("find",       this::find, Map.class),
+        func("find",       this::find, Map.class, Map.class),
+        func("find",       this::find, Bson.class, Bson.class),
+        func("find",             this::find),
+        func("find",             this::find, Class.class),
+        func("find",             this::find, Bson.class),
+        func("find",             this::find, Bson.class, Class.class),
+        func("delete",     this::delete, String.class),
+        func("delete",     this::delete, Map.class),
+        func("deleteOne",  this::deleteOne, String.class),
+        func("deleteOne",  nativeCollection::deleteOne, Bson.class),
+        func("deleteOne",  this::deleteOne, Map.class),
+        func("deleteMany", this::deleteMany, String.class),
+        func("deleteMany", nativeCollection::deleteMany, Bson.class),
+        func("replaceOne", nativeCollection::replaceOne, Bson.class, tDocumentClass),
+        func("replaceOne", this::replaceOne, Bson.class, tDocumentClass, UpdateOptions.class),
+        func("replaceOne", this::replaceOne, String.class, tDocumentClass),
+        func("replaceOne", this::replaceOne, String.class, tDocumentClass, UpdateOptions.class),
+        func("update",     this::update, Map.class, Map.class),
+        func("update",     this::update, Map.class, Map.class, UpdateOptions.class),
+        func("updateOne",  nativeCollection::updateOne, Bson.class, Bson.class),
+        func("updateOne",  nativeCollection::updateOne, Bson.class, Bson.class, UpdateOptions.class),
+        func("updateOne",  this::updateOne, Map.class, Map.class),
+        func("updateOne",  this::updateOne, String.class, String.class),
+        func("updateOne",  this::updateOne, Map.class, Map.class, UpdateOptions.class),
+        func("updateOne",  this::updateOne, String.class, String.class, UpdateOptions.class),
+        func("updateMany", nativeCollection::updateMany, Bson.class, Bson.class),
+        func("updateMany", nativeCollection::updateMany, Bson.class, Bson.class, UpdateOptions.class),
+        func("updateMany", this::updateMany, Map.class, Map.class),
+        func("updateMany", this::updateMany, String.class, String.class),
+        func("updateMany", this::updateMany, Map.class, Map.class, UpdateOptions.class),
+        func("updateMany", this::updateMany, String.class, String.class, UpdateOptions.class),
+        func("findOneAndDelete",  nativeCollection::findOneAndDelete, Bson.class),
+        func("findOneAndDelete",  nativeCollection::findOneAndDelete, Bson.class, FindOneAndDeleteOptions.class),
+        func("findOneAndDelete",  this::findOneAndDelete, String.class),
+        func("findOneAndDelete",  this::findOneAndDelete, Map.class),
+        func("findOneAndDelete",  this::findOneAndDelete, String.class, FindOneAndDeleteOptions.class),
+        func("findOneAndReplace", this::findOneAndReplace, String.class, tDocumentClass),
+        func("findOneAndReplace", this::findOneAndReplace, String.class, tDocumentClass, FindOneAndReplaceOptions.class),
+        func("findOneAndReplace", nativeCollection::findOneAndReplace, Bson.class, tDocumentClass),
+        func("findOneAndReplace", nativeCollection::findOneAndReplace, Bson.class, tDocumentClass, FindOneAndReplaceOptions.class),
+        func("findOneAndUpdate",  this::findOneAndUpdate, String.class, String.class),
+        func("findOneAndUpdate",  this::findOneAndUpdate, String.class, String.class, FindOneAndUpdateOptions.class),
+        func("findOneAndUpdate",  nativeCollection::findOneAndUpdate, Bson.class, Bson.class),
+        func("findOneAndUpdate",  nativeCollection::findOneAndUpdate, Bson.class, Bson.class, FindOneAndUpdateOptions.class),
+        func("createIndex",       this::createIndex, String.class),
+        func("createIndex",       nativeCollection::createIndex, Bson.class),
+        func("createIndex",       nativeCollection::createIndex, Bson.class, IndexOptions.class),
+        func("createIndex",       this::createIndex, Map.class),
+        func("createIndex",       this::createIndex, String.class, IndexOptions.class),
+        func("createIndex",       this::createIndex, Map.class, Map.class),
+        func("createIndexes",     nativeCollection::createIndexes, List.class),
+        func("listIndexes",       this::listIndexes),
+        func("listIndexes",       nativeCollection::listIndexes, Class.class),
+        func("getNamespace",      nativeCollection::getNamespace),
+        func("getDocumentClass",  nativeCollection::getDocumentClass),
+        func("getCodecRegistry",  nativeCollection::getCodecRegistry),
+        func("getReadPreference", nativeCollection::getReadPreference),
+        func("getWriteConcern",   nativeCollection::getWriteConcern),
+        func("withDocumentClass", this::withDocumentClass, Class.class),
+        func("withCodecRegistry", this::withCodecRegistry, CodecRegistry.class),
+        func("withReadPreference",this::withReadPreference, ReadPreference.class),
+        func("withWriteConcern",  this::withWriteConcern, WriteConcern.class),
+        func("distinct",  this::distinct, String.class, Class.class),
+        func("aggregate", this::aggregate, Map.class),
+        func("aggregate", nativeCollection::aggregate, List.class, Class.class),
+        func("mapReduce", nativeCollection::mapReduce, String.class, String.class),
+        func("mapReduce", nativeCollection::mapReduce, String.class, String.class, Class.class),
+        func("bulkWrite", nativeCollection::bulkWrite, List.class),
+        func("bulkWrite", nativeCollection::bulkWrite, List.class, BulkWriteOptions.class)));
+  }
+
+  @Override
+  public boolean hasMember(String name) {
+    return delegate.hasMember(name);
+  }
+
+  @Override
+  public Object getMember(String name) {
+    AbstractJSObject member = delegate.getMember(name);
+    return member != null ? member : getSubCollection(name);
+  }
+
+  private JMongoCollection<Document> getSubCollection(String name) {
+    String newName = this.name + "." + name;
+    return new JMongoCollection<>(mongoDatabase.getCollection(newName), newName, mongoDatabase, Document.class);
   }
 
   public void insert(String str) {
@@ -231,27 +350,7 @@ public class JMongoCollection<TDocument> {
 
   //---------------------------------------------------------------
 
-  public MongoNamespace getNamespace() {
-    return nativeCollection.getNamespace();
-  }
-
-  public Class<TDocument> getDocumentClass() {
-    return nativeCollection.getDocumentClass();
-  }
-
-  public CodecRegistry getCodecRegistry() {
-    return nativeCollection.getCodecRegistry();
-  }
-
-  public ReadPreference getReadPreference() {
-    return nativeCollection.getReadPreference();
-  }
-
-  public WriteConcern getWriteConcern() {
-    return nativeCollection.getWriteConcern();
-  }
-
-  public <NewTDocument> JMongoCollection<TDocument> withDocumentClass(Class<?> aClass) {
+  public JMongoCollection<TDocument> withDocumentClass(Class<?> aClass) {
     nativeCollection.withDocumentClass(aClass);
     return this;
   }
@@ -317,172 +416,20 @@ public class JMongoCollection<TDocument> {
     return new JAggregateIterable<>(nativeCollection.aggregate(list));
   }
 
-  public <TResult> AggregateIterable<TResult> aggregate(List<? extends Bson> bsons, Class<TResult> aClass) {
-    return nativeCollection.aggregate(bsons, aClass);
-  }
-
-  public MapReduceIterable<TDocument> mapReduce(String s, String s1) {
-    return nativeCollection.mapReduce(s, s1);
-  }
-
-  public <TResult> MapReduceIterable<TResult> mapReduce(String s, String s1, Class<TResult> aClass) {
-    return nativeCollection.mapReduce(s, s1, aClass);
-  }
-
-  public BulkWriteResult bulkWrite(List<?> list) {
-    //noinspection unchecked
-    return nativeCollection.bulkWrite((List<? extends WriteModel<? extends TDocument>>) list);
-  }
-
-
-  public BulkWriteResult bulkWrite(List<?> list, BulkWriteOptions bulkWriteOptions) {
-    //noinspection unchecked
-    return nativeCollection.bulkWrite((List<? extends WriteModel<? extends TDocument>>) list, bulkWriteOptions);
-  }
-
-
   public void insertOne(TDocument o) {
     nativeCollection.insertOne(o);
   }
-
-
-  public void insertMany(List<?> list) {
-    //noinspection unchecked
-    nativeCollection.insertMany((List<? extends TDocument>) list);
-  }
-
-
-  public void insertMany(List<?> list, InsertManyOptions insertManyOptions) {
-    //noinspection unchecked
-    nativeCollection.insertMany((List<? extends TDocument>) list, insertManyOptions);
-  }
-
-
-  public DeleteResult deleteOne(Bson bson) {
-    return nativeCollection.deleteOne(bson);
-  }
-
-
-  public DeleteResult deleteMany(Bson bson) {
-    return nativeCollection.deleteMany(bson);
-  }
-
-
-  public UpdateResult replaceOne(Bson bson, TDocument o) {
-    return nativeCollection.replaceOne(bson, o);
-  }
-
 
   public UpdateResult replaceOne(Bson bson, TDocument o, UpdateOptions updateOptions) {
     //noinspection deprecation
     return nativeCollection.replaceOne(bson, o, updateOptions);
   }
 
-
-  public UpdateResult updateOne(Bson bson, Bson bson1) {
-    return nativeCollection.updateOne(bson, bson1);
-  }
-
-
-  public UpdateResult updateOne(Bson bson, Bson bson1, UpdateOptions updateOptions) {
-    return nativeCollection.updateOne(bson, bson1, updateOptions);
-  }
-
-
-  public UpdateResult updateMany(Bson bson, Bson bson1) {
-    return nativeCollection.updateMany(bson, bson1);
-  }
-
-
-  public UpdateResult updateMany(Bson bson, Bson bson1, UpdateOptions updateOptions) {
-    return nativeCollection.updateMany(bson, bson1, updateOptions);
-  }
-
-
-  public TDocument findOneAndDelete(Bson bson) {
-    return nativeCollection.findOneAndDelete(bson);
-  }
-
-
-  public TDocument findOneAndDelete(Bson bson, FindOneAndDeleteOptions findOneAndDeleteOptions) {
-    return nativeCollection.findOneAndDelete(bson, findOneAndDeleteOptions);
-  }
-
-
-  public TDocument findOneAndReplace(Bson bson, TDocument o) {
-    return nativeCollection.findOneAndReplace(bson, o);
-  }
-
-
-  public TDocument findOneAndReplace(Bson bson, TDocument o, FindOneAndReplaceOptions findOneAndReplaceOptions) {
-    return nativeCollection.findOneAndReplace(bson, o, findOneAndReplaceOptions);
-  }
-
-
-  public TDocument findOneAndUpdate(Bson bson, Bson bson1) {
-    return nativeCollection.findOneAndUpdate(bson, bson1);
-  }
-
-
-  public TDocument findOneAndUpdate(Bson bson, Bson bson1, FindOneAndUpdateOptions findOneAndUpdateOptions) {
-    return nativeCollection.findOneAndUpdate(bson, bson1, findOneAndUpdateOptions);
-  }
-
-
-  public void drop() {
-    nativeCollection.drop();
-  }
-
-
-  public String createIndex(Bson bson) {
-    return nativeCollection.createIndex(bson);
-  }
-
-
-  public String createIndex(Bson bson, IndexOptions indexOptions) {
-    return nativeCollection.createIndex(bson, indexOptions);
-  }
-
-
-  public List<String> createIndexes(List<IndexModel> indexModels) {
-    return nativeCollection.createIndexes(indexModels);
-  }
-
-
   public ListIndexesIterable<Document> listIndexes() {
     return nativeCollection.listIndexes();
   }
 
-
-  public <TResult> ListIndexesIterable<TResult> listIndexes(Class<TResult> aClass) {
-    return nativeCollection.listIndexes(aClass);
-  }
-
-
-  public void dropIndex(String s) {
-    nativeCollection.dropIndex(s);
-  }
-
-
-  public void dropIndex(Bson bson) {
-    nativeCollection.dropIndex(bson);
-  }
-
-
-  public void dropIndexes() {
-    nativeCollection.dropIndexes();
-  }
-
-
   public void renameCollection(String newName) {
     nativeCollection.renameCollection(new MongoNamespace(nativeCollection.getNamespace().getDatabaseName(), newName));
-  }
-
-  public void renameCollection(MongoNamespace mongoNamespace) {
-    nativeCollection.renameCollection(mongoNamespace);
-  }
-
-  public void renameCollection(MongoNamespace mongoNamespace, RenameCollectionOptions renameCollectionOptions) {
-    nativeCollection.renameCollection(mongoNamespace, renameCollectionOptions);
   }
 }

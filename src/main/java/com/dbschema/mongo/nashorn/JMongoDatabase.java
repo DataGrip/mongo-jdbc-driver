@@ -2,7 +2,6 @@ package com.dbschema.mongo.nashorn;
 
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
-import com.mongodb.client.ListCollectionsIterable;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 import com.mongodb.client.model.CreateCollectionOptions;
@@ -11,37 +10,49 @@ import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static com.dbschema.mongo.nashorn.MemberFunction.*;
+
 
 // https://wiki.openjdk.java.net/display/Nashorn/Nashorn+extensions
 // http://sites.psu.edu/robertbcolton/2015/07/31/java-8-nashorn-script-engine/
-@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class JMongoDatabase extends AbstractJSObject {
-
   private final MongoDatabase mongoDatabase;
+  private final MongoJSObject delegate;
 
   public JMongoDatabase(MongoDatabase mongoDatabase) {
-
     this.mongoDatabase = mongoDatabase;
+    delegate = new MongoJSObject(Arrays.asList(
+        func("getCollection",        this::getCollection, String.class),
+        func("getCollection",        this::getCollection, String.class, Class.class),
+        voidFunc("createCollection", mongoDatabase::createCollection, String.class),
+        voidFunc("createCollection", mongoDatabase::createCollection, String.class, CreateCollectionOptions.class),
+        voidFunc("createView",       mongoDatabase::createView, String.class, String.class, List.class),
+        func("runCommand",           this::runCommand, String.class),
+        func("runCommand",           this::runCommand, Map.class),
+        func("runCommand",           mongoDatabase::runCommand, Bson.class, Class.class),
+        func("runCommand",           mongoDatabase::runCommand, Bson.class, ReadPreference.class),
+        func("runCommand",           mongoDatabase::runCommand, Bson.class, ReadPreference.class, Class.class),
+        voidFunc("drop",             mongoDatabase::drop),
+        func("listCollectionNames",  this::listCollectionNames),
+        func("listCollections",      mongoDatabase::listCollections),
+        func("listCollections",      mongoDatabase::listCollections, Class.class),
+        func("version",              this::version),
+        func("getCodecRegistry",     mongoDatabase::getCodecRegistry),
+        func("getReadPreference",    mongoDatabase::getReadPreference),
+        func("getWriteConcern",      mongoDatabase::getWriteConcern),
+        func("withCodecRegistry",    this::withCodecRegistry, CodecRegistry.class),
+        func("withReadPreference",   this::withReadPreference, ReadPreference.class),
+        func("withWriteConcern",     this::withWriteConcern, WriteConcern.class)
+    ));
   }
 
   public String getName() {
     return mongoDatabase.getName();
-  }
-
-  public CodecRegistry getCodecRegistry() {
-    return mongoDatabase.getCodecRegistry();
-  }
-
-  public ReadPreference getReadPreference() {
-    return mongoDatabase.getReadPreference();
-  }
-
-  public WriteConcern getWriteConcern() {
-    return mongoDatabase.getWriteConcern();
   }
 
   public JMongoDatabase withCodecRegistry(CodecRegistry codecRegistry) {
@@ -60,11 +71,11 @@ public class JMongoDatabase extends AbstractJSObject {
   }
 
   public JMongoCollection<Document> getCollection(String s) {
-    return new JMongoCollection<>(mongoDatabase.getCollection(s));
+    return new JMongoCollection<>(mongoDatabase.getCollection(s), s, mongoDatabase, Document.class);
   }
 
   public <TDocument> JMongoCollection<TDocument> getCollection(String s, Class<TDocument> tDocumentClass) {
-    return new JMongoCollection<>(mongoDatabase.getCollection(s, tDocumentClass));
+    return new JMongoCollection<>(mongoDatabase.getCollection(s, tDocumentClass), s, mongoDatabase, tDocumentClass);
   }
 
   public Document runCommand(String str) {
@@ -77,23 +88,6 @@ public class JMongoDatabase extends AbstractJSObject {
     return mongoDatabase.runCommand(new Document((Map<String, Object>) map));
   }
 
-  public Document runCommand(Bson bson, ReadPreference readPreference) {
-    return mongoDatabase.runCommand(bson, readPreference);
-  }
-
-  public <TResult> TResult runCommand(Bson bson, Class<TResult> tResultClass) {
-    return mongoDatabase.runCommand(bson, tResultClass);
-  }
-
-  public <TResult> TResult runCommand(Bson bson, ReadPreference readPreference, Class<TResult> tResultClass) {
-    return mongoDatabase.runCommand(bson, readPreference, tResultClass);
-  }
-
-
-  public void drop() {
-    mongoDatabase.drop();
-  }
-
   public MongoIterable<String> listCollectionNames() {
     return mongoDatabase.listCollectionNames();
   }
@@ -104,20 +98,8 @@ public class JMongoDatabase extends AbstractJSObject {
     return v == null ? null : Collections.singletonList(v);
   }
 
-  public ListCollectionsIterable<Document> listCollections() {
-    return mongoDatabase.listCollections();
-  }
-
-  public <TResult> ListCollectionsIterable<TResult> listCollections(Class<TResult> tResultClass) {
-    return mongoDatabase.listCollections(tResultClass);
-  }
-
   public void createCollection(String s) {
     mongoDatabase.createCollection(s);
-  }
-
-  public void createCollection(String s, CreateCollectionOptions createCollectionOptions) {
-    mongoDatabase.createCollection(s, createCollectionOptions);
   }
 
   /**
@@ -127,87 +109,12 @@ public class JMongoDatabase extends AbstractJSObject {
    */
   @Override
   public boolean hasMember(String name) {
-    return "getCollection".equals(name) ||
-        "createCollection".equals(name) ||
-        "createView".equals(name) ||
-        "getReadConcern".equals(name) ||
-        "listCollections".equals(name) ||
-        "listCollectionNames".equals(name) ||
-        "drop".equals(name) ||
-        "runCommand".equals(name) ||
-        "version".equals(name);
+    return delegate.hasMember(name);
   }
 
   @Override
   public Object getMember(final String name) {
-    if (hasMember(name)) {
-      return new AbstractJSObject() {
-        @Override
-        public Object call(Object thiz, Object... args) {
-          switch (name) {
-            case "getCollection":
-              if (args.length == 1 && args[0] instanceof String) {
-                return getCollection((String) args[0]);
-              }
-              break;
-            case "createCollection":
-              if (args.length == 1 && args[0] instanceof String) {
-                createCollection((String) args[0]);
-              }
-              else if (args.length == 2 && args[0] instanceof String && args[1] instanceof CreateCollectionOptions) {
-                createCollection((String) args[0], (CreateCollectionOptions) args[1]);
-              }
-              break;
-            case "createView":
-              if (args.length == 3 && args[0] instanceof String && args[1] instanceof String) {
-                //noinspection unchecked
-                mongoDatabase.createView((String) args[0], (String) args[1], (List<? extends Bson>) args[2]);
-              }
-              break;
-            case "runCommand":
-              if (args.length == 1 && args[0] instanceof String) {
-                runCommand((String) args[0]);
-              }
-              else if (args.length == 1 && args[0] instanceof Map) {
-                runCommand((Map<?, ?>) args[0]);
-              }
-              else if (args.length == 2 && args[0] instanceof Bson && args[1] instanceof Class) {
-                runCommand((Bson) args[0], (Class<?>) args[1]);
-              }
-              break;
-            case "drop":
-              drop();
-              break;
-            case "listCollectionNames":
-              return listCollectionNames();
-            case "listCollections":
-              return listCollections();
-            case "version":
-              return version();
-          }
-          return (args.length == 1) ? getCollection(String.valueOf(args[0])) : null;
-        }
-
-        @Override
-        public boolean isFunction() {
-          return true;
-        }
-      };
-    }
-
-    return getCollection(name);
+    AbstractJSObject member = delegate.getMember(name);
+    return member != null ? member : getCollection(name);
   }
-
-
-
-    /*
-      Used in Groovy to expose collection as particular object
-
-      //extends groovy.util.Proxy {
-    @Override
-    public Object getProperty( String name ){
-        return getCollection( name );
-    }
-    */
-
 }
