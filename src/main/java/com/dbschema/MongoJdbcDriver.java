@@ -27,7 +27,6 @@ import static com.dbschema.mongo.nashorn.JMongoClient.removeParameter;
  * The URL excepting the jdbc: prefix is passed as it is to the MongoDb native Java driver.
  */
 public class MongoJdbcDriver implements Driver {
-  private static final Pattern FETCH_DOCUMENTS_FOR_META_PATTERN = Pattern.compile("([?&])" + FETCH_DOCUMENTS_FOR_METAINFO + "=(\\d+)&?");
   private DriverPropertyInfoHelper propertyInfoHelper = new DriverPropertyInfoHelper();
   public static final String DEFAULT_DB = "admin";
   private static final Pattern AUTH_MECH_PATTERN = Pattern.compile("([?&])authMechanism=([\\w_-]+)&?");
@@ -61,20 +60,11 @@ public class MongoJdbcDriver implements Driver {
       catch (NumberFormatException ignored) {
       }
     }
+    if (fetchDocumentsForMeta < 0) fetchDocumentsForMeta = 0;
     boolean useMongoShell = USE_MONGO_SHELL_DEFAULT;
     if (info.getProperty(USE_MONGO_SHELL) != null) {
       useMongoShell = Boolean.parseBoolean(info.getProperty(USE_MONGO_SHELL));
     }
-    Matcher matcher = FETCH_DOCUMENTS_FOR_META_PATTERN.matcher(url);
-    if (matcher.find()) {
-      url = removeParameter(url, matcher);
-      try {
-        fetchDocumentsForMeta = Integer.parseInt(matcher.group(2));
-      }
-      catch (NumberFormatException ignored) {
-      }
-    }
-    if (fetchDocumentsForMeta < 0) fetchDocumentsForMeta = 0;
 
     if (url.startsWith("jdbc:")) {
       url = url.substring("jdbc:".length());
@@ -82,7 +72,7 @@ public class MongoJdbcDriver implements Driver {
 
     ConnectionString connectionString = new ConnectionString(url);
     AuthenticationMechanism authMechanism = null;
-    matcher = AUTH_MECH_PATTERN.matcher(url);
+    Matcher matcher = AUTH_MECH_PATTERN.matcher(url);
     if (matcher.find()) {
       url = removeParameter(url, matcher);
       authMechanism = AuthenticationMechanism.fromMechanismName(matcher.group(2));
