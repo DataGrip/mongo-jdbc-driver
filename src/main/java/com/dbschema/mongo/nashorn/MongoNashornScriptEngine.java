@@ -9,6 +9,7 @@ import com.dbschema.mongo.resultSet.ResultSetIterator;
 import com.mongodb.AggregationOutput;
 import com.mongodb.client.MongoIterable;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -131,11 +132,11 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
 
     try {
       Object obj = getEngine().eval(query);
-      if (obj == null) {
+      if (obj == Undefined.INSTANCE) {
         return null;
       }
       else if (obj instanceof Iterable) {
-        if (obj instanceof MongoIterable) ((MongoIterable<?>) obj).batchSize(fetchSize);
+        if (obj instanceof MongoIterable && fetchSize > 1) ((MongoIterable<?>) obj).batchSize(fetchSize);
         return new ResultSetIterator(((Iterable<?>) obj).iterator());
       }
       else if (obj instanceof Iterator) {

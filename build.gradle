@@ -24,6 +24,7 @@ dependencies {
     compile group: 'org.jetbrains', name: 'annotations', version: '15.0'
     compile group: 'org.apache.commons', name: 'commons-text', version: '1.8'
     testCompile 'junit:junit:4.12'
+    testCompile group: 'commons-io', name: 'commons-io', version: '2.6'
 }
 
 jar {

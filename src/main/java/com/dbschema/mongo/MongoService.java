@@ -5,8 +5,11 @@ import com.dbschema.mongo.nashorn.JMongoCollection;
 import com.dbschema.mongo.nashorn.JMongoDatabase;
 import com.dbschema.mongo.schema.MetaCollection;
 import com.dbschema.mongo.schema.MetaField;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoSecurityException;
+import org.bson.BsonDocument;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 

@@ -24,7 +24,7 @@ public class JMongoClient {
     databaseNameFromUrl = parameters.database;
     MongoClientSettings.Builder builder = MongoClientSettings.builder()
         .applyConnectionString(connectionString)
-        .applyToConnectionPoolSettings(b -> b.maxSize(1));
+        .applyToConnectionPoolSettings(b -> b.maxSize(3));
     if (parameters.username != null || parameters.password != null) {
       builder.credential(createCredential(parameters.mechanism, parameters.username, parameters.authSource, parameters.password));
     }
@@ -68,7 +68,7 @@ public class JMongoClient {
   }
 
   public JMongoDatabase getDatabase(String databaseName) {
-    return new JMongoDatabase(mongoClient.getDatabase(databaseName));
+    return new JMongoDatabase(mongoClient.getDatabase(databaseName), mongoClient);
   }
 
   public void testConnectivity() {

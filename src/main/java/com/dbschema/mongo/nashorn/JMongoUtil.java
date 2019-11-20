@@ -3,12 +3,13 @@ package com.dbschema.mongo.nashorn;
 import com.dbschema.mongo.nashorn.parser.JsonLoaderCallback;
 import com.dbschema.mongo.nashorn.parser.JsonParseException;
 import com.dbschema.mongo.nashorn.parser.JsonParser;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("UnusedReturnValue")
@@ -25,35 +26,30 @@ public class JMongoUtil {
     return new Document(callback.map);
   }
 
-  @SuppressWarnings("unchecked")
-  public static Map<String, Object> doConversions(Map<String, Object> map) {
-    for (String key : map.keySet()) {
-      Object value = map.get(key);
-      if (value instanceof Map<?, ?>) {
-        doConversions((Map<String, Object>) value);
-      }
-      if (value instanceof Map && canConvertMapToArray((Map<Object, Object>) value)) {
-        map.put(key, convertMapToArray((Map<Object, Object>) value));
-      }
+  public static Bson toBson(@NotNull ScriptObjectMirror objectMirror) {
+    Document doc = new Document();
+    for (String key : objectMirror.keySet()) {
+      Object value = toBsonValue(objectMirror.get(key));
+      doc.put(key, value);
     }
-    return map;
+    return doc;
   }
 
-
-  private static boolean canConvertMapToArray(Map<Object, Object> map) {
-    boolean isArray = true;
-    for (int i = 0; i < map.size(); i++) {
-      if (!map.containsKey("" + i)) isArray = false;
-    }
-    return isArray;
+  private static Object toBsonValue(@Nullable Object o) {
+    return o instanceof ScriptObjectMirror && ((ScriptObjectMirror) o).isArray() ?
+           new ScriptObjectMirrorList((ScriptObjectMirror) o) :
+           o instanceof Map<?, ?> ? toBson((Map<?, ?>) o) :
+           o;
   }
 
-  private static List<Object> convertMapToArray(Map<Object, Object> map) {
-    ArrayList<Object> array = new ArrayList<>();
-    for (int i = 0; i < map.size(); i++) {
-      array.add(map.get("" + i));
+  public static Document toBson(@NotNull Map<?, ?> map) {
+    Document doc = new Document();
+    for (Object key : map.keySet()) {
+      if (!(key instanceof String)) continue;
+      Object value = toBsonValue(map.get(key));
+      doc.put((String) key, value);
     }
-    return array;
+    return doc;
   }
 
   @NotNull

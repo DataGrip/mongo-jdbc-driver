@@ -14,6 +14,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.dbschema.mongo.nashorn.JMongoUtil.toBson;
+
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class JFindIterable<TResult> implements com.mongodb.client.MongoIterable<TResult> {
@@ -29,10 +31,8 @@ public class JFindIterable<TResult> implements com.mongodb.client.MongoIterable<
     return this;
   }
 
-  @SuppressWarnings("unchecked")
   public JFindIterable<TResult> filter(Map<?, ?> map) {
-    JMongoUtil.doConversions((Map<String, Object>) map);
-    findIterable.filter(new Document((Map<String, Object>) map));
+    findIterable.filter(toBson(map));
     return this;
   }
 
@@ -47,10 +47,8 @@ public class JFindIterable<TResult> implements com.mongodb.client.MongoIterable<
     return this;
   }
 
-  @SuppressWarnings("unchecked")
   public JFindIterable<TResult> projection(Map<?, ?> map) {
-    JMongoUtil.doConversions((Map<String, Object>) map);
-    findIterable.projection(new Document((Map<String, Object>) map));
+    findIterable.projection(toBson(map));
     return this;
   }
 
@@ -59,10 +57,8 @@ public class JFindIterable<TResult> implements com.mongodb.client.MongoIterable<
     return this;
   }
 
-  @SuppressWarnings("unchecked")
   public JFindIterable<TResult> sort(Map<?, ?> map) {
-    JMongoUtil.doConversions((Map<String, Object>) map);
-    findIterable.sort(new Document((Map<String, Object>) map));
+    findIterable.sort(toBson(map));
     return this;
   }
 

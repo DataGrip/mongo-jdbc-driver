@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static com.dbschema.mongo.nashorn.JMongoUtil.toBson;
 import static com.dbschema.mongo.nashorn.MemberFunction.func;
 import static com.dbschema.mongo.nashorn.MemberFunction.voidFunc;
 
@@ -162,10 +163,9 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     insertOne(map);
   }
 
-  @SuppressWarnings("unchecked")
   public void insertOne(Map<?, ?> map) {
-    JMongoUtil.doConversions((Map<String, Object>) map);
-    nativeCollection.insertOne((TDocument) (new Document((Map<String, Object>) map)));
+    //noinspection unchecked
+    nativeCollection.insertOne((TDocument) toBson(map));
   }
 
 
@@ -190,17 +190,12 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return new JFindIterable<>(nativeCollection.find(JMongoUtil.parse(str), aClass));
   }
 
-  @SuppressWarnings("unchecked")
   public JFindIterable<TDocument> find(Map<?, ?> map) {
-    JMongoUtil.doConversions((Map<String, Object>) map);
-    return new JFindIterable<>(nativeCollection.find(new Document((Map<String, Object>) map)));
+    return new JFindIterable<>(nativeCollection.find(toBson(map)));
   }
 
-  @SuppressWarnings("unchecked")
   public JFindIterable<TDocument> find(Map<?, ?> map, Map<?, ?> proj) {
-    JMongoUtil.doConversions((Map<String, Object>) map);
-    JMongoUtil.doConversions((Map<String, Object>) proj);
-    return new JFindIterable<>(nativeCollection.find(new Document((Map<String, Object>) map)).projection(new Document((Map<String, Object>) proj)));
+    return new JFindIterable<>(nativeCollection.find(toBson(map)).projection(toBson(proj)));
   }
 
   public JFindIterable<TDocument> find(Bson bson, Bson proj) {
@@ -220,10 +215,8 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return deleteOne(map);
   }
 
-  @SuppressWarnings("unchecked")
   public DeleteResult deleteOne(Map<?, ?> map) {
-    JMongoUtil.doConversions((Map<String, Object>) map);
-    return nativeCollection.deleteOne(new Document((Map<String, Object>) map));
+    return nativeCollection.deleteOne(toBson(map));
   }
 
 
@@ -242,22 +235,16 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return nativeCollection.replaceOne(JMongoUtil.parse(str), o, updateOptions);
   }
 
-  @SuppressWarnings("unchecked")
   public UpdateResult updateOne(Map<?, ?> map, Map<?, ?> map1) {
-    JMongoUtil.doConversions((Map<String, Object>) map);
-    JMongoUtil.doConversions((Map<String, Object>) map1);
-    return nativeCollection.updateOne(new Document((Map<String, Object>) map), new Document((Map<String, Object>) map1));
+    return nativeCollection.updateOne(toBson(map), toBson(map1));
   }
 
   public UpdateResult updateOne(String str, String str1) {
     return nativeCollection.updateOne(JMongoUtil.parse(str), BsonDocument.parse(str1));
   }
 
-  @SuppressWarnings("unchecked")
   public UpdateResult updateOne(Map<?, ?> map, Map<?, ?> map1, UpdateOptions updateOptions) {
-    JMongoUtil.doConversions((Map<String, Object>) map);
-    JMongoUtil.doConversions((Map<String, Object>) map1);
-    return nativeCollection.updateOne(new Document((Map<String, Object>) map), new Document((Map<String, Object>) map1), updateOptions);
+    return nativeCollection.updateOne(toBson(map), toBson(map1), updateOptions);
   }
 
   public UpdateResult updateOne(String str, String str1, UpdateOptions updateOptions) {
@@ -281,21 +268,16 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return updateMany(map, map1, updateOptions);
   }
 
-  @SuppressWarnings("unchecked")
   public UpdateResult updateMany(Map<?, ?> map, Map<?, ?> map1, UpdateOptions updateOptions) {
-    JMongoUtil.doConversions((Map<String, Object>) map);
-    JMongoUtil.doConversions((Map<String, Object>) map1);
-    return nativeCollection.updateMany(new Document((Map<String, Object>) map), new Document((Map<String, Object>) map1), updateOptions);
+    return nativeCollection.updateMany(toBson(map), toBson(map1), updateOptions);
   }
 
   public UpdateResult updateMany(String str, String str1, UpdateOptions updateOptions) {
     return nativeCollection.updateMany(JMongoUtil.parse(str), BsonDocument.parse(str1), updateOptions);
   }
 
-  @SuppressWarnings("unchecked")
   public TDocument findOneAndDelete(Map<?, ?> map) {
-    JMongoUtil.doConversions((Map<String, Object>) map);
-    return nativeCollection.findOneAndDelete(new Document((Map<String, Object>) map));
+    return nativeCollection.findOneAndDelete(toBson(map));
   }
 
   public TDocument findOneAndDelete(String str) {
@@ -332,20 +314,16 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return nativeCollection.createIndex(JMongoUtil.parse(str));
   }
 
-  @SuppressWarnings("unchecked")
   public String createIndex(Map<?, ?> map) {
-    JMongoUtil.doConversions((Map<String, Object>) map);
-    return nativeCollection.createIndex(new Document((Map<String, Object>) map));
+    return nativeCollection.createIndex(toBson(map));
   }
 
   public String createIndex(String str, IndexOptions indexOptions) {
     return nativeCollection.createIndex(JMongoUtil.parse(str), indexOptions);
   }
 
-  @SuppressWarnings("unchecked")
   public String createIndex(Map<?, ?> map, Map<?, ?> optionsMap) {
-    JMongoUtil.doConversions((Map<String, Object>) map);
-    return nativeCollection.createIndex(new Document((Map<String, Object>) map), new IndexOptionsFromMap(optionsMap));
+    return nativeCollection.createIndex(toBson(map), new IndexOptionsFromMap(optionsMap));
   }
 
   //---------------------------------------------------------------
@@ -406,12 +384,10 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return new JFindIterable<>(nativeCollection.find(bson, aClass));
   }
 
-  @SuppressWarnings("unchecked")
   public JAggregateIterable<TDocument> aggregate(Map<?, ?>... maps) {
     List<Bson> list = new ArrayList<>();
     for (Map<?, ?> map : maps) {
-      JMongoUtil.doConversions((Map<String, Object>) map);
-      list.add(new Document((Map<String, Object>) map));
+      list.add(toBson(map));
     }
     return new JAggregateIterable<>(nativeCollection.aggregate(list));
   }

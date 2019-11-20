@@ -1,0 +1,2 @@
+|map|
+|Document{{_id=<ObjectID>, a=1}}|

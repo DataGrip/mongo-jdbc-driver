@@ -1,0 +1,2 @@
+|map|
+|Document{{ok=0.0, errmsg=no such command: 'version', code=59, codeName=CommandNotFound}}|

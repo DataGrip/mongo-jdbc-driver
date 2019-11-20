@@ -1,0 +1,2 @@
+// command
+db.fsyncLock();
