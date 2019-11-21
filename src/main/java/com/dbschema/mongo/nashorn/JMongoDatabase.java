@@ -201,8 +201,8 @@ public class JMongoDatabase extends AbstractJSObject {
     return map == null ? options : MapProcessor.runProcessors(options, collectionOptionsProcessors, map);
   }
 
-  public JMongoCollection<Document> getCollection(String s) {
-    return new JMongoCollection<>(mongoDatabase.getCollection(s), s, mongoDatabase, Document.class);
+  public JMongoCollection getCollection(String s) {
+    return new JMongoCollection(mongoDatabase.getCollection(s), s, mongoDatabase);
   }
 
   public Document runCommand(Map<?, ?> map) {

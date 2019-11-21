@@ -146,7 +146,7 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
         return new AggregateResultSet((AggregationOutput) obj);
       }
       else if (obj instanceof JMongoCollection) {
-        return new ResultSetIterator(((JMongoCollection<?>) obj).find());
+        return new ResultSetIterator(((JMongoCollection) obj).find());
       }
       else if (obj instanceof ResultSet) {
         return (ResultSet) obj;

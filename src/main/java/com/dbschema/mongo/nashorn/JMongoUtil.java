@@ -14,8 +14,6 @@ import java.util.Map;
 
 @SuppressWarnings("UnusedReturnValue")
 public class JMongoUtil {
-
-
   public static Document parse(String text) {
     Thread.dumpStack();
     if (text != null && text.trim().length() > 0 && !text.trim().startsWith("{")) {

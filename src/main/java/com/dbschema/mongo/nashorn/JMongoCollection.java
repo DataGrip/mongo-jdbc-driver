@@ -5,7 +5,6 @@ import com.dbschema.mongo.resultSet.ListResultSet;
 import com.mongodb.MongoNamespace;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
-import com.mongodb.client.DistinctIterable;
 import com.mongodb.client.ListIndexesIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -28,13 +27,13 @@ import static com.dbschema.mongo.nashorn.JMongoUtil.toBson;
 import static com.dbschema.mongo.nashorn.MemberFunction.func;
 import static com.dbschema.mongo.nashorn.MemberFunction.voidFunc;
 
-public class JMongoCollection<TDocument> extends AbstractJSObject {
-  private final MongoCollection<TDocument> nativeCollection;
+public class JMongoCollection extends AbstractJSObject {
+  private final MongoCollection<Document> nativeCollection;
   private final String name;
   private final MongoDatabase mongoDatabase;
   private final MongoJSObject delegate;
 
-  public JMongoCollection(MongoCollection<TDocument> nativeCollection, String name, MongoDatabase mongoDatabase, Class<TDocument> tDocumentClass) {
+  public JMongoCollection(MongoCollection<Document> nativeCollection, String name, MongoDatabase mongoDatabase) {
     this.nativeCollection = nativeCollection;
     this.name = name;
     this.mongoDatabase = mongoDatabase;
@@ -44,7 +43,6 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
         voidFunc("insert",     this::insert, String.class),
         voidFunc("insertOne",  this::insertOne, String.class),
         voidFunc("insertOne",  this::insertOne, String.class),
-        voidFunc("insertOne",  this::insertOne, tDocumentClass),
         voidFunc("insertMany", nativeCollection::insertMany, List.class),
         voidFunc("insertMany", nativeCollection::insertMany, List.class, InsertManyOptions.class),
         voidFunc("drop",       nativeCollection::drop),
@@ -61,14 +59,11 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
         func("count",      this::count, Bson.class, CountOptions.class),
         func("find",       this::find, String.class),
         func("find",       this::find, String.class, String.class),
-        func("find",       this::find, String.class, Class.class),
         func("find",       this::find, Map.class),
         func("find",       this::find, Map.class, Map.class),
         func("find",       this::find, Bson.class, Bson.class),
         func("find",             this::find),
-        func("find",             this::find, Class.class),
         func("find",             this::find, Bson.class),
-        func("find",             this::find, Bson.class, Class.class),
         func("delete",     this::delete, String.class),
         func("delete",     this::delete, Map.class),
         func("deleteOne",  this::deleteOne, String.class),
@@ -76,10 +71,6 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
         func("deleteOne",  this::deleteOne, Map.class),
         func("deleteMany", this::deleteMany, String.class),
         func("deleteMany", nativeCollection::deleteMany, Bson.class),
-        func("replaceOne", nativeCollection::replaceOne, Bson.class, tDocumentClass),
-        func("replaceOne", this::replaceOne, Bson.class, tDocumentClass, UpdateOptions.class),
-        func("replaceOne", this::replaceOne, String.class, tDocumentClass),
-        func("replaceOne", this::replaceOne, String.class, tDocumentClass, UpdateOptions.class),
         func("update",     this::update, Map.class, Map.class),
         func("update",     this::update, Map.class, Map.class, UpdateOptions.class),
         func("updateOne",  nativeCollection::updateOne, Bson.class, Bson.class),
@@ -99,10 +90,6 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
         func("findOneAndDelete",  this::findOneAndDelete, String.class),
         func("findOneAndDelete",  this::findOneAndDelete, Map.class),
         func("findOneAndDelete",  this::findOneAndDelete, String.class, FindOneAndDeleteOptions.class),
-        func("findOneAndReplace", this::findOneAndReplace, String.class, tDocumentClass),
-        func("findOneAndReplace", this::findOneAndReplace, String.class, tDocumentClass, FindOneAndReplaceOptions.class),
-        func("findOneAndReplace", nativeCollection::findOneAndReplace, Bson.class, tDocumentClass),
-        func("findOneAndReplace", nativeCollection::findOneAndReplace, Bson.class, tDocumentClass, FindOneAndReplaceOptions.class),
         func("findOneAndUpdate",  this::findOneAndUpdate, String.class, String.class),
         func("findOneAndUpdate",  this::findOneAndUpdate, String.class, String.class, FindOneAndUpdateOptions.class),
         func("findOneAndUpdate",  nativeCollection::findOneAndUpdate, Bson.class, Bson.class),
@@ -115,21 +102,15 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
         func("createIndex",       this::createIndex, Map.class, Map.class),
         func("createIndexes",     nativeCollection::createIndexes, List.class),
         func("listIndexes",       this::listIndexes),
-        func("listIndexes",       nativeCollection::listIndexes, Class.class),
         func("getNamespace",      nativeCollection::getNamespace),
-        func("getDocumentClass",  nativeCollection::getDocumentClass),
         func("getCodecRegistry",  nativeCollection::getCodecRegistry),
         func("getReadPreference", nativeCollection::getReadPreference),
         func("getWriteConcern",   nativeCollection::getWriteConcern),
-        func("withDocumentClass", this::withDocumentClass, Class.class),
         func("withCodecRegistry", this::withCodecRegistry, CodecRegistry.class),
         func("withReadPreference",this::withReadPreference, ReadPreference.class),
         func("withWriteConcern",  this::withWriteConcern, WriteConcern.class),
-        func("distinct",  this::distinct, String.class, Class.class),
         func("aggregate", this::aggregate, Map.class),
-        func("aggregate", nativeCollection::aggregate, List.class, Class.class),
         func("mapReduce", nativeCollection::mapReduce, String.class, String.class),
-        func("mapReduce", nativeCollection::mapReduce, String.class, String.class, Class.class),
         func("bulkWrite", nativeCollection::bulkWrite, List.class),
         func("bulkWrite", nativeCollection::bulkWrite, List.class, BulkWriteOptions.class)));
   }
@@ -145,9 +126,9 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return member != null ? member : getSubCollection(name);
   }
 
-  private JMongoCollection<Document> getSubCollection(String name) {
+  private JMongoCollection getSubCollection(String name) {
     String newName = this.name + "." + name;
-    return new JMongoCollection<>(mongoDatabase.getCollection(newName), newName, mongoDatabase, Document.class);
+    return new JMongoCollection(mongoDatabase.getCollection(newName), newName, mongoDatabase);
   }
 
   public void insert(String str) {
@@ -155,8 +136,7 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
   }
 
   public void insertOne(String str) {
-    //noinspection unchecked
-    nativeCollection.insertOne((TDocument) JMongoUtil.parse(str));
+    nativeCollection.insertOne(JMongoUtil.parse(str));
   }
 
   public void insert(Map<?, ?> map) {
@@ -164,8 +144,7 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
   }
 
   public void insertOne(Map<?, ?> map) {
-    //noinspection unchecked
-    nativeCollection.insertOne((TDocument) toBson(map));
+    nativeCollection.insertOne(toBson(map));
   }
 
 
@@ -178,11 +157,11 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return wrapInResultSet("count", nativeCollection.countDocuments(JMongoUtil.parse(str), countOptions));
   }
 
-  public JFindIterable<TDocument> find(String str) {
+  public JFindIterable<Document> find(String str) {
     return new JFindIterable<>(nativeCollection.find(JMongoUtil.parse(str)));
   }
 
-  public JFindIterable<TDocument> find(String str, String proj) {
+  public JFindIterable<Document> find(String str, String proj) {
     return new JFindIterable<>(nativeCollection.find(JMongoUtil.parse(str)).projection(JMongoUtil.parse(proj)));
   }
 
@@ -190,15 +169,15 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return new JFindIterable<>(nativeCollection.find(JMongoUtil.parse(str), aClass));
   }
 
-  public JFindIterable<TDocument> find(Map<?, ?> map) {
+  public JFindIterable<Document> find(Map<?, ?> map) {
     return new JFindIterable<>(nativeCollection.find(toBson(map)));
   }
 
-  public JFindIterable<TDocument> find(Map<?, ?> map, Map<?, ?> proj) {
+  public JFindIterable<Document> find(Map<?, ?> map, Map<?, ?> proj) {
     return new JFindIterable<>(nativeCollection.find(toBson(map)).projection(toBson(proj)));
   }
 
-  public JFindIterable<TDocument> find(Bson bson, Bson proj) {
+  public JFindIterable<Document> find(Bson bson, Bson proj) {
     return new JFindIterable<>(nativeCollection.find(bson)).projection(proj);
   }
 
@@ -224,16 +203,6 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return nativeCollection.deleteMany(JMongoUtil.parse(str));
   }
 
-
-  public UpdateResult replaceOne(String str, TDocument o) {
-    return nativeCollection.replaceOne(JMongoUtil.parse(str), o);
-  }
-
-
-  public UpdateResult replaceOne(String str, TDocument o, UpdateOptions updateOptions) {
-    //noinspection deprecation
-    return nativeCollection.replaceOne(JMongoUtil.parse(str), o, updateOptions);
-  }
 
   public UpdateResult updateOne(Map<?, ?> map, Map<?, ?> map1) {
     return nativeCollection.updateOne(toBson(map), toBson(map1));
@@ -276,36 +245,26 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return nativeCollection.updateMany(JMongoUtil.parse(str), BsonDocument.parse(str1), updateOptions);
   }
 
-  public TDocument findOneAndDelete(Map<?, ?> map) {
+  public Document findOneAndDelete(Map<?, ?> map) {
     return nativeCollection.findOneAndDelete(toBson(map));
   }
 
-  public TDocument findOneAndDelete(String str) {
+  public Document findOneAndDelete(String str) {
     return nativeCollection.findOneAndDelete(JMongoUtil.parse(str));
   }
 
 
-  public TDocument findOneAndDelete(String str, FindOneAndDeleteOptions findOneAndDeleteOptions) {
+  public Document findOneAndDelete(String str, FindOneAndDeleteOptions findOneAndDeleteOptions) {
     return nativeCollection.findOneAndDelete(JMongoUtil.parse(str), findOneAndDeleteOptions);
   }
 
 
-  public TDocument findOneAndReplace(String str, TDocument o) {
-    return nativeCollection.findOneAndReplace(JMongoUtil.parse(str), o);
-  }
-
-
-  public TDocument findOneAndReplace(String str, TDocument o, FindOneAndReplaceOptions findOneAndReplaceOptions) {
-    return nativeCollection.findOneAndReplace(JMongoUtil.parse(str), o, findOneAndReplaceOptions);
-  }
-
-
-  public TDocument findOneAndUpdate(String str, String str1) {
+  public Document findOneAndUpdate(String str, String str1) {
     return nativeCollection.findOneAndUpdate(JMongoUtil.parse(str), BsonDocument.parse(str1));
   }
 
 
-  public TDocument findOneAndUpdate(String str, String str1, FindOneAndUpdateOptions findOneAndUpdateOptions) {
+  public Document findOneAndUpdate(String str, String str1, FindOneAndUpdateOptions findOneAndUpdateOptions) {
     return nativeCollection.findOneAndUpdate(JMongoUtil.parse(str), BsonDocument.parse(str1), findOneAndUpdateOptions);
   }
 
@@ -328,22 +287,17 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
 
   //---------------------------------------------------------------
 
-  public JMongoCollection<TDocument> withDocumentClass(Class<?> aClass) {
-    nativeCollection.withDocumentClass(aClass);
-    return this;
-  }
-
-  public JMongoCollection<TDocument> withCodecRegistry(CodecRegistry codecRegistry) {
+  public JMongoCollection withCodecRegistry(CodecRegistry codecRegistry) {
     nativeCollection.withCodecRegistry(codecRegistry);
     return this;
   }
 
-  public JMongoCollection<TDocument> withReadPreference(ReadPreference readPreference) {
+  public JMongoCollection withReadPreference(ReadPreference readPreference) {
     nativeCollection.withReadPreference(readPreference);
     return this;
   }
 
-  public JMongoCollection<TDocument> withWriteConcern(WriteConcern writeConcern) {
+  public JMongoCollection withWriteConcern(WriteConcern writeConcern) {
     nativeCollection.withWriteConcern(writeConcern);
     return this;
   }
@@ -364,11 +318,7 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return wrapInResultSet("count", nativeCollection.countDocuments(bson, countOptions));
   }
 
-  public <TResult> DistinctIterable<TResult> distinct(String s, Class<TResult> aClass) {
-    return nativeCollection.distinct(s, aClass);
-  }
-
-  public JFindIterable<TDocument> find() {
+  public JFindIterable<Document> find() {
     return new JFindIterable<>(nativeCollection.find());
   }
 
@@ -376,7 +326,7 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return new JFindIterable<>(nativeCollection.find(aClass));
   }
 
-  public JFindIterable<TDocument> find(Bson bson) {
+  public JFindIterable<Document> find(Bson bson) {
     return new JFindIterable<>(nativeCollection.find(bson));
   }
 
@@ -384,7 +334,7 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return new JFindIterable<>(nativeCollection.find(bson, aClass));
   }
 
-  public JAggregateIterable<TDocument> aggregate(Map<?, ?>... maps) {
+  public JAggregateIterable<Document> aggregate(Map<?, ?>... maps) {
     List<Bson> list = new ArrayList<>();
     for (Map<?, ?> map : maps) {
       list.add(toBson(map));
@@ -392,13 +342,13 @@ public class JMongoCollection<TDocument> extends AbstractJSObject {
     return new JAggregateIterable<>(nativeCollection.aggregate(list));
   }
 
-  public void insertOne(TDocument o) {
+  public void insertOne(Document o) {
     nativeCollection.insertOne(o);
   }
 
-  public UpdateResult replaceOne(Bson bson, TDocument o, UpdateOptions updateOptions) {
+  public void replaceOne(Bson bson, Document o, UpdateOptions updateOptions) {
     //noinspection deprecation
-    return nativeCollection.replaceOne(bson, o, updateOptions);
+    nativeCollection.replaceOne(bson, o, updateOptions);
   }
 
   public ListIndexesIterable<Document> listIndexes() {

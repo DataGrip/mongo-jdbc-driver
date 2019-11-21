@@ -5,11 +5,8 @@ import com.dbschema.mongo.nashorn.JMongoCollection;
 import com.dbschema.mongo.nashorn.JMongoDatabase;
 import com.dbschema.mongo.schema.MetaCollection;
 import com.dbschema.mongo.schema.MetaField;
-import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoSecurityException;
-import org.bson.BsonDocument;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 
@@ -136,7 +133,7 @@ public class MongoService {
     final JMongoDatabase mongoDatabase = getDatabase(dbOrCatalog);
     if (mongoDatabase != null) {
       try {
-        final JMongoCollection<?> mongoCollection = mongoDatabase.getCollection(collectionName);
+        final JMongoCollection mongoCollection = mongoDatabase.getCollection(collectionName);
         if (mongoCollection != null) {
           return new MetaCollection(mongoCollection, dbOrCatalog, collectionName, fetchDocumentsForMeta);
         }
@@ -150,7 +147,7 @@ public class MongoService {
   }
 
 
-  private JMongoCollection<?> getJMongoCollection(String databaseName, String collectionName) {
+  private JMongoCollection getJMongoCollection(String databaseName, String collectionName) {
     final JMongoDatabase mongoDatabase = client.getDatabase(databaseName);
     if (mongoDatabase != null) {
       return mongoDatabase.getCollection(collectionName);
@@ -172,7 +169,7 @@ public class MongoService {
         }
         if (!unsolvedFields.isEmpty()) {
           for (MetaCollection collection : metaCollections.values()) {
-            final JMongoCollection<?> mongoCollection = getJMongoCollection(collection.db, collection.name);
+            final JMongoCollection mongoCollection = getJMongoCollection(collection.db, collection.name);
             if (mongoCollection != null) {
               for (MetaField metaField : unsolvedFields) {
                 for (ObjectId objectId : metaField.objectIds) {

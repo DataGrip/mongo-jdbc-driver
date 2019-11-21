@@ -119,7 +119,7 @@ public class MongoPreparedStatement implements PreparedStatement {
         Matcher matcher = PATTERN_UPDATE.matcher(sql);
         final Object id = documentParam.get("_id");
         if (matcher.matches()) {
-          JMongoCollection<Document> collection = getCollectionMandatory(matcher.group(1), true);
+          JMongoCollection collection = getCollectionMandatory(matcher.group(1), true);
           if (id == null) {
             collection.insertOne(documentParam);
           }
@@ -130,8 +130,8 @@ public class MongoPreparedStatement implements PreparedStatement {
         }
         matcher = PATTERN_DELETE.matcher(sql);
         if (matcher.matches()) {
-          JMongoCollection<Document> collection = getCollectionMandatory(matcher.group(1), false);
-          collection.deleteOne((Map<String, Object>) (new Document().append("_id", id)));
+          JMongoCollection collection = getCollectionMandatory(matcher.group(1), false);
+          collection.deleteOne(new Document().append("_id", id));
           return 1;
         }
       }
@@ -144,7 +144,7 @@ public class MongoPreparedStatement implements PreparedStatement {
   private static final Pattern PATTERN_DOT = Pattern.compile("(.*)\\.(.*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
 
-  private JMongoCollection<Document> getCollectionMandatory(String collectionRef, boolean createCollectionIfMissing) throws SQLException {
+  private JMongoCollection getCollectionMandatory(String collectionRef, boolean createCollectionIfMissing) throws SQLException {
     JMongoDatabase mongoDatabase = null;
     Matcher matcherDbIdentifier = PATTERN_DB_IDENTIFIER.matcher(collectionRef);
     Matcher matcherDbDot = PATTERN_DOT.matcher(collectionRef);
@@ -161,7 +161,7 @@ public class MongoPreparedStatement implements PreparedStatement {
     if (matcherCollectionIdentifier.matches()) {
       collectionRef = matcherDbIdentifier.group(1);
     }
-    JMongoCollection<Document> collection = mongoDatabase.getCollection(collectionRef);
+    JMongoCollection collection = mongoDatabase.getCollection(collectionRef);
     if (collection == null && createCollectionIfMissing) {
       mongoDatabase.createCollection(collectionRef);
       collection = mongoDatabase.getCollection(collectionRef);

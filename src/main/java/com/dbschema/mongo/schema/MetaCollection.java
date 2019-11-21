@@ -19,7 +19,7 @@ public class MetaCollection extends MetaJson {
   public final String db;
   public final List<MetaIndex> metaIndexes = new ArrayList<>();
 
-  public MetaCollection(final JMongoCollection<?> mongoCollection, final String db, final String name, final int fetchDocumentsForMeta) {
+  public MetaCollection(final JMongoCollection mongoCollection, final String db, final String name, final int fetchDocumentsForMeta) {
     super(null, name, TYPE_MAP);
     this.db = db;
 
@@ -35,7 +35,7 @@ public class MetaCollection extends MetaJson {
   }
 
 
-  private boolean discoverCollectionFirstRecords(JMongoCollection<?> mongoCollection, int iterations) {
+  private boolean discoverCollectionFirstRecords(JMongoCollection mongoCollection, int iterations) {
     MongoCursor<?> cursor = mongoCollection.find().iterator();
     int iteration = 0;
     while (cursor.hasNext() && ++iteration <= iterations) {
@@ -45,7 +45,7 @@ public class MetaCollection extends MetaJson {
     return iteration >= iterations;
   }
 
-  private void discoverCollectionRandomRecords(JMongoCollection<?> mongoCollection, int iterations) {
+  private void discoverCollectionRandomRecords(JMongoCollection mongoCollection, int iterations) {
     int skip = 10, i = 0;
     final JFindIterable<?> jFindIterable = mongoCollection.find(); // .limit(-1)
     while (i++ < iterations) {
@@ -122,7 +122,7 @@ public class MetaCollection extends MetaJson {
   private static final String KEY_UNIQUE = "unique";
   private static final String KEY_KEY = "key";
 
-  private void discoverIndexes(JMongoCollection<?> dbCollection) {
+  private void discoverIndexes(JMongoCollection dbCollection) {
     try {
       ListIndexesIterable<?> iterable = dbCollection.listIndexes();
       for (Object indexObject : iterable) {
