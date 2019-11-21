@@ -4,7 +4,8 @@ import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
-import com.mongodb.client.model.*;
+import com.mongodb.client.model.CreateCollectionOptions;
+import com.mongodb.client.model.CreateViewOptions;
 import jdk.nashorn.api.scripting.AbstractJSObject;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -15,6 +16,9 @@ import java.util.*;
 
 import static com.dbschema.mongo.Util.toDocument;
 import static com.dbschema.mongo.nashorn.JMongoUtil.toBson;
+import static com.dbschema.mongo.nashorn.MapProcessor.runProcessors;
+import static com.dbschema.mongo.nashorn.MapProcessors.CREATE_COLLECTION_OPTIONS;
+import static com.dbschema.mongo.nashorn.MapProcessors.CREATE_VIEW_OPTIONS;
 import static com.dbschema.mongo.nashorn.MemberFunction.*;
 
 
@@ -23,101 +27,68 @@ import static com.dbschema.mongo.nashorn.MemberFunction.*;
 public class JMongoDatabase extends AbstractJSObject {
   private final MongoDatabase mongoDatabase;
   private final MongoJSObject delegate;
-  @SuppressWarnings("deprecation")
-  private final List<MapProcessor<CreateCollectionOptions, ?>> collectionOptionsProcessors = Arrays.asList(
-      new MapProcessor<>("capped", Boolean.class, (v, o) -> o.capped(v)),
-      new MapProcessor<>("autoIndexId", Boolean.class, (v, o) -> o.autoIndex(v)),
-      new MapProcessor<>("size", Number.class, (v, o) -> o.sizeInBytes(v.longValue())),
-      new MapProcessor<>("max", Number.class, (v, o) -> o.maxDocuments(v.longValue())),
-      new MapProcessor<>("storageEngine", Map.class, (v, o) -> o), // todo
-      new MapProcessor<>("validator", Map.class, (v, o) -> o), // todo
-      new MapProcessor<>("validationLevel", String.class, (v, o) -> o), // todo
-      new MapProcessor<>("validationAction", String.class, (v, o) -> o), // todo
-      new MapProcessor<>("indexOptionDefaults", Map.class, (v, o) -> o), // todo
-      new MapProcessor<>("viewOn", String.class, (v, o) -> o), // todo
-      new MapProcessor<>("pipeline", String.class, (v, o) -> o), // todo
-      new MapProcessor<>("collation", Map.class, (v, o) -> o), // todo
-      new MapProcessor<>("writeConcern", Map.class, (v, o) -> o) // todo
-  );
-  private final List<MapProcessor<Collation.Builder, ?>> collationProcessors = Arrays.asList(
-      new MapProcessor<>("locale", String.class, (v, o) -> o.locale(v)),
-      new MapProcessor<>("caseLevel", Boolean.class, (v, o) -> o.caseLevel(v)),
-      new MapProcessor<>("caseFirst", String.class, (v, o) -> o.collationCaseFirst(CollationCaseFirst.fromString(v))),
-      new MapProcessor<>("strength", Number.class, (v, o) -> o.collationStrength(CollationStrength.fromInt(v.intValue()))),
-      new MapProcessor<>("numericOrdering", Boolean.class, (v, o) -> o.numericOrdering(v)),
-      new MapProcessor<>("alternate", String.class, (v, o) -> o.collationAlternate(CollationAlternate.fromString(v))),
-      new MapProcessor<>("maxVariable", String.class, (v, o) -> o.collationMaxVariable(CollationMaxVariable.fromString(v))),
-      new MapProcessor<>("backwards", Boolean.class, (v, o) -> o.backwards(v))
-  );
-  private final List<MapProcessor<CreateViewOptions, ?>> viewOptionsProcessors = Collections.singletonList(
-      new MapProcessor<>("collation", Map.class, (map, o) -> {
-        Collation.Builder collation = Collation.builder();
-        if (map != null) collation = MapProcessor.runProcessors(collation, collationProcessors, map);
-        return o.collation(collation.build());
-      })
-  );
 
   public JMongoDatabase(@NotNull MongoDatabase mongoDatabase, @NotNull MongoClient mongoClient) {
     this.mongoDatabase = mongoDatabase;
     delegate = new MongoJSObject(Arrays.asList(
-        oneDoc("adminCommand",                  m -> new JMongoDatabase(mongoClient.getDatabase("admin"), mongoClient).runCommand(m), Map.class),
-        oneDoc("adminCommand",                  s -> new JMongoDatabase(mongoClient.getDatabase("admin"), mongoClient).runCommand(s), String.class),
-        oneDoc("aggregate",                     this::aggregate,                List.class),
-        oneDoc("aggregate",                     this::aggregate,                List.class, Map.class),
-        oneDoc("cloneCollection",               this::cloneCollection,          String.class, String.class),
-        oneDoc("cloneCollection",               this::cloneCollection,          String.class, String.class, Map.class),
-        ignoreParams("cloneDatabase",           () -> "Not implemented"), // no such command
+        func("adminCommand",                    m -> new JMongoDatabase(mongoClient.getDatabase("admin"), mongoClient).runCommand(m), Map.class),
+        func("adminCommand",                    s -> new JMongoDatabase(mongoClient.getDatabase("admin"), mongoClient).runCommand(s), String.class),
+        func("aggregate",                       this::aggregate,                List.class),
+        func("aggregate",                       this::aggregate,                List.class, Map.class),
+        func("cloneCollection",                 this::cloneCollection,          String.class, String.class),
+        func("cloneCollection",                 this::cloneCollection,          String.class, String.class, Map.class),
+        notImplemented("cloneDatabase",         ObjectKind.DATABASE), // no such command
         func("commandHelp",                     this::commandHelp, String.class),
-        ignoreParams("copyDatabase",            () -> "Not implemented"), // no such command
+        notImplemented("copyDatabase",          ObjectKind.DATABASE), // no such command
         voidFunc("createCollection",            mongoDatabase::createCollection,String.class),
         voidFunc("createCollection",            this::createCollection,         String.class, Map.class),
         voidFunc("createView",                  this::createView,               String.class, String.class, List.class),
         voidFunc("createView",                  this::createView,               String.class, String.class, List.class, Map.class),
-        oneDoc("currentOp",                     () -> runCommand("currentOp")),
+        func("currentOp",                       () -> runCommand("currentOp")),
         voidFunc("dropDatabase",                mongoDatabase::drop),
-        oneDoc("fsyncLock",                     () -> runCommand("fsync")),
-        oneDoc("fsyncUnlock",                   () -> runCommand("fsyncUnlock")),
+        func("fsyncLock",                       () -> runCommand("fsync")),
+        func("fsyncUnlock",                     () -> runCommand("fsyncUnlock")),
         func("getCollection",                   this::getCollection,            String.class),
-        ignoreParams("getCollectionInfos",      () -> "Not implemented"), // no such command
+        notImplemented("getCollectionInfos",    ObjectKind.DATABASE), // no such command
         func("getCollectionNames",              this::listCollectionNames),
-        oneDoc("getLastError",                  () -> runCommand("getLastError")),
-        oneDoc("getLastError",                  w -> runCommand(new Document("getLastError", 1).append("w", w.intValue())), Number.class),
-        oneDoc("getLastError",                  w -> runCommand(new Document("getLastError", 1).append("w", w)), String.class),
-        oneDoc("getLastError",                  (w, t) -> runCommand(new Document("getLastError", 1).append("w", w.intValue()).append("wtimeout", t.intValue())), Number.class, Number.class),
-        oneDoc("getLastError",                  (w, t) -> runCommand(new Document("getLastError", 1).append("w", w).append("wtimeout", t.intValue())), String.class, Number.class),
-        ignoreParams("getLastErrorObj",         () -> "Not implemented"), // no such command
-        ignoreParams("getLogComponents",        () -> "Not implemented"), // no such command
-        ignoreParams("getMongo",                () -> "Not implemented"), // no such command
+        func("getLastError",                    () -> runCommand("getLastError")),
+        func("getLastError",                    w -> runCommand(new Document("getLastError", 1).append("w", w.intValue())), Number.class),
+        func("getLastError",                    w -> runCommand(new Document("getLastError", 1).append("w", w)), String.class),
+        func("getLastError",                    (w, t) -> runCommand(new Document("getLastError", 1).append("w", w.intValue()).append("wtimeout", t.intValue())), Number.class, Number.class),
+        func("getLastError",                    (w, t) -> runCommand(new Document("getLastError", 1).append("w", w).append("wtimeout", t.intValue())), String.class, Number.class),
+        notImplemented("getLastErrorObj",       ObjectKind.DATABASE), // no such command
+        notImplemented("getLogComponents",      ObjectKind.DATABASE), // no such command
+        notImplemented("getMongo",              ObjectKind.DATABASE), // no such command
         func("getName",                         mongoDatabase::getName),
-        oneDoc("getPrevError",                  () -> runCommand("getPrevError")),
-        ignoreParams("getProfilingLevel",       () -> "Not implemented"), // no such command
-        ignoreParams("getProfilingStatus",      () -> "Not implemented"), // no such command
-        ignoreParams("getReplicationInfo",      () -> "Not implemented"), // no such command
-        ignoreParams("getSiblingDB",            () -> "Not implemented"), // no such command
-        ignoreParams("help",                    () -> "Not implemented"), // no such command
-        oneDoc("hostInfo",                      () -> runCommand("hostInfo")),
-        oneDoc("isMaster",                      () -> runCommand("isMaster")),
-        oneDoc("killOp",                        id -> runCommand(new Document("killOp", 1).append("op", id.intValue())), Number.class),
-        oneDoc("listCommands",                  () -> runCommand("listCommands")),
-        oneDoc("logout",                        () -> runCommand("logout")),
-        ignoreParams("printCollectionStats",    () -> "Not implemented"), // no such command
-        ignoreParams("printReplicationInfo",    () -> "Not implemented"), // no such command
-        ignoreParams("printShardingStatus",     () -> "Not implemented"), // no such command
-        ignoreParams("printSlaveReplicationInfo",() -> "Not implemented"), // no such command
-        oneDoc("resetError",                    () -> runCommand("resetError")),
-        oneDoc("runCommand",                    this::runCommand,               Map.class),
-        oneDoc("runCommand",                    this::runCommand,               String.class),
-        oneDoc("serverBuildInfo",               () -> runCommand("buildinfo")),
-        ignoreParams("serverCmdLineOpts",       () -> runCommand("getCmdLineOpts")),
-        oneDoc("serverStatus",                  () -> runCommand("serverStatus")),
-        oneDoc("serverStatus",                  m -> runCommand(appendOptions(new Document("serverStatus", 1), m)), Map.class),
-        ignoreParams("setLogLevel",             () -> "Not implemented"), // no such command
-        ignoreParams("setProfilingLevel",       () -> "Not implemented"), // no such command
-        oneDoc("shutdownServer",                () -> runCommand("shutdown")),
-        oneDoc("stats",                         () -> runCommand("dbStats")),
-        oneDoc("stats",                         n -> runCommand(new Document("dbStats", 1).append("scale", n)), Number.class),
+        func("getPrevError",                    () -> runCommand("getPrevError")),
+        notImplemented("getProfilingLevel",     ObjectKind.DATABASE), // no such command
+        notImplemented("getProfilingStatus",    ObjectKind.DATABASE), // no such command
+        notImplemented("getReplicationInfo",    ObjectKind.DATABASE), // no such command
+        notImplemented("getSiblingDB",          ObjectKind.DATABASE), // no such command
+        notImplemented("help",                  ObjectKind.DATABASE), // no such command
+        func("hostInfo",                        () -> runCommand("hostInfo")),
+        func("isMaster",                        () -> runCommand("isMaster")),
+        func("killOp",                          id -> runCommand(new Document("killOp", 1).append("op", id.intValue())), Number.class),
+        func("listCommands",                    () -> runCommand("listCommands")),
+        func("logout",                          () -> runCommand("logout")),
+        notImplemented("printCollectionStats",  ObjectKind.DATABASE), // no such command
+        notImplemented("printReplicationInfo",  ObjectKind.DATABASE), // no such command
+        notImplemented("printShardingStatus",   ObjectKind.DATABASE), // no such command
+        notImplemented("printSlaveReplicationInfo", ObjectKind.DATABASE), // no such command
+        func("resetError",                      () -> runCommand("resetError")),
+        func("runCommand",                      this::runCommand,               Map.class),
+        func("runCommand",                      this::runCommand,               String.class),
+        func("serverBuildInfo",                 () -> runCommand("buildinfo")),
+        func("serverCmdLineOpts",               () -> runCommand("getCmdLineOpts")),
+        func("serverStatus",                    () -> runCommand("serverStatus")),
+        func("serverStatus",                    m -> runCommand(appendOptions(new Document("serverStatus", 1), m)), Map.class),
+        notImplemented("setLogLevel",           ObjectKind.DATABASE), // no such command
+        notImplemented("setProfilingLevel",     ObjectKind.DATABASE), // no such command
+        func("shutdownServer",                  () -> runCommand("shutdown")),
+        func("stats",                           () -> runCommand("dbStats")),
+        func("stats",                           n -> runCommand(new Document("dbStats", 1).append("scale", n)), Number.class),
         func("version",                         this::version),
-        ignoreParams("watch",                   () -> "Not implemented"))); // no such command
+        notImplemented("watch",                 ObjectKind.DATABASE))); // no such command
   }
 
   public String getName() {
@@ -190,7 +161,7 @@ public class JMongoDatabase extends AbstractJSObject {
     if (options == null) mongoDatabase.createView(viewName, collectionName, convertedPipe);
     else {
       CreateViewOptions createViewOptions = new CreateViewOptions();
-      MapProcessor.runProcessors(createViewOptions, viewOptionsProcessors, options);
+      runProcessors(createViewOptions, CREATE_VIEW_OPTIONS, options);
       mongoDatabase.createView(viewName, collectionName, convertedPipe, createViewOptions);
     }
   }
@@ -198,7 +169,7 @@ public class JMongoDatabase extends AbstractJSObject {
   @NotNull
   private CreateCollectionOptions extractCollectionOptions(@Nullable Map<?, ?> map) {
     CreateCollectionOptions options = new CreateCollectionOptions();
-    return map == null ? options : MapProcessor.runProcessors(options, collectionOptionsProcessors, map);
+    return map == null ? options : runProcessors(options, CREATE_COLLECTION_OPTIONS, map);
   }
 
   public JMongoCollection getCollection(String s) {
@@ -215,17 +186,25 @@ public class JMongoDatabase extends AbstractJSObject {
   }
 
   private Document runCommand(Document map) {
+    return runCommand(mongoDatabase, map);
+  }
+
+  public Document runCommand(String command) {
+    return runCommand(mongoDatabase, command);
+  }
+
+  public static Document runCommand(@NotNull MongoDatabase mongoDatabase, @NotNull String command) {
     try {
-      return mongoDatabase.runCommand(map);
+      return mongoDatabase.runCommand(new Document(command, null));
     }
     catch (MongoCommandException e) {
       return toDocument(e.getResponse());
     }
   }
 
-  public Document runCommand(String command) {
+  public static Document runCommand(@NotNull MongoDatabase mongoDatabase, @NotNull Document map) {
     try {
-      return mongoDatabase.runCommand(new Document(command, null));
+      return mongoDatabase.runCommand(map);
     }
     catch (MongoCommandException e) {
       return toDocument(e.getResponse());
@@ -257,7 +236,7 @@ public class JMongoDatabase extends AbstractJSObject {
   }
 
   @Override
-  public Object getMember(final String name) {
+  public AbstractJSObject getMember(final String name) {
     AbstractJSObject member = delegate.getMember(name);
     return member != null ? member : getCollection(name);
   }

@@ -16,9 +16,10 @@ public class MongoConnection implements Connection {
   private boolean isClosed = false;
   private boolean isReadOnly = false;
 
-  public MongoConnection(@NotNull String url, @NotNull Properties info, @NotNull MongoConnectionParameters parameters, int fetchDocumentsForMeta, boolean useMongoShell) throws SQLInvalidAuthorizationSpecException {
+  public MongoConnection(@NotNull String url, @NotNull Properties info, @NotNull MongoConnectionParameters parameters,
+                         int fetchDocumentsForMeta, boolean useMongoShell, boolean useEs6) {
     this.service = new MongoService(url, info, parameters, fetchDocumentsForMeta);
-    this.scriptEngine = useMongoShell ? new MongoShellScriptEngine(parameters) : new MongoNashornScriptEngine(this);
+    this.scriptEngine = useMongoShell ? new MongoShellScriptEngine(parameters) : new MongoNashornScriptEngine(this, useEs6);
     setSchema(service.getDatabaseNameFromUrl());
   }
 

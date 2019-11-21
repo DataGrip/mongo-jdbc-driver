@@ -1,0 +1,2 @@
+|map|
+|Document{{Result=Unsupported operation: Document{{updateOne=Document{{filter=Document{{a=1}}, update=Document{{}}, upsert=true}}}}}}|

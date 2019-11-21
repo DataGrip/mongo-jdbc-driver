@@ -11,10 +11,10 @@ import java.util.ListIterator;
 /**
  * @author Liudmila Kornilova
  **/
-public class ScriptObjectMirrorList implements List<Object> {
+public class JSArray implements List<Object> {
   private final ScriptObjectMirror objectMirror;
 
-  public ScriptObjectMirrorList(@NotNull ScriptObjectMirror objectMirror) {
+  public JSArray(@NotNull ScriptObjectMirror objectMirror) {
     assert objectMirror.isArray();
     this.objectMirror = objectMirror;
   }

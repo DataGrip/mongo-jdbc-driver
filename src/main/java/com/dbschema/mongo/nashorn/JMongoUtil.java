@@ -11,9 +11,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.dbschema.mongo.Util.tryCast;
 
 @SuppressWarnings("UnusedReturnValue")
 public class JMongoUtil {
+  private static final Pattern REGEX_BODY = Pattern.compile("/(.*)/[a-z]*");
+
   public static Document parse(String text) {
     Thread.dumpStack();
     if (text != null && text.trim().length() > 0 && !text.trim().startsWith("{")) {
@@ -34,9 +40,23 @@ public class JMongoUtil {
   }
 
   private static Object toBsonValue(@Nullable Object o) {
-    return o instanceof ScriptObjectMirror && ((ScriptObjectMirror) o).isArray() ?
-           new ScriptObjectMirrorList((ScriptObjectMirror) o) :
-           o instanceof Map<?, ?> ? toBson((Map<?, ?>) o) :
+    if (o instanceof ScriptObjectMirror) {
+      ScriptObjectMirror mirror = (ScriptObjectMirror) o;
+      if (mirror.isArray()) return new JSArray((ScriptObjectMirror) o);
+
+      if ("RegExp".equals(mirror.getClassName())) {
+        String regexLiteral = (String) mirror.getDefaultValue(String.class);
+        Matcher matcher = REGEX_BODY.matcher(regexLiteral);
+        if (matcher.matches()) {
+          String body = matcher.group(1);
+          Boolean ignoreCase = tryCast(mirror.get("ignoreCase"), Boolean.class);
+          Boolean multiline = tryCast(mirror.get("multiline"), Boolean.class);
+          return Pattern.compile(body, (ignoreCase == Boolean.TRUE ? Pattern.CASE_INSENSITIVE : 0) |
+              (multiline == Boolean.TRUE ? Pattern.MULTILINE : 0));
+        }
+      }
+    }
+    return o instanceof Map<?, ?> ? toBson((Map<?, ?>) o) :
            o;
   }
 

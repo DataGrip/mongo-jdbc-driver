@@ -61,9 +61,9 @@ public class MongoJdbcDriver implements Driver {
       }
     }
     if (fetchDocumentsForMeta < 0) fetchDocumentsForMeta = 0;
-    boolean useMongoShell = USE_MONGO_SHELL_DEFAULT;
-    if (info.getProperty(USE_MONGO_SHELL) != null) {
-      useMongoShell = Boolean.parseBoolean(info.getProperty(USE_MONGO_SHELL));
+    boolean useEs6 = USE_ES6_DEFAULT;
+    if (info.getProperty(USE_ES6) != null) {
+      useEs6 = Boolean.parseBoolean(info.getProperty(USE_ES6));
     }
 
     if (url.startsWith("jdbc:")) {
@@ -95,7 +95,7 @@ public class MongoJdbcDriver implements Driver {
     MongoConnectionParameters parameters = new MongoConnectionParameters(username, password == null ? null : password.toCharArray(),
         source, databaseNameFromUrl, authMechanism);
 
-    return new MongoConnection(url, info, parameters, fetchDocumentsForMeta, useMongoShell);
+    return new MongoConnection(url, info, parameters, fetchDocumentsForMeta, USE_MONGO_SHELL_DEFAULT, useEs6);
   }
 
 

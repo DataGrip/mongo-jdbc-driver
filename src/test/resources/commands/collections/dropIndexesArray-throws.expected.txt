@@ -1,0 +1,1 @@
+Method db.collection.dropIndexes(<array>) is not implemented

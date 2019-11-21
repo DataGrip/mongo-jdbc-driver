@@ -1,0 +1,1 @@
+Method not found: db.col.unknownMethod

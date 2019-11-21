@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -131,7 +132,9 @@ public class MongoPreparedStatement implements PreparedStatement {
         matcher = PATTERN_DELETE.matcher(sql);
         if (matcher.matches()) {
           JMongoCollection collection = getCollectionMandatory(matcher.group(1), false);
-          collection.deleteOne(new Document().append("_id", id));
+          HashMap<String, Object> m = new HashMap<>();
+          m.put("_id", id);
+          collection.deleteOne(m);
           return 1;
         }
       }

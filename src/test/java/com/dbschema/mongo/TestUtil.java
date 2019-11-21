@@ -44,6 +44,7 @@ public class TestUtil {
 
   public static void doTest(String name, Connection connection, String testDataPath) throws IOException, SQLException {
     boolean hasResults = !name.endsWith("-undefined");
+    boolean throwsE = name.endsWith("-throws");
     File testFile = new File(testDataPath + "/" + name + ".js");
     String test = FileUtils.readFileToString(testFile, StandardCharsets.UTF_8);
     String[] before = new String[1];
@@ -59,23 +60,41 @@ public class TestUtil {
       try {
         run(statement, before);
         assertNotNull("Command cannot be null", command[0]);
-        boolean result = statement.execute(command[0]);
-        if (!hasResults) {
-          assertFalse("Command should not produce nothing", result);
+        try {
+          boolean result = statement.execute(command[0]);
+          if (!hasResults) {
+            assertFalse("Command should not produce nothing", result);
+          }
+          else {
+            assertTrue("Command should produce result set", result);
+            ResultSet resultSet = statement.getResultSet();
+            assertNotNull("Result set cannot be null", resultSet);
+            String actual = print(resultSet);
+            compare(testDataPath, name, actual);
+          }
         }
-        else {
-          assertTrue("Command should produce result set", result);
-          ResultSet resultSet = statement.getResultSet();
-          assertNotNull("Result set cannot be null", resultSet);
-          String actual = print(resultSet);
-          File expectedFile = new File(testDataPath + "/" + name + ".expected.txt");
-          String expected = FileUtils.readFileToString(expectedFile, StandardCharsets.UTF_8);
-          assertEquals(expected.trim(), replaceId(actual).trim());
+        catch (Throwable t) {
+          if (!throwsE) throw t;
+          compare(testDataPath, name, t.getMessage());
         }
       }
       finally {
         runIgnore(statement, clear);
       }
+    }
+  }
+
+  private static void compare(String testDataPath, String name, String actual) throws IOException {
+    File expectedFile = new File(testDataPath + "/" + name + ".expected.txt");
+    actual = replaceId(actual).trim();
+    if (!expectedFile.exists()) {
+      assertTrue(expectedFile.createNewFile());
+      FileUtils.write(expectedFile, actual, StandardCharsets.UTF_8);
+      fail("Created output file " + expectedFile);
+    }
+    else {
+      String expected = FileUtils.readFileToString(expectedFile, StandardCharsets.UTF_8);
+      assertEquals(expected.trim(), actual);
     }
   }
 

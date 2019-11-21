@@ -1,0 +1,2 @@
+|map|
+|Document{{acknowledged=true, deletedCount=2}}|

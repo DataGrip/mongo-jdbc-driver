@@ -1,0 +1,2 @@
+|map|
+|Document{{acknowledged=true, deletedCount=0, insertedCount=2, matchedCount=0, upsertedCount=0, insertedIds=Document{{}}}}|

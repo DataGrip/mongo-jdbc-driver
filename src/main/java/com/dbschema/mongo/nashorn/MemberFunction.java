@@ -1,11 +1,10 @@
 package com.dbschema.mongo.nashorn;
 
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.*;
@@ -44,8 +43,28 @@ public class MemberFunction {
     return new MemberFunction(name, args -> args.length == 0 ? Optional.of(function.get()) : Optional.empty());
   }
 
-  public static <T> MemberFunction ignoreParams(String name, Supplier<T> function) {
-    return new MemberFunction(name, args -> Optional.of(function.get()));
+  public static MemberFunction ignoreParams(String name, Runnable function) {
+    return new MemberFunction(name, args -> {
+      function.run();
+      return Optional.of(Undefined.INSTANCE);
+    });
+  }
+
+  public static MemberFunction notImplemented(String name, ObjectKind objectKind) {
+    return ignoreParams(name, () -> {
+      String msg;
+      switch (objectKind) {
+        case DATABASE:
+          msg = "Method db." + name + " is not implemented";
+          break;
+        case COLLECTION:
+          msg = "Method db.collection." + name + " is not implemented";
+          break;
+        default:
+          msg = "Method " + name + " is not implemented";
+      }
+      throw new UnsupportedOperationException(msg);
+    });
   }
 
   public static <T, R> MemberFunction func(String name, Function<T, R> function, Class<T> clazz) {
@@ -56,24 +75,16 @@ public class MemberFunction {
     });
   }
 
-  public static MemberFunction oneDoc(String name, Supplier<Document> function) {
-    MemberFunction func = func(name, function);
-    return new MemberFunction(name, args -> func.tryRun(args).map(Collections::singletonList));
-  }
-
-  public static <T> MemberFunction oneDoc(String name, Function<T, Document> function, Class<T> clazz) {
-    MemberFunction func = func(name, function, clazz);
-    return new MemberFunction(name, args -> func.tryRun(args).map(Collections::singletonList));
-  }
-
-  public static <T1, T2> MemberFunction oneDoc(String name, BiFunction<T1, T2, Document> function, Class<T1> clazzA, Class<T2> clazzB) {
-    MemberFunction func = func(name, function, clazzA, clazzB);
-    return new MemberFunction(name, args -> func.tryRun(args).map(Collections::singletonList));
-  }
-
-  public static <T1, T2, T3> MemberFunction oneDoc(String name, TriFunction<T1, T2, T3, Document> function, Class<T1> clazzA, Class<T2> clazzB, Class<T3> clzzC) {
-    MemberFunction func = func(name, function, clazzA, clazzB, clzzC);
-    return new MemberFunction(name, args -> func.tryRun(args).map(Collections::singletonList));
+  public static <T, R> MemberFunction vararg(String name, Function<List<T>, R> function, Class<T> clazz) {
+    return new MemberFunction(name, args -> {
+      List<T> objects = new ArrayList<>();
+      for (Object arg : args) {
+        Optional<T> o = isInstance(clazz, arg);
+        if (!o.isPresent()) return Optional.empty();
+        objects.add(o.get());
+      }
+      return Optional.of(function.apply(objects));
+    });
   }
 
   public static <T1, T2, R> MemberFunction func(String name, BiFunction<T1, T2, R> function, Class<T1> clazzA, Class<T2> clazzB) {
@@ -159,8 +170,15 @@ public class MemberFunction {
       return Optional.of((T) value);
     if (clazz == List.class && value instanceof ScriptObjectMirror && ((ScriptObjectMirror) value).isArray()) {
       //noinspection unchecked
-      return Optional.of((T) new ScriptObjectMirrorList((ScriptObjectMirror) value));
+      return Optional.of((T) new JSArray((ScriptObjectMirror) value));
     }
+    if (clazz == JSFunction.class && value instanceof ScriptObjectMirror && ((ScriptObjectMirror) value).isFunction())
+      return Optional.of((T) new JSFunction((ScriptObjectMirror) value));
     return Optional.empty();
+  }
+
+  public enum ObjectKind {
+    DATABASE,
+    COLLECTION
   }
 }

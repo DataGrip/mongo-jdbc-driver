@@ -13,6 +13,8 @@ public class DriverPropertyInfoHelper {
   public static final int FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT = 10;
   public static final String USE_MONGO_SHELL = "use_mongo_shell";
   public static final boolean USE_MONGO_SHELL_DEFAULT = false;
+  public static final String USE_ES6 = "use_ecmascript_6";
+  public static final boolean USE_ES6_DEFAULT = true;
 
 
   public DriverPropertyInfo[] getPropertyInfo() {
@@ -43,7 +45,7 @@ public class DriverPropertyInfoHelper {
     addPropInfo(propInfos, FETCH_DOCUMENTS_FOR_METAINFO, Integer.toString(FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT), "Number of documents that will be fetched per collection in order" +
         "to return meta information from DatabaseMetaData.getColumns method.", null);
 
-    addPropInfo(propInfos, USE_MONGO_SHELL, Boolean.toString(USE_MONGO_SHELL_DEFAULT), "Use Mongo shell to run commands. If set to false then Nashorn is used", null);
+    addPropInfo(propInfos, USE_ES6, Boolean.toString(USE_ES6_DEFAULT), "Start Nashorn script engine with ecmascript 6 standard", null);
 
     return propInfos.toArray(new DriverPropertyInfo[0]);
   }

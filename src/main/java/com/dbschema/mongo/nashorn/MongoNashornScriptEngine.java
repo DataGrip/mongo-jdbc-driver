@@ -9,7 +9,7 @@ import com.dbschema.mongo.resultSet.ResultSetIterator;
 import com.mongodb.AggregationOutput;
 import com.mongodb.client.MongoIterable;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
-import jdk.nashorn.internal.runtime.ScriptRuntime;
+import org.bson.Document;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,6 +19,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,10 +44,12 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
       "var ISODate = function( str ) { return new java.text.SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\").parse(str);}";
 
   private final MongoConnection connection;
+  private final boolean useEs6;
   private ScriptEngine engine;
 
-  public MongoNashornScriptEngine(@NotNull MongoConnection connection) {
+  public MongoNashornScriptEngine(@NotNull MongoConnection connection, boolean useEs6) {
     this.connection = connection;
+    this.useEs6 = useEs6;
   }
 
   private ScriptEngine getEngine() throws SQLException {
@@ -63,7 +66,8 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
       }
       try {
         NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-        engine = factory.getScriptEngine(MongoNashornScriptEngine.class.getClassLoader());
+        String[] args = useEs6 ? new String[]{"--language=es6"} : new String[0];
+        engine = factory.getScriptEngine(args);
         engine.eval(STARTUP_SCRIPT);
       }
       catch (Throwable t) {
@@ -150,6 +154,9 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
       }
       else if (obj instanceof ResultSet) {
         return (ResultSet) obj;
+      }
+      else if (obj instanceof Document) {
+        return new ResultSetIterator(Collections.singletonList(obj));
       }
       return ok(obj);
     }

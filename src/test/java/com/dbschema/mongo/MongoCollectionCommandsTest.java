@@ -1,8 +1,6 @@
 package com.dbschema.mongo;
 
 import com.dbschema.MongoJdbcDriver;
-import com.dbschema.mongo.TestDataReader.SectionHandler;
-import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -11,14 +9,15 @@ import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.SQLInvalidAuthorizationSpecException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
 
-import static com.dbschema.mongo.TestUtil.*;
-import static org.junit.Assert.*;
+import static com.dbschema.mongo.TestUtil.URL;
+import static com.dbschema.mongo.TestUtil.doTest;
 
 /**
  * @author Liudmila Kornilova
