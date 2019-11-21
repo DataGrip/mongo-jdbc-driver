@@ -66,9 +66,9 @@ public class JMongoDatabase extends AbstractJSObject {
         oneDoc("aggregate",                     this::aggregate,                List.class, Map.class),
         oneDoc("cloneCollection",               this::cloneCollection,          String.class, String.class),
         oneDoc("cloneCollection",               this::cloneCollection,          String.class, String.class, Map.class),
-        igoreParams("cloneDatabase",            () -> "Not implemented"), // no such command
+        ignoreParams("cloneDatabase",           () -> "Not implemented"), // no such command
         func("commandHelp",                     this::commandHelp, String.class),
-        igoreParams("copyDatabase",             () -> "Not implemented"), // no such command
+        ignoreParams("copyDatabase",            () -> "Not implemented"), // no such command
         voidFunc("createCollection",            mongoDatabase::createCollection,String.class),
         voidFunc("createCollection",            this::createCollection,         String.class, Map.class),
         voidFunc("createView",                  this::createView,               String.class, String.class, List.class),
@@ -78,46 +78,46 @@ public class JMongoDatabase extends AbstractJSObject {
         oneDoc("fsyncLock",                     () -> runCommand("fsync")),
         oneDoc("fsyncUnlock",                   () -> runCommand("fsyncUnlock")),
         func("getCollection",                   this::getCollection,            String.class),
-        igoreParams("getCollectionInfos",       () -> "Not implemented"), // no such command
+        ignoreParams("getCollectionInfos",      () -> "Not implemented"), // no such command
         func("getCollectionNames",              this::listCollectionNames),
         oneDoc("getLastError",                  () -> runCommand("getLastError")),
         oneDoc("getLastError",                  w -> runCommand(new Document("getLastError", 1).append("w", w.intValue())), Number.class),
         oneDoc("getLastError",                  w -> runCommand(new Document("getLastError", 1).append("w", w)), String.class),
         oneDoc("getLastError",                  (w, t) -> runCommand(new Document("getLastError", 1).append("w", w.intValue()).append("wtimeout", t.intValue())), Number.class, Number.class),
         oneDoc("getLastError",                  (w, t) -> runCommand(new Document("getLastError", 1).append("w", w).append("wtimeout", t.intValue())), String.class, Number.class),
-        igoreParams("getLastErrorObj",          () -> "Not implemented"), // no such command
-        igoreParams("getLogComponents",         () -> "Not implemented"), // no such command
-        igoreParams("getMongo",                 () -> "Not implemented"), // no such command
+        ignoreParams("getLastErrorObj",         () -> "Not implemented"), // no such command
+        ignoreParams("getLogComponents",        () -> "Not implemented"), // no such command
+        ignoreParams("getMongo",                () -> "Not implemented"), // no such command
         func("getName",                         mongoDatabase::getName),
         oneDoc("getPrevError",                  () -> runCommand("getPrevError")),
-        igoreParams("getProfilingLevel",        () -> "Not implemented"), // no such command
-        igoreParams("getProfilingStatus",       () -> "Not implemented"), // no such command
-        igoreParams("getReplicationInfo",       () -> "Not implemented"), // no such command
-        igoreParams("getSiblingDB",             () -> "Not implemented"), // no such command
-        igoreParams("help",                     () -> "Not implemented"), // no such command
+        ignoreParams("getProfilingLevel",       () -> "Not implemented"), // no such command
+        ignoreParams("getProfilingStatus",      () -> "Not implemented"), // no such command
+        ignoreParams("getReplicationInfo",      () -> "Not implemented"), // no such command
+        ignoreParams("getSiblingDB",            () -> "Not implemented"), // no such command
+        ignoreParams("help",                    () -> "Not implemented"), // no such command
         oneDoc("hostInfo",                      () -> runCommand("hostInfo")),
         oneDoc("isMaster",                      () -> runCommand("isMaster")),
         oneDoc("killOp",                        id -> runCommand(new Document("killOp", 1).append("op", id.intValue())), Number.class),
         oneDoc("listCommands",                  () -> runCommand("listCommands")),
         oneDoc("logout",                        () -> runCommand("logout")),
-        igoreParams("printCollectionStats",     () -> "Not implemented"), // no such command
-        igoreParams("printReplicationInfo",     () -> "Not implemented"), // no such command
-        igoreParams("printShardingStatus",      () -> "Not implemented"), // no such command
-        igoreParams("printSlaveReplicationInfo",() -> "Not implemented"), // no such command
+        ignoreParams("printCollectionStats",    () -> "Not implemented"), // no such command
+        ignoreParams("printReplicationInfo",    () -> "Not implemented"), // no such command
+        ignoreParams("printShardingStatus",     () -> "Not implemented"), // no such command
+        ignoreParams("printSlaveReplicationInfo",() -> "Not implemented"), // no such command
         oneDoc("resetError",                    () -> runCommand("resetError")),
         oneDoc("runCommand",                    this::runCommand,               Map.class),
         oneDoc("runCommand",                    this::runCommand,               String.class),
         oneDoc("serverBuildInfo",               () -> runCommand("buildinfo")),
-        igoreParams("serverCmdLineOpts",        () -> runCommand("getCmdLineOpts")),
+        ignoreParams("serverCmdLineOpts",       () -> runCommand("getCmdLineOpts")),
         oneDoc("serverStatus",                  () -> runCommand("serverStatus")),
         oneDoc("serverStatus",                  m -> runCommand(appendOptions(new Document("serverStatus", 1), m)), Map.class),
-        igoreParams("setLogLevel",              () -> "Not implemented"), // no such command
-        igoreParams("setProfilingLevel",        () -> "Not implemented"), // no such command
+        ignoreParams("setLogLevel",             () -> "Not implemented"), // no such command
+        ignoreParams("setProfilingLevel",       () -> "Not implemented"), // no such command
         oneDoc("shutdownServer",                () -> runCommand("shutdown")),
         oneDoc("stats",                         () -> runCommand("dbStats")),
         oneDoc("stats",                         n -> runCommand(new Document("dbStats", 1).append("scale", n)), Number.class),
         func("version",                         this::version),
-        igoreParams("watch",                    () -> "Not implemented"))); // no such command
+        ignoreParams("watch",                   () -> "Not implemented"))); // no such command
   }
 
   public String getName() {

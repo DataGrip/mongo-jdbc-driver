@@ -44,7 +44,7 @@ public class MemberFunction {
     return new MemberFunction(name, args -> args.length == 0 ? Optional.of(function.get()) : Optional.empty());
   }
 
-  public static <T> MemberFunction igoreParams(String name, Supplier<T> function) {
+  public static <T> MemberFunction ignoreParams(String name, Supplier<T> function) {
     return new MemberFunction(name, args -> Optional.of(function.get()));
   }
 
