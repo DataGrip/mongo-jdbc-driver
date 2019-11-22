@@ -2,70 +2,61 @@ package com.dbschema.mongo.nashorn;
 
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCursor;
+import jdk.nashorn.api.scripting.AbstractJSObject;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.concurrent.TimeUnit;
+import java.util.Arrays;
+import java.util.Map;
+
+import static com.dbschema.mongo.nashorn.JMongoUtil.toBson;
+import static com.dbschema.mongo.nashorn.MemberFunction.func;
+import static com.dbschema.mongo.nashorn.MemberFunction.notImplemented;
 
 
-public class JAggregateIterable implements com.mongodb.client.MongoIterable<Document> {
-  private final AggregateIterable<Document> aggregateIterable;
+public class JAggregateIterable extends AbstractJSObject implements Iterable<Document> {
+  private final AggregateIterable<Document> iterable;
+  private final MongoJSObject delegate;
 
-  public JAggregateIterable(AggregateIterable<Document> aggregateIterable) {
-    this.aggregateIterable = aggregateIterable;
+  public JAggregateIterable(AggregateIterable<Document> iterable) {
+    this.iterable = iterable;
+    delegate = new MongoJSObject(Arrays.asList(
+        notImplemented("close",           MemberFunction.ObjectKind.CURSOR),
+        notImplemented("isClosed",        MemberFunction.ObjectKind.CURSOR),
+        notImplemented("forEach",         MemberFunction.ObjectKind.CURSOR),
+        notImplemented("hasNext",         MemberFunction.ObjectKind.CURSOR),
+        func("hint",                      m -> { iterable.hint(toBson(m)); return this; }, Map.class),
+        notImplemented("isExhausted",     MemberFunction.ObjectKind.CURSOR),
+        notImplemented("itcount",         MemberFunction.ObjectKind.CURSOR),
+        notImplemented("next",            MemberFunction.ObjectKind.CURSOR),
+        notImplemented("objsLeftInBatch", MemberFunction.ObjectKind.CURSOR),
+        notImplemented("pretty",          MemberFunction.ObjectKind.CURSOR),
+        notImplemented("toArray",         MemberFunction.ObjectKind.CURSOR)
+    ));
   }
 
-  public JAggregateIterable allowDiskUse(Boolean aBoolean) {
-    aggregateIterable.allowDiskUse(aBoolean);
-    return this;
+  @Override
+  public boolean hasMember(String name) {
+    return delegate.hasMember(name);
   }
 
-  @NotNull
-  public JAggregateIterable batchSize(int i) {
-    aggregateIterable.batchSize(i);
-    return this;
+  @Override
+  public Object getMember(String name) {
+    AbstractJSObject member = delegate.getMember(name);
+    return member != null ? member : new AbstractJSObject() {
+      @Override
+      public Object call(Object thiz, Object... args) {
+        throw new UnsupportedOperationException("Method not found: cursor." + name);
+      }
+    };
   }
 
-  public JAggregateIterable maxTime(long l, TimeUnit timeUnit) {
-    aggregateIterable.maxTime(l, timeUnit);
-    return this;
-  }
-
-  @SuppressWarnings("deprecation")
-  public JAggregateIterable useCursor(Boolean aBoolean) {
-    aggregateIterable.useCursor(aBoolean);
-    return this;
+  public void batchSize(int v) {
+    iterable.batchSize(v);
   }
 
   @NotNull
   public MongoCursor<Document> iterator() {
-    return aggregateIterable.iterator();
-  }
-
-  @NotNull
-  @Override
-  public MongoCursor<Document> cursor() {
-    return aggregateIterable.cursor();
-  }
-
-  public Document first() {
-    return aggregateIterable.first();
-  }
-
-
-  @NotNull
-  public <U> com.mongodb.client.MongoIterable<U> map(@NotNull com.mongodb.Function<Document, U> function) {
-    return aggregateIterable.map(function);
-  }
-
-  @SuppressWarnings("deprecation")
-  public void forEach(@NotNull com.mongodb.Block<? super Document> block) {
-    aggregateIterable.forEach(block);
-  }
-
-  @NotNull
-  public <A extends Collection<? super Document>> A into(@NotNull A a) {
-    return aggregateIterable.into(a);
+    return iterable.iterator();
   }
 }

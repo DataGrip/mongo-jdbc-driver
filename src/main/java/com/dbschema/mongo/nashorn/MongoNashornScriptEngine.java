@@ -140,7 +140,11 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
         return null;
       }
       else if (obj instanceof Iterable) {
-        if (obj instanceof MongoIterable && fetchSize > 1) ((MongoIterable<?>) obj).batchSize(fetchSize);
+        if (fetchSize > 1) {
+          if (obj instanceof JFindIterable) ((JFindIterable) obj).batchSize(fetchSize);
+          else if (obj instanceof JAggregateIterable) ((JAggregateIterable) obj).batchSize(fetchSize);
+          else if (obj instanceof MongoIterable<?>) ((MongoIterable<?>) obj).batchSize(fetchSize);
+        }
         return new ResultSetIterator(((Iterable<?>) obj).iterator());
       }
       else if (obj instanceof Iterator) {

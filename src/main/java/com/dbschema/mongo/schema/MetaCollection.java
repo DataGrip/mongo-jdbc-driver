@@ -47,13 +47,13 @@ public class MetaCollection extends MetaJson {
 
   private void discoverCollectionRandomRecords(JMongoCollection mongoCollection, int iterations) {
     int skip = 10, i = 0;
-    final JFindIterable jFindIterable = mongoCollection.find(); // .limit(-1)
+    JFindIterable jFindIterable = mongoCollection.find(); // .limit(-1)
     while (i++ < iterations) {
       final MongoCursor<?> crs = jFindIterable.iterator();
       while (i++ < iterations && crs.hasNext()) {
         discoverMap(this, crs.next());
       }
-      jFindIterable.skip(skip);
+      jFindIterable = jFindIterable.skip(skip);
       skip = skip * 2;
     }
   }

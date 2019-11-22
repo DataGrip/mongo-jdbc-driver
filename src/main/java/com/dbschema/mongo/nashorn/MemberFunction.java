@@ -60,6 +60,9 @@ public class MemberFunction {
         case COLLECTION:
           msg = "Method db.collection." + name + " is not implemented";
           break;
+        case CURSOR:
+          msg = "Method cursor." + name + " is not implemented";
+          break;
         default:
           msg = "Method " + name + " is not implemented";
       }
@@ -179,6 +182,7 @@ public class MemberFunction {
 
   public enum ObjectKind {
     DATABASE,
-    COLLECTION
+    COLLECTION,
+    CURSOR
   }
 }
