@@ -46,7 +46,7 @@ public class JMongoCollection extends AbstractJSObject {
         vararg("aggregate",                   this::aggregateVararg, Map.class),
         func("bulkWrite",                     this::bulkWrite, List.class),
         func("bulkWrite",                     this::bulkWrite, List.class, Map.class),
-        func("copyTo",                        n -> new JAggregateIterable<>(nativeCollection.aggregate(Collections.singletonList(new Document("$out", n)))), String.class),
+        func("copyTo",                        n -> new JAggregateIterable(nativeCollection.aggregate(Collections.singletonList(new Document("$out", n)))), String.class),
         func("count",                         nativeCollection::count),
         func("count",                         this::count, Map.class),
         func("count",                         this::count, Map.class, Map.class),
@@ -287,12 +287,12 @@ public class JMongoCollection extends AbstractJSObject {
     return nativeCollection.estimatedDocumentCount(runProcessors(new EstimatedDocumentCountOptions(), ESTIMATED_DOCUMENT_OPTIONS, options));
   }
 
-  public JFindIterable<Document> find(Map<?, ?> map) {
-    return new JFindIterable<>(nativeCollection.find(toBson(map)));
+  public JFindIterable find(Map<?, ?> map) {
+    return new JFindIterable(nativeCollection.find(toBson(map)));
   }
 
-  public JFindIterable<Document> find(Map<?, ?> map, Map<?, ?> proj) {
-    return new JFindIterable<>(nativeCollection.find(toBson(map)).projection(toBson(proj)));
+  public JFindIterable find(Map<?, ?> map, Map<?, ?> proj) {
+    return new JFindIterable(nativeCollection.find(toBson(map)).projection(toBson(proj)));
   }
 
   public Document deleteOne(Map<?, ?> filter) {
@@ -371,45 +371,33 @@ public class JMongoCollection extends AbstractJSObject {
 
   //---------------------------------------------------------------
 
-  public JFindIterable<Document> find() {
-    return new JFindIterable<>(nativeCollection.find());
+  public JFindIterable find() {
+    return new JFindIterable(nativeCollection.find());
   }
 
-  public <TResult> JFindIterable<TResult> find(Class<TResult> aClass) {
-    return new JFindIterable<>(nativeCollection.find(aClass));
-  }
-
-  public JFindIterable<Document> find(Bson bson) {
-    return new JFindIterable<>(nativeCollection.find(bson));
-  }
-
-  public <TResult> JFindIterable<TResult> find(Bson bson, Class<TResult> aClass) {
-    return new JFindIterable<>(nativeCollection.find(bson, aClass));
-  }
-
-  public JAggregateIterable<Document> aggregateVararg(@SuppressWarnings("rawtypes") List<Map> pipeline) {
+  public JAggregateIterable aggregateVararg(@SuppressWarnings("rawtypes") List<Map> pipeline) {
     List<Bson> convertedPipe = new ArrayList<>();
     for (Map<?, ?> pipe : pipeline) {
       convertedPipe.add(toBson(pipe));
     }
-    return new JAggregateIterable<>(nativeCollection.aggregate(convertedPipe));
+    return new JAggregateIterable(nativeCollection.aggregate(convertedPipe));
   }
 
-  public JAggregateIterable<Document> aggregate(List<?> pipeline, Map<?, ?> options) {
+  public JAggregateIterable aggregate(List<?> pipeline, Map<?, ?> options) {
     List<Bson> convertedPipe = new ArrayList<>(pipeline.size());
     for (Object pipe : pipeline) {
       if (pipe instanceof Map<?, ?>) convertedPipe.add(toBson((Map<?, ?>) pipe));
     }
     AggregateIterable<Document> aggregateIterable = nativeCollection.aggregate(convertedPipe);
-    return new JAggregateIterable<>(runProcessors(aggregateIterable, AGGREGATE_ITERABLE, options));
+    return new JAggregateIterable(runProcessors(aggregateIterable, AGGREGATE_ITERABLE, options));
   }
 
-  public JAggregateIterable<Document> aggregate(List<?> pipeline) {
+  public JAggregateIterable aggregate(List<?> pipeline) {
     List<Bson> convertedPipe = new ArrayList<>(pipeline.size());
     for (Object pipe : pipeline) {
       if (pipe instanceof Map<?, ?>) convertedPipe.add(toBson((Map<?, ?>) pipe));
     }
-    return new JAggregateIterable<>(nativeCollection.aggregate(convertedPipe));
+    return new JAggregateIterable(nativeCollection.aggregate(convertedPipe));
   }
 
   public void insertOne(Document o) {

@@ -2,71 +2,70 @@ package com.dbschema.mongo.nashorn;
 
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCursor;
+import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 
-@SuppressWarnings("unused")
-public class JAggregateIterable<TResult> implements com.mongodb.client.MongoIterable<TResult> {
+public class JAggregateIterable implements com.mongodb.client.MongoIterable<Document> {
+  private final AggregateIterable<Document> aggregateIterable;
 
-  private final AggregateIterable<TResult> aggregateIterable;
-
-  public JAggregateIterable(AggregateIterable<TResult> aggregateIterable) {
+  public JAggregateIterable(AggregateIterable<Document> aggregateIterable) {
     this.aggregateIterable = aggregateIterable;
   }
 
-  public JAggregateIterable<TResult> allowDiskUse(Boolean aBoolean) {
+  public JAggregateIterable allowDiskUse(Boolean aBoolean) {
     aggregateIterable.allowDiskUse(aBoolean);
     return this;
   }
 
   @NotNull
-  public JAggregateIterable<TResult> batchSize(int i) {
+  public JAggregateIterable batchSize(int i) {
     aggregateIterable.batchSize(i);
     return this;
   }
 
-  public JAggregateIterable<TResult> maxTime(long l, TimeUnit timeUnit) {
+  public JAggregateIterable maxTime(long l, TimeUnit timeUnit) {
     aggregateIterable.maxTime(l, timeUnit);
     return this;
   }
 
   @SuppressWarnings("deprecation")
-  public JAggregateIterable<TResult> useCursor(Boolean aBoolean) {
+  public JAggregateIterable useCursor(Boolean aBoolean) {
     aggregateIterable.useCursor(aBoolean);
     return this;
   }
 
   @NotNull
-  public MongoCursor<TResult> iterator() {
+  public MongoCursor<Document> iterator() {
     return aggregateIterable.iterator();
   }
 
   @NotNull
   @Override
-  public MongoCursor<TResult> cursor() {
+  public MongoCursor<Document> cursor() {
     return aggregateIterable.cursor();
   }
 
-  public TResult first() {
+  public Document first() {
     return aggregateIterable.first();
   }
 
 
   @NotNull
-  public <U> com.mongodb.client.MongoIterable<U> map(@NotNull com.mongodb.Function<TResult, U> function) {
+  public <U> com.mongodb.client.MongoIterable<U> map(@NotNull com.mongodb.Function<Document, U> function) {
     return aggregateIterable.map(function);
   }
 
   @SuppressWarnings("deprecation")
-  public void forEach(@NotNull com.mongodb.Block<? super TResult> block) {
+  public void forEach(@NotNull com.mongodb.Block<? super Document> block) {
     aggregateIterable.forEach(block);
   }
 
   @NotNull
-  public <A extends Collection<? super TResult>> A into(@NotNull A a) {
+  public <A extends Collection<? super Document>> A into(@NotNull A a) {
     return aggregateIterable.into(a);
   }
 }

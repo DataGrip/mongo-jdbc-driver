@@ -17,47 +17,45 @@ import java.util.concurrent.TimeUnit;
 import static com.dbschema.mongo.nashorn.JMongoUtil.toBson;
 
 
-@SuppressWarnings({"unused", "UnusedReturnValue"})
-public class JFindIterable<TResult> implements com.mongodb.client.MongoIterable<TResult> {
+public class JFindIterable implements com.mongodb.client.MongoIterable<Document> {
+  private final FindIterable<Document> findIterable;
 
-  private final FindIterable<TResult> findIterable;
-
-  public JFindIterable(FindIterable<TResult> findIterable) {
+  public JFindIterable(FindIterable<Document> findIterable) {
     this.findIterable = findIterable;
   }
 
-  public JFindIterable<TResult> filter(String str) {
+  public JFindIterable filter(String str) {
     findIterable.filter(JMongoUtil.parse(str));
     return this;
   }
 
-  public JFindIterable<TResult> filter(Map<?, ?> map) {
+  public JFindIterable filter(Map<?, ?> map) {
     findIterable.filter(toBson(map));
     return this;
   }
 
-  public JFindIterable<TResult> modifiers(String str) {
+  public JFindIterable modifiers(String str) {
     //noinspection deprecation
     findIterable.modifiers(JMongoUtil.parse(str));
     return this;
   }
 
-  public JFindIterable<TResult> projection(String str) {
+  public JFindIterable projection(String str) {
     findIterable.projection(JMongoUtil.parse(str));
     return this;
   }
 
-  public JFindIterable<TResult> projection(Map<?, ?> map) {
+  public JFindIterable projection(Map<?, ?> map) {
     findIterable.projection(toBson(map));
     return this;
   }
 
-  public JFindIterable<TResult> sort(String str) {
+  public JFindIterable sort(String str) {
     findIterable.sort(JMongoUtil.parse(str));
     return this;
   }
 
-  public JFindIterable<TResult> sort(Map<?, ?> map) {
+  public JFindIterable sort(Map<?, ?> map) {
     findIterable.sort(toBson(map));
     return this;
   }
@@ -65,94 +63,94 @@ public class JFindIterable<TResult> implements com.mongodb.client.MongoIterable<
 
   //---------------------------------------------------------------
 
-  public JFindIterable<TResult> filter(Bson bson) {
+  public JFindIterable filter(Bson bson) {
     findIterable.filter(bson);
     return this;
   }
 
-  public JFindIterable<TResult> limit(int i) {
+  public JFindIterable limit(int i) {
     findIterable.limit(i);
     return this;
   }
 
-  public JFindIterable<TResult> skip(int i) {
+  public JFindIterable skip(int i) {
     findIterable.skip(i);
     return this;
   }
 
-  public JFindIterable<TResult> maxTime(long l, TimeUnit timeUnit) {
+  public JFindIterable maxTime(long l, TimeUnit timeUnit) {
     findIterable.maxTime(l, timeUnit);
     return this;
   }
 
-  public JFindIterable<TResult> modifiers(Bson bson) {
+  public JFindIterable modifiers(Bson bson) {
     //noinspection deprecation
     findIterable.modifiers(bson);
     return this;
   }
 
-  public JFindIterable<TResult> projection(Bson bson) {
+  public JFindIterable projection(Bson bson) {
     findIterable.projection(bson);
     return this;
   }
 
-  public JFindIterable<TResult> sort(Bson bson) {
+  public JFindIterable sort(Bson bson) {
     findIterable.sort(bson);
     return this;
   }
 
-  public JFindIterable<TResult> noCursorTimeout(boolean b) {
+  public JFindIterable noCursorTimeout(boolean b) {
     findIterable.noCursorTimeout(b);
     return this;
   }
 
-  public JFindIterable<TResult> oplogReplay(boolean b) {
+  public JFindIterable oplogReplay(boolean b) {
     findIterable.oplogReplay(b);
     return this;
   }
 
-  public JFindIterable<TResult> partial(boolean b) {
+  public JFindIterable partial(boolean b) {
     findIterable.partial(b);
     return this;
   }
 
-  public JFindIterable<TResult> cursorType(CursorType cursorType) {
+  public JFindIterable cursorType(CursorType cursorType) {
     findIterable.cursorType(cursorType);
     return this;
   }
 
   @NotNull
-  public JFindIterable<TResult> batchSize(int i) {
+  public JFindIterable batchSize(int i) {
     findIterable.batchSize(i);
     return this;
   }
 
   @NotNull
-  public MongoCursor<TResult> iterator() {
+  public MongoCursor<Document> iterator() {
     return findIterable.iterator();
   }
 
   @NotNull
   @Override
-  public MongoCursor<TResult> cursor() {
+  public MongoCursor<Document> cursor() {
     return findIterable.cursor();
   }
 
-  public TResult first() {
+  public Document first() {
     return findIterable.first();
   }
 
   @NotNull
-  public <U> MongoIterable<U> map(@NotNull Function<TResult, U> tResultUFunction) {
-    return findIterable.map(tResultUFunction);
+  public <U> MongoIterable<U> map(@NotNull Function<Document, U> DocumentUFunction) {
+    return findIterable.map(DocumentUFunction);
   }
 
   @NotNull
-  public <A extends Collection<? super TResult>> A into(@NotNull A a) {
+  public <A extends Collection<? super Document>> A into(@NotNull A a) {
     return findIterable.into(a);
   }
 
-  public void forEach(@NotNull Block<? super TResult> block) {
+  public void forEach(@NotNull Block<? super Document> block) {
     //noinspection deprecation
     findIterable.forEach(block);
   }

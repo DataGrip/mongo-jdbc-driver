@@ -47,7 +47,7 @@ public class MetaCollection extends MetaJson {
 
   private void discoverCollectionRandomRecords(JMongoCollection mongoCollection, int iterations) {
     int skip = 10, i = 0;
-    final JFindIterable<?> jFindIterable = mongoCollection.find(); // .limit(-1)
+    final JFindIterable jFindIterable = mongoCollection.find(); // .limit(-1)
     while (i++ < iterations) {
       final MongoCursor<?> crs = jFindIterable.iterator();
       while (i++ < iterations && crs.hasNext()) {
