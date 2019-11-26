@@ -1,6 +1,7 @@
 package com.dbschema.mongo.nashorn;
 
 import com.dbschema.mongo.MongoConnectionParameters;
+import com.dbschema.mongo.SQLAlreadyClosedException;
 import com.mongodb.AuthenticationMechanism;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -15,7 +16,8 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 
 
-public class JMongoClient {
+public class JMongoClient implements AutoCloseable {
+  private boolean isClosed = false;
   private final MongoClient mongoClient;
   public final String databaseNameFromUrl;
 
@@ -34,6 +36,17 @@ public class JMongoClient {
     this.mongoClient = MongoClients.create(builder.build());
   }
 
+  @Override
+  public void close() throws SQLAlreadyClosedException {
+    checkClosed();
+    isClosed = true;
+    mongoClient.close();
+  }
+
+  private void checkClosed() throws SQLAlreadyClosedException {
+    if (isClosed) throw new SQLAlreadyClosedException(this.getClass().getSimpleName());
+  }
+
   @NotNull
   public static String removeParameter(@NotNull String uri, @NotNull Matcher matcher) {
     String group = matcher.group();
@@ -43,7 +56,7 @@ public class JMongoClient {
   }
 
   @SuppressWarnings("deprecation")
-  private MongoCredential createCredential(@Nullable AuthenticationMechanism mechanism, String user, String source, char[] password) {
+  private static MongoCredential createCredential(@Nullable AuthenticationMechanism mechanism, String user, String source, char[] password) {
     if (mechanism == null) return MongoCredential.createCredential(user, source, password);
     switch (mechanism) {
       case GSSAPI:
@@ -63,15 +76,18 @@ public class JMongoClient {
     }
   }
 
-  public MongoIterable<String> listDatabaseNames() {
+  public MongoIterable<String> listDatabaseNames() throws SQLAlreadyClosedException {
+    checkClosed();
     return mongoClient.listDatabaseNames();
   }
 
-  public JMongoDatabase getDatabase(String databaseName) {
+  public JMongoDatabase getDatabase(String databaseName) throws SQLAlreadyClosedException {
+    checkClosed();
     return new JMongoDatabase(mongoClient.getDatabase(databaseName), mongoClient);
   }
 
-  public void testConnectivity() {
+  public void testConnectivity() throws SQLAlreadyClosedException {
+    checkClosed();
     mongoClient.getClusterDescription();
   }
 }

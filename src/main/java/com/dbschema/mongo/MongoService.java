@@ -13,10 +13,10 @@ import org.jetbrains.annotations.NotNull;
 import java.sql.SQLException;
 import java.util.*;
 
-public class MongoService {
-
+public class MongoService implements AutoCloseable {
+  private boolean isClosed = false;
   private final JMongoClient client;
-  private String uri;
+  private final String uri;
   private final HashMap<String, MetaCollection> metaCollections = new HashMap<>();
   private final int fetchDocumentsForMeta;
 
@@ -30,12 +30,25 @@ public class MongoService {
     client = new JMongoClient(uri, prop, parameters);
   }
 
-  public String getDatabaseNameFromUrl() {
+  @Override
+  public void close() throws SQLAlreadyClosedException {
+    checkClosed();
+    isClosed = true;
+    client.close();
+  }
+
+  private void checkClosed() throws SQLAlreadyClosedException {
+    if (isClosed) throw new SQLAlreadyClosedException(this.getClass().getSimpleName());
+  }
+
+  public String getDatabaseNameFromUrl() throws SQLAlreadyClosedException {
+    checkClosed();
     // SEE THIS TO SEE HOW DATABASE NAME IS USED : http://api.mongodb.org/java/current/com/mongodb/MongoClientURI.html
     return client.databaseNameFromUrl != null ? client.databaseNameFromUrl : "admin";
   }
 
-  public List<String> getDatabaseNames() {
+  public List<String> getDatabaseNames() throws SQLAlreadyClosedException {
+    checkClosed();
     client.testConnectivity();
 
     final List<String> names = new ArrayList<>();
@@ -56,11 +69,12 @@ public class MongoService {
     return names;
   }
 
-  public JMongoDatabase getDatabase(String dbName) {
+  public JMongoDatabase getDatabase(String dbName) throws SQLAlreadyClosedException {
+    checkClosed();
     return client.getDatabase(dbName);
   }
 
-  public List<JMongoDatabase> getDatabases() {
+  public List<JMongoDatabase> getDatabases() throws SQLAlreadyClosedException {
     final List<JMongoDatabase> list = new ArrayList<>();
 
     for (String dbName : getDatabaseNames()) {
@@ -76,6 +90,7 @@ public class MongoService {
 
   @NotNull
   public String getVersion() throws SQLException {
+    checkClosed();
     JMongoDatabase db = client.getDatabase("test");
     try {
       Document info = db.runCommand(new Document("buildinfo", null));
@@ -87,7 +102,7 @@ public class MongoService {
   }
 
 
-  public MetaCollection getMetaCollection(@NotNull String catalogName, String collectionName) {
+  public MetaCollection getMetaCollection(@NotNull String catalogName, String collectionName) throws SQLAlreadyClosedException {
     if (collectionName == null || collectionName.length() == 0) return null;
     int idx = collectionName.indexOf('.');
     if (idx > -1) collectionName = collectionName.substring(0, idx);
@@ -109,7 +124,8 @@ public class MongoService {
   }
 
 
-  public List<String> getCollectionNames(String catalog) {
+  public List<String> getCollectionNames(String catalog) throws SQLAlreadyClosedException {
+    checkClosed();
     List<String> list = new ArrayList<>();
     try {
       JMongoDatabase db = client.getDatabase(catalog);
@@ -129,7 +145,7 @@ public class MongoService {
   }
 
 
-  public MetaCollection discoverCollection(String dbOrCatalog, String collectionName) {
+  public MetaCollection discoverCollection(String dbOrCatalog, String collectionName) throws SQLAlreadyClosedException {
     final JMongoDatabase mongoDatabase = getDatabase(dbOrCatalog);
     if (mongoDatabase != null) {
       try {
@@ -147,7 +163,8 @@ public class MongoService {
   }
 
 
-  private JMongoCollection getJMongoCollection(String databaseName, String collectionName) {
+  private JMongoCollection getJMongoCollection(String databaseName, String collectionName) throws SQLAlreadyClosedException {
+    checkClosed();
     final JMongoDatabase mongoDatabase = client.getDatabase(databaseName);
     if (mongoDatabase != null) {
       return mongoDatabase.getCollection(collectionName);

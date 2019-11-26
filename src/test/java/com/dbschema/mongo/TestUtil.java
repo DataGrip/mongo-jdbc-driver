@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
@@ -116,5 +117,16 @@ public class TestUtil {
 
   public static String replaceId(@NotNull String value) {
     return MONGO_ID_PATTERN.matcher(value).replaceAll("<ObjectID>");
+  }
+
+  public static int getNumberOfConnections(@NotNull Connection connection) throws SQLException {
+    try (Statement stmt = connection.createStatement()) {
+      stmt.execute("db.serverStatus()");
+      ResultSet rs = stmt.getResultSet();
+      rs.next();
+      Object o = rs.getObject(1);
+      Object connections = ((Map<?, ?>) o).get("connections");
+      return ((Number)((Map<?, ?>) connections).get("current")).intValue();
+    }
   }
 }

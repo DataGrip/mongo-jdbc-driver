@@ -30,7 +30,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * @see java.sql.DatabaseMetaData#getSchemas()
    */
   @Override
-  public ResultSet getSchemas() {
+  public ResultSet getSchemas() throws SQLAlreadyClosedException {
     List<String> mongoDbs = con.getService().getDatabaseNames();
     ListResultSet retVal = new ListResultSet();
     retVal.setColumnNames("TABLE_SCHEM", "TABLE_CATALOG");
@@ -56,7 +56,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * @see java.sql.DatabaseMetaData#getTables(java.lang.String, java.lang.String, java.lang.String,
    * java.lang.String[])
    */
-  public ResultSet getTables(String catalogName, String schemaPattern, String tableNamePattern, String[] types) {
+  public ResultSet getTables(String catalogName, String schemaPattern, String tableNamePattern, String[] types) throws SQLAlreadyClosedException {
     ListResultSet resultSet = new ListResultSet();
     resultSet.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME",
         "TABLE_TYPE", "REMARKS", "TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "SELF_REFERENCING_COL_NAME",
@@ -97,7 +97,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * java.lang.String)
    */
   @Override
-  public ResultSet getColumns(String catalogName, String schemaName, String tableNamePattern, String columnNamePattern) {
+  public ResultSet getColumns(String catalogName, String schemaName, String tableNamePattern, String columnNamePattern) throws SQLAlreadyClosedException {
     // As far as this driver implementation goes, every "table" in MongoDB is actually a collection, and
     // every collection "table" has two columns - "_id" column which is the primary key, and a "document"
     // column which is the JSON document corresponding to the "_id". An "_id" value can be specified on
@@ -172,7 +172,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
   /**
    * @see java.sql.DatabaseMetaData#getPrimaryKeys(java.lang.String, java.lang.String, java.lang.String)
    */
-  public ResultSet getPrimaryKeys(String catalogName, String schemaName, String tableNamePattern) {
+  public ResultSet getPrimaryKeys(String catalogName, String schemaName, String tableNamePattern) throws SQLAlreadyClosedException {
     /*
      * 	<LI><B>TABLE_CAT</B> String => table catalog (may be <code>null</code>)
      *	<LI><B>TABLE_SCHEM</B> String => table schema (may be <code>null</code>)
@@ -214,7 +214,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * boolean, boolean)
    */
   public ResultSet getIndexInfo(String catalogName, String schemaName, String tableNamePattern, boolean unique,
-                                boolean approximate) {
+                                boolean approximate) throws SQLAlreadyClosedException {
     /*
      *      *  <OL>
      *	<LI><B>TABLE_CAT</B> String => table catalog (may be <code>null</code>)
@@ -447,7 +447,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * @see java.sql.DatabaseMetaData#getDriverVersion()
    */
   public String getDriverVersion() {
-    return "1.7";
+    return "1.7.1";
   }
 
   /**
@@ -1118,7 +1118,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
   }
 
   @Override
-  public ResultSet getExportedKeys(String catalogName, String schemaName, String tableNamePattern) {
+  public ResultSet getExportedKeys(String catalogName, String schemaName, String tableNamePattern) throws SQLAlreadyClosedException {
     con.getService().discoverReferences();
 
 
@@ -1170,7 +1170,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * @see java.sql.DatabaseMetaData#getExportedKeys(java.lang.String, java.lang.String, java.lang.String)
    */
   @Override
-  public ResultSet getImportedKeys(String catalogName, String schemaName, String tableNamePattern) {
+  public ResultSet getImportedKeys(String catalogName, String schemaName, String tableNamePattern) throws SQLAlreadyClosedException {
     con.getService().discoverReferences();
 
 

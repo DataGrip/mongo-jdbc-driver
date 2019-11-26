@@ -87,7 +87,7 @@ public class MongoPreparedStatement implements PreparedStatement {
     return executeUpdate(query);
   }
 
-  private JMongoDatabase getDatabase(String name) {
+  private JMongoDatabase getDatabase(String name) throws SQLAlreadyClosedException {
     for (JMongoDatabase scan : connection.getService().getDatabases()) {
       if (scan.getName().equalsIgnoreCase(name)) {
         return scan;
@@ -175,10 +175,9 @@ public class MongoPreparedStatement implements PreparedStatement {
 
   @Override
   public void close() throws SQLException {
-    if (lastResultSet != null) {
-      lastResultSet.close();
-    }
     this.isClosed = true;
+    if (lastResultSet == null || lastResultSet.isClosed()) return;
+    lastResultSet.close();
   }
 
   @Override
@@ -374,10 +373,8 @@ public class MongoPreparedStatement implements PreparedStatement {
     return false;
   }
 
-  private void checkClosed() throws SQLException {
-    if (isClosed) {
-      throw new SQLException("Statement was previously closed.");
-    }
+  private void checkClosed() throws SQLAlreadyClosedException {
+    if (isClosed) throw new SQLAlreadyClosedException(this.getClass().getSimpleName());
   }
 
   @Override

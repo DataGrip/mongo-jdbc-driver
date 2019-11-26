@@ -17,7 +17,7 @@ public class MongoResultSetMetaData implements ResultSetMetaData {
   }
 
   @Override
-  public <T> T unwrap(Class<T> iface) throws SQLException {
+  public <T> T unwrap(Class<T> iface) {
     return null;
   }
 

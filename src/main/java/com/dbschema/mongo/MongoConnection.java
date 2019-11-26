@@ -20,7 +20,11 @@ public class MongoConnection implements Connection {
                          int fetchDocumentsForMeta, boolean useMongoShell, boolean useEs6) {
     this.service = new MongoService(url, info, parameters, fetchDocumentsForMeta);
     this.scriptEngine = useMongoShell ? new MongoShellScriptEngine(parameters) : new MongoNashornScriptEngine(this, useEs6);
-    setSchema(service.getDatabaseNameFromUrl());
+    try {
+      setSchema(service.getDatabaseNameFromUrl());
+    }
+    catch (SQLAlreadyClosedException ignored) { // service cannot be closed because it has just been created
+    }
   }
 
   public String getCatalog() {
@@ -118,8 +122,10 @@ public class MongoConnection implements Connection {
   }
 
   @Override
-  public void close() {
+  public void close() throws SQLAlreadyClosedException {
+    checkClosed();
     isClosed = true;
+    service.close();
   }
 
   @Override
@@ -158,7 +164,7 @@ public class MongoConnection implements Connection {
   @Override
   public void setTransactionIsolation(int level) throws SQLException {
     checkClosed();
-    // Since the only valid value for MongDB is Connection.TRANSACTION_NONE, and the javadoc for this method
+    // Since the only valid value for MongoDB is Connection.TRANSACTION_NONE, and the javadoc for this method
     // indicates that this is not a valid value for level here, throw unsupported operation exception.
     throw new UnsupportedOperationException("MongoDB provides no support for transactions.");
   }
@@ -326,7 +332,6 @@ public class MongoConnection implements Connection {
   @Override
   public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
     checkClosed();
-
     return null;
   }
 
@@ -336,7 +341,6 @@ public class MongoConnection implements Connection {
   @Override
   public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
     checkClosed();
-
     return null;
   }
 
@@ -344,10 +348,8 @@ public class MongoConnection implements Connection {
     return service.getURI();
   }
 
-  private void checkClosed() throws SQLException {
-    if (isClosed) {
-      throw new SQLException("Statement was previously closed.");
-    }
+  private void checkClosed() throws SQLAlreadyClosedException {
+    if (isClosed) throw new SQLAlreadyClosedException(this.getClass().getSimpleName());
   }
 
   @Override

@@ -1,6 +1,6 @@
 package com.dbschema.mongo.resultSet;
 
-import com.dbschema.mongo.MongoPreparedStatement;
+import com.dbschema.mongo.SQLAlreadyClosedException;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -16,10 +16,7 @@ public class ListResultSet implements ResultSet {
   private final List<Object[]> data;
   private String[] columnNames;
   private int currentRow = -1;
-  private String tableName = null;
   private boolean isClosed = false;
-
-  private MongoPreparedStatement statement = null;
 
   public ListResultSet() {
     this(new ArrayList<>(), new String[0]);
@@ -69,15 +66,23 @@ public class ListResultSet implements ResultSet {
   /**
    * @see java.sql.ResultSet#close()
    */
-  public void close() {
+  public void close() throws SQLAlreadyClosedException {
+    checkClosed();
     this.isClosed = true;
+  }
+
+  private void checkClosed() throws SQLAlreadyClosedException {
+    if (isClosed) throw new SQLAlreadyClosedException(this.getClass().getSimpleName());
+  }
+
+  public boolean isClosed() {
+    return isClosed;
   }
 
   /**
    * @see java.sql.ResultSet#wasNull()
    */
   public boolean wasNull() {
-
     return false;
   }
 
@@ -293,7 +298,7 @@ public class ListResultSet implements ResultSet {
     checkClosed();
 
     if (data == null) {
-      return new MongoResultSetMetaData(tableName, new String[0], new int[0]);
+      return new MongoResultSetMetaData(null, new String[0], new int[0]);
     }
 
     int[] columnJavaTypes = new int[columnNames.length];
@@ -301,7 +306,7 @@ public class ListResultSet implements ResultSet {
       columnJavaTypes[i] = Types.OTHER;
     }
 
-    return new MongoResultSetMetaData(tableName, columnNames, columnJavaTypes);
+    return new MongoResultSetMetaData(null, columnNames, columnJavaTypes);
   }
 
   public Object getObject(int columnIndex) throws SQLException {
@@ -679,7 +684,7 @@ public class ListResultSet implements ResultSet {
    * @see java.sql.ResultSet#getStatement()
    */
   public Statement getStatement() {
-    return this.statement;
+    return null;
   }
 
   public Object getObject(int columnIndex, Map<String, Class<?>> map) {
@@ -836,17 +841,8 @@ public class ListResultSet implements ResultSet {
     throw new SQLFeatureNotSupportedException();
   }
 
-  /**
-   * @see java.sql.ResultSet#isClosed()
-   */
-  public boolean isClosed() {
-    return isClosed;
-  }
-
   public void updateNString(int columnIndex, String nString) throws SQLException {
     checkClosed();
-
-
   }
 
   public void updateNString(String columnLabel, String nString) {
@@ -1052,12 +1048,6 @@ public class ListResultSet implements ResultSet {
   public void updateNClob(String columnLabel, Reader reader) {
 
 
-  }
-
-  private void checkClosed() throws SQLException {
-    if (isClosed) {
-      throw new SQLException("ResultSet was previously closed.");
-    }
   }
 
   @Override

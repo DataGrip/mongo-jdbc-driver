@@ -1,5 +1,8 @@
 package com.dbschema.mongo.resultSet;
 
+import com.dbschema.mongo.SQLAlreadyClosedException;
+
+import java.io.Closeable;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -11,7 +14,7 @@ import java.util.Map;
 
 
 public class ResultSetIterator implements ResultSet {
-
+  private boolean isClosed = false;
   private final Iterator<?> iterator;
   protected Object actual;
 
@@ -46,7 +49,26 @@ public class ResultSetIterator implements ResultSet {
   }
 
   @Override
-  public void close() {
+  public void close() throws SQLException {
+    checkClosed();
+    isClosed = true;
+    if (iterator instanceof Closeable) {
+      try {
+        ((Closeable) iterator).close();
+      }
+      catch (Throwable t) {
+        throw new SQLException(t);
+      }
+    }
+  }
+
+  private void checkClosed() throws SQLAlreadyClosedException {
+    if (isClosed) throw new SQLAlreadyClosedException(this.getClass().getSimpleName());
+  }
+
+  @Override
+  public boolean isClosed() {
+    return isClosed;
   }
 
   @Override
@@ -754,11 +776,6 @@ public class ResultSetIterator implements ResultSet {
   @Override
   public int getHoldability() throws SQLFeatureNotSupportedException {
     throw new SQLFeatureNotSupportedException();
-  }
-
-  @Override
-  public boolean isClosed() {
-    return false;
   }
 
   @Override

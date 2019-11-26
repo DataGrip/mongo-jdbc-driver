@@ -3,6 +3,7 @@ package com.dbschema.mongo.nashorn;
 import com.dbschema.mongo.MongoConnection;
 import com.dbschema.mongo.MongoScriptEngine;
 import com.dbschema.mongo.MongoService;
+import com.dbschema.mongo.SQLAlreadyClosedException;
 import com.dbschema.mongo.resultSet.AggregateResultSet;
 import com.dbschema.mongo.resultSet.ListResultSet;
 import com.dbschema.mongo.resultSet.ResultSetIterator;
@@ -78,7 +79,7 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
     return engine;
   }
 
-  private void updateBindings(@NotNull ScriptEngine engine) {
+  private void updateBindings(@NotNull ScriptEngine engine) throws SQLAlreadyClosedException {
     final Bindings binding = engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE);
     for (JMongoDatabase db : connection.getService().getDatabases()) {
       binding.put(db.getName(), db);
