@@ -28,7 +28,7 @@ dependencies {
 }
 
 jar {
-    archiveName = "mongo-jdbc-${version}.jar"
+    archiveName = "mongo-jdbc-standalone-${version}.jar"
     manifest {
         attributes 'Main-Class': 'com.dbschema.MongoJdbcDriver'
         attributes 'Specification-Version': "$version"
@@ -36,6 +36,9 @@ jar {
         attributes 'Implementation-Vendor-Id': "dbschema.com"
         attributes 'Implementation-Vendor': "Wise Coders"
         attributes 'Implementation-Version': new Date().format( 'yyMMdd' )
+    }
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
 
