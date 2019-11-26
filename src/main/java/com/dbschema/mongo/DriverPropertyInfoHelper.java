@@ -42,7 +42,7 @@ public class DriverPropertyInfoHelper {
         + "I/O socket read and write operations "
         + "Socket.setSoTimeout(int) Default is 0 and means no timeout.", null);
 
-    addPropInfo(propInfos, FETCH_DOCUMENTS_FOR_METAINFO, Integer.toString(FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT), "Number of documents that will be fetched per collection in order" +
+    addPropInfo(propInfos, FETCH_DOCUMENTS_FOR_METAINFO, Integer.toString(FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT), "Number of documents that will be fetched per collection in order " +
         "to return meta information from DatabaseMetaData.getColumns method.", null);
 
     addPropInfo(propInfos, USE_ES6, Boolean.toString(USE_ES6_DEFAULT), "Start Nashorn script engine with ecmascript 6 standard", null);
