@@ -11,8 +11,6 @@ public class DriverPropertyInfoHelper {
   public static final String SOCKET_TIMEOUT = "socketTimeout";
   public static final String FETCH_DOCUMENTS_FOR_METAINFO = "fetch_documents_for_metainfo";
   public static final int FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT = 10;
-  public static final String USE_MONGO_SHELL = "use_mongo_shell";
-  public static final boolean USE_MONGO_SHELL_DEFAULT = false;
   public static final String USE_ES6 = "use_ecmascript_6";
   public static final boolean USE_ES6_DEFAULT = true;
 

@@ -95,7 +95,7 @@ public class MongoJdbcDriver implements Driver {
     MongoConnectionParameters parameters = new MongoConnectionParameters(username, password == null ? null : password.toCharArray(),
         source, databaseNameFromUrl, authMechanism);
 
-    return new MongoConnection(url, info, parameters, fetchDocumentsForMeta, USE_MONGO_SHELL_DEFAULT, useEs6);
+    return new MongoConnection(url, info, parameters, fetchDocumentsForMeta, useEs6);
   }
 
 
