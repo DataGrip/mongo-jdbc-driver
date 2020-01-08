@@ -65,6 +65,8 @@ public class MongoJdbcDriver implements Driver {
     if (info.getProperty(USE_ES6) != null) {
       useEs6 = Boolean.parseBoolean(info.getProperty(USE_ES6));
     }
+    String scriptEngine = info.getProperty(SCRIPT_ENGINE);
+    if (scriptEngine == null) scriptEngine = SCRIPT_ENGINE_DEFAULT;
 
     if (url.startsWith("jdbc:")) {
       url = url.substring("jdbc:".length());
@@ -95,7 +97,7 @@ public class MongoJdbcDriver implements Driver {
     MongoConnectionParameters parameters = new MongoConnectionParameters(username, password == null ? null : password.toCharArray(),
         source, databaseNameFromUrl, authMechanism);
 
-    return new MongoConnection(url, info, parameters, fetchDocumentsForMeta, useEs6);
+    return new MongoConnection(url, info, parameters, fetchDocumentsForMeta, scriptEngine, useEs6);
   }
 
 

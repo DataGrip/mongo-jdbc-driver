@@ -13,6 +13,8 @@ public class DriverPropertyInfoHelper {
   public static final int FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT = 10;
   public static final String USE_ES6 = "use_ecmascript_6";
   public static final boolean USE_ES6_DEFAULT = true;
+  public static final String SCRIPT_ENGINE = "script_engine";
+  public static final String SCRIPT_ENGINE_DEFAULT = "mongosh";
 
 
   public DriverPropertyInfo[] getPropertyInfo() {
@@ -44,6 +46,8 @@ public class DriverPropertyInfoHelper {
         "to return meta information from DatabaseMetaData.getColumns method.", null);
 
     addPropInfo(propInfos, USE_ES6, Boolean.toString(USE_ES6_DEFAULT), "Start Nashorn script engine with ecmascript 6 standard", null);
+    addPropInfo(propInfos, SCRIPT_ENGINE, SCRIPT_ENGINE_DEFAULT, "Script engine that is used to evaluate mongo shell scripts",
+        new String[]{"mongosh", "nashorn"});
 
     return propInfos.toArray(new DriverPropertyInfo[0]);
   }

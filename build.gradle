@@ -1,4 +1,5 @@
 buildscript {
+    ext.kotlin_version = '1.3.61'
     repositories {
         mavenCentral()
         maven { url "https://plugins.gradle.org/m2/" }
@@ -6,13 +7,21 @@ buildscript {
     }
     dependencies {
         classpath "gradle.plugin.install4j.install4j:gradle_plugin:7.0.8"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
     }
 }
-plugins{
+
+plugins {
     id 'org.hidetake.ssh' version '2.7.1'
+    id "org.jetbrains.kotlin.jvm" version "1.3.61"
 }
+
 apply plugin: 'application'
 apply plugin: 'distribution'
+mainClassName = 'com.dbschema.MongoJdbcDriver'
+apply plugin: 'com.github.johnrengelman.shadow'
+
 
 repositories {
     mavenCentral()
@@ -20,28 +29,20 @@ repositories {
 
 
 dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile "org.mongodb:mongo-java-driver:3.12.0"
     compile group: 'org.jetbrains', name: 'annotations', version: '15.0'
     compile group: 'org.apache.commons', name: 'commons-text', version: '1.8'
+    compile group: 'org.graalvm.js', name: 'js', version: '19.3.0'
+    compile files('libs/java-shell-1.0-SNAPSHOT.jar')
     testCompile 'junit:junit:4.12'
     testCompile group: 'commons-io', name: 'commons-io', version: '2.6'
 }
 
-jar {
+shadowJar {
     archiveName = "mongo-jdbc-standalone-${version}.jar"
-    manifest {
-        attributes 'Main-Class': 'com.dbschema.MongoJdbcDriver'
-        attributes 'Specification-Version': "$version"
-        attributes 'Specification-Vendor': "Wise Coders"
-        attributes 'Implementation-Vendor-Id': "dbschema.com"
-        attributes 'Implementation-Vendor': "Wise Coders"
-        attributes 'Implementation-Version': new Date().format( 'yyMMdd' )
-    }
-    from {
-        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
-    }
+    mergeServiceFiles()
 }
-
 
 task zip(type: Zip, dependsOn:['clean','jar']) {
     archiveName 'MongoDbJdbcDriver.zip'
@@ -80,30 +81,3 @@ task uploadWeb {
         }
     }
 }
-
-/* EXTRACT COMPLETION KEYWORDS. THIS SHOULD PRINT ON SCREEN SOME TEXT
-def listMethodNames = { clz ->
-                def result = []
-                clz.metaClass.methods.each { method ->
-                  if ( method.isPublic() && ( !'equals'.equals(method.name) && !'notify'.equals(method.name) && !'notifyAll'.equals(method.name) && !'wait'.equals(method.name) && !'hashCode'.equals(method.name) )){
-                    StringBuilder sbParams = new StringBuilder()
-                    for( Class paramType : method.nativeParameterTypes ){
-                      if ( sbParams.length() > 0 ) sbParams.append(", ")
-                      if ( 'Map'.equals(paramType.getSimpleName()) || 'Bson'.equals(paramType.getSimpleName())){
-                       sbParams.append("{ }")
-                      } else {
-                       sbParams.append(paramType.getSimpleName())
-                      }
-                    }
-                    result.add( "${clz.getSimpleName()}|${method.name}(${sbParams})|${method.returnType.getSimpleName()}\\n\\" )
-                    //println "${clz.getSimpleName()}|${method.name}(${method.nativeParameterTypes*.getSimpleName().join( ', ' )})|${method.returnType.getSimpleName()}\\n\\"
-                  }
-                }
-                for ( String str : result.unique() ){
-                 println str
-               }
-            }
-            listMethodNames( com.dbschema.mongo.JMongoDatabase.class )
-            listMethodNames( com.dbschema.mongo.JMongoCollection.class )
-            listMethodNames( com.dbschema.mongo.JFindIterable.class )
- */

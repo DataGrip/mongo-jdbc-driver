@@ -86,6 +86,11 @@ public class JMongoClient implements AutoCloseable {
     return new JMongoDatabase(mongoClient.getDatabase(databaseName), mongoClient);
   }
 
+  @NotNull
+  public MongoClient getMongoClient() {
+    return mongoClient;
+  }
+
   public void testConnectivity() throws SQLAlreadyClosedException {
     checkClosed();
     mongoClient.getClusterDescription();

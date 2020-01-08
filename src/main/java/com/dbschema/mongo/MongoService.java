@@ -6,6 +6,7 @@ import com.dbschema.mongo.nashorn.JMongoDatabase;
 import com.dbschema.mongo.schema.MetaCollection;
 import com.dbschema.mongo.schema.MetaField;
 import com.mongodb.MongoSecurityException;
+import com.mongodb.client.MongoClient;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
@@ -215,6 +216,10 @@ public class MongoService implements AutoCloseable {
   @Override
   public String toString() {
     return client.toString();
+  }
+
+  public MongoClient getMongoClient() {
+    return client.getMongoClient();
   }
 
 }
