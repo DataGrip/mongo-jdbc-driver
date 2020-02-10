@@ -1398,11 +1398,16 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
   public int getDatabaseMajorVersion() throws SQLException {
     String version = getDatabaseProductVersion();
     try {
-      return Integer.parseInt((version.split("\\."))[0]);
+      String[] parts = version.split("\\.");
+      if (parts.length >= 1) return Integer.parseInt(parts[0]);
+      else {
+        System.err.println("WARNING: cannot extract major version from string: " + version);
+      }
     }
     catch (NumberFormatException e) {
-      throw new SQLException("Unable to parse major version. Version: " + version);
+      e.printStackTrace();
     }
+    return 0;
   }
 
   /**
@@ -1412,11 +1417,16 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
   public int getDatabaseMinorVersion() throws SQLException {
     String version = getDatabaseProductVersion();
     try {
-      return Integer.parseInt(version.split("\\.")[1]);
+      String[] parts = version.split("\\.");
+      if (parts.length >= 2) return Integer.parseInt(parts[1]);
+      else {
+        System.err.println("WARNING: cannot extract minor version from string: " + version);
+      }
     }
     catch (NumberFormatException e) {
-      throw new SQLException("Unable to parse minor version. Version: " + version);
+      e.printStackTrace();
     }
+    return 0;
   }
 
   /**
