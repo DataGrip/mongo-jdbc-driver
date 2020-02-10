@@ -135,7 +135,12 @@ public class Util {
 
   @NotNull
   public static String insertCredentials(@NotNull String uri, @Nullable String username, @Nullable String password) {
-    if (username == null) return uri;
+    if (username == null) {
+      if (password != null) {
+        System.err.println("WARNING: Password is ignored because username is not specified");
+      }
+      return uri;
+    }
     boolean isSrv = false;
     String uriWithoutPrefix;
     if (uri.startsWith(MONGODB_SRV_PREFIX)) {
