@@ -45,8 +45,7 @@ public class MongoService implements AutoCloseable {
 
   public String getDatabaseNameFromUrl() throws SQLAlreadyClosedException {
     checkClosed();
-    // SEE THIS TO SEE HOW DATABASE NAME IS USED : http://api.mongodb.org/java/current/com/mongodb/MongoClientURI.html
-    return client.databaseNameFromUrl != null ? client.databaseNameFromUrl : "admin";
+    return client.databaseNameFromUrl != null ? client.databaseNameFromUrl : "test";
   }
 
   public List<String> getDatabaseNames() throws SQLAlreadyClosedException {
