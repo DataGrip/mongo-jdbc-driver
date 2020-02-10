@@ -21,7 +21,7 @@ public class ConnectionClosedTest {
     try (Connection connection = new MongoJdbcDriver().connect(URL, new Properties())) {
       int before = getNumberOfConnections(connection);
       try (Connection connection2 = new MongoJdbcDriver().connect(URL, new Properties());
-           Statement stmt = connection2.createStatement();) {
+           Statement stmt = connection2.createStatement()) {
         stmt.execute("1");
       }
       int after = getNumberOfConnections(connection);

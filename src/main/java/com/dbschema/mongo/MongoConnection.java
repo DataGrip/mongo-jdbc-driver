@@ -17,7 +17,7 @@ public class MongoConnection implements Connection {
   private boolean isReadOnly = false;
 
   public MongoConnection(@NotNull String url, @NotNull Properties info, @Nullable String username, @Nullable String password,
-                         int fetchDocumentsForMeta, boolean useEs6) {
+                         int fetchDocumentsForMeta, boolean useEs6) throws SQLException {
     this.service = new MongoService(url, info, username, password, fetchDocumentsForMeta);
     this.scriptEngine = new MongoNashornScriptEngine(this, useEs6);
     try {

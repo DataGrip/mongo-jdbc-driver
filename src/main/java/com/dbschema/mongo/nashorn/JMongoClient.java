@@ -9,6 +9,7 @@ import com.mongodb.client.MongoIterable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.SQLException;
 import java.util.Properties;
 
 import static com.dbschema.mongo.DriverPropertyInfoHelper.MAX_POOL_SIZE;
@@ -21,18 +22,23 @@ public class JMongoClient implements AutoCloseable {
   private final MongoClient mongoClient;
   public final String databaseNameFromUrl;
 
-  public JMongoClient(@NotNull String uri, @NotNull Properties prop, @Nullable String username, @Nullable String password) {
-    uri = insertCredentials(uri, username, password);
-    ConnectionString connectionString = new ConnectionString(uri);
-    databaseNameFromUrl = connectionString.getDatabase();
-    int maxPoolSize = getMaxPoolSize(prop);
-    MongoClientSettings.Builder builder = MongoClientSettings.builder()
-        .applyConnectionString(connectionString)
-        .applyToConnectionPoolSettings(b -> b.maxSize(maxPoolSize));
-    if ("true".equals(prop.getProperty("ssl"))) {
-      builder.applyToSslSettings(s -> s.enabled(true));
+  public JMongoClient(@NotNull String uri, @NotNull Properties prop, @Nullable String username, @Nullable String password) throws SQLException {
+    try {
+      uri = insertCredentials(uri, username, password);
+      ConnectionString connectionString = new ConnectionString(uri);
+      databaseNameFromUrl = connectionString.getDatabase();
+      int maxPoolSize = getMaxPoolSize(prop);
+      MongoClientSettings.Builder builder = MongoClientSettings.builder()
+          .applyConnectionString(connectionString)
+          .applyToConnectionPoolSettings(b -> b.maxSize(maxPoolSize));
+      if ("true".equals(prop.getProperty("ssl"))) {
+        builder.applyToSslSettings(s -> s.enabled(true));
+      }
+      this.mongoClient = MongoClients.create(builder.build());
     }
-    this.mongoClient = MongoClients.create(builder.build());
+    catch (Exception e) {
+      throw new SQLException(e);
+    }
   }
 
   private int getMaxPoolSize(@NotNull Properties prop) {

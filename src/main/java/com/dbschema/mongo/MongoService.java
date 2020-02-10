@@ -26,7 +26,7 @@ public class MongoService implements AutoCloseable {
 
 
   public MongoService(@NotNull String uri, @NotNull Properties prop, @Nullable String username,
-                      @Nullable String password, int fetchDocumentsForMeta) {
+                      @Nullable String password, int fetchDocumentsForMeta) throws SQLException {
     this.uri = uri;
     this.fetchDocumentsForMeta = fetchDocumentsForMeta;
     client = new JMongoClient(uri, prop, username, password);

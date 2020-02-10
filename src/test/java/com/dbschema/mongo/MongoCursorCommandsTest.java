@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.SQLInvalidAuthorizationSpecException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
@@ -44,7 +43,7 @@ public class MongoCursorCommandsTest {
   }
 
   @BeforeClass
-  public static void before() throws SQLInvalidAuthorizationSpecException {
+  public static void before() throws SQLException {
     connection = new MongoJdbcDriver().connect(URL, new Properties());
   }
 
