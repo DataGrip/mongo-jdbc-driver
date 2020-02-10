@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Properties;
 
+import static com.dbschema.mongo.DriverPropertyInfoHelper.MAX_POOL_SIZE;
+import static com.dbschema.mongo.DriverPropertyInfoHelper.MAX_POOL_SIZE_DEFAULT;
 import static com.dbschema.mongo.Util.insertCredentials;
 
 
@@ -23,13 +25,25 @@ public class JMongoClient implements AutoCloseable {
     uri = insertCredentials(uri, username, password);
     ConnectionString connectionString = new ConnectionString(uri);
     databaseNameFromUrl = connectionString.getDatabase();
+    int maxPoolSize = getMaxPoolSize(prop);
     MongoClientSettings.Builder builder = MongoClientSettings.builder()
         .applyConnectionString(connectionString)
-        .applyToConnectionPoolSettings(b -> b.maxSize(3));
+        .applyToConnectionPoolSettings(b -> b.maxSize(maxPoolSize));
     if ("true".equals(prop.getProperty("ssl"))) {
       builder.applyToSslSettings(s -> s.enabled(true));
     }
     this.mongoClient = MongoClients.create(builder.build());
+  }
+
+  private int getMaxPoolSize(@NotNull Properties prop) {
+    try {
+      int poolSize = Integer.parseInt(prop.getProperty(MAX_POOL_SIZE));
+      return poolSize > 0 ? poolSize : 1;
+    }
+    catch (NumberFormatException e) {
+      e.printStackTrace();
+    }
+    return MAX_POOL_SIZE_DEFAULT;
   }
 
   @Override
