@@ -43,8 +43,11 @@ public class JMongoClient implements AutoCloseable {
 
   private int getMaxPoolSize(@NotNull Properties prop) {
     try {
-      int poolSize = Integer.parseInt(prop.getProperty(MAX_POOL_SIZE));
-      return poolSize > 0 ? poolSize : 1;
+      String str = prop.getProperty(MAX_POOL_SIZE);
+      if (str != null) {
+        int poolSize = Integer.parseInt(str);
+        return poolSize > 0 ? poolSize : 1;
+      }
     }
     catch (NumberFormatException e) {
       e.printStackTrace();
