@@ -1,11 +1,8 @@
 package com.dbschema.mongo.nashorn;
 
-import com.dbschema.mongo.MongoConnectionParameters;
 import com.dbschema.mongo.SQLAlreadyClosedException;
-import com.mongodb.AuthenticationMechanism;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
-import com.mongodb.MongoCredential;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoIterable;
@@ -13,7 +10,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Properties;
-import java.util.regex.Matcher;
+
+import static com.dbschema.mongo.Util.insertCredentials;
 
 
 public class JMongoClient implements AutoCloseable {
@@ -21,15 +19,13 @@ public class JMongoClient implements AutoCloseable {
   private final MongoClient mongoClient;
   public final String databaseNameFromUrl;
 
-  public JMongoClient(@NotNull String uri, @NotNull Properties prop, @NotNull MongoConnectionParameters parameters) {
+  public JMongoClient(@NotNull String uri, @NotNull Properties prop, @Nullable String username, @Nullable String password) {
+    uri = insertCredentials(uri, username, password);
     ConnectionString connectionString = new ConnectionString(uri);
-    databaseNameFromUrl = parameters.database;
+    databaseNameFromUrl = connectionString.getDatabase();
     MongoClientSettings.Builder builder = MongoClientSettings.builder()
         .applyConnectionString(connectionString)
         .applyToConnectionPoolSettings(b -> b.maxSize(3));
-    if (parameters.username != null || parameters.password != null) {
-      builder.credential(createCredential(parameters.mechanism, parameters.username, parameters.authSource, parameters.password));
-    }
     if ("true".equals(prop.getProperty("ssl"))) {
       builder.applyToSslSettings(s -> s.enabled(true));
     }
@@ -45,35 +41,6 @@ public class JMongoClient implements AutoCloseable {
 
   private void checkClosed() throws SQLAlreadyClosedException {
     if (isClosed) throw new SQLAlreadyClosedException(this.getClass().getSimpleName());
-  }
-
-  @NotNull
-  public static String removeParameter(@NotNull String uri, @NotNull Matcher matcher) {
-    String group = matcher.group();
-    uri = uri.replace(group, matcher.group(1));
-    if (uri.endsWith("?") || uri.endsWith("&")) uri = uri.substring(0, uri.length() - 1);
-    return uri;
-  }
-
-  @SuppressWarnings("deprecation")
-  private static MongoCredential createCredential(@Nullable AuthenticationMechanism mechanism, String user, String source, char[] password) {
-    if (mechanism == null) return MongoCredential.createCredential(user, source, password);
-    switch (mechanism) {
-      case GSSAPI:
-        return MongoCredential.createGSSAPICredential(user);
-      case MONGODB_X509:
-        return MongoCredential.createMongoX509Credential(user);
-      case SCRAM_SHA_1:
-        return MongoCredential.createScramSha1Credential(user, source, password);
-      case SCRAM_SHA_256:
-        return MongoCredential.createScramSha256Credential(user, source, password);
-      case MONGODB_CR:
-        return MongoCredential.createMongoCRCredential(user, source, password);
-      case PLAIN:
-        return MongoCredential.createPlainCredential(user, source, password);
-      default:
-        return MongoCredential.createCredential(user, source, password);
-    }
   }
 
   public MongoIterable<String> listDatabaseNames() throws SQLAlreadyClosedException {

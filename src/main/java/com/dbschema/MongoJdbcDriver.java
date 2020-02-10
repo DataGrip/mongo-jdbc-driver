@@ -2,21 +2,13 @@ package com.dbschema;
 
 import com.dbschema.mongo.DriverPropertyInfoHelper;
 import com.dbschema.mongo.MongoConnection;
-import com.dbschema.mongo.MongoConnectionParameters;
-import com.mongodb.AuthenticationMechanism;
-import com.mongodb.ConnectionString;
-import com.mongodb.MongoCredential;
 
 import java.sql.*;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.dbschema.mongo.DriverPropertyInfoHelper.*;
-import static com.dbschema.mongo.Util.nullize;
-import static com.dbschema.mongo.nashorn.JMongoClient.removeParameter;
 
 
 /**
@@ -27,10 +19,7 @@ import static com.dbschema.mongo.nashorn.JMongoClient.removeParameter;
  * The URL excepting the jdbc: prefix is passed as it is to the MongoDb native Java driver.
  */
 public class MongoJdbcDriver implements Driver {
-  private DriverPropertyInfoHelper propertyInfoHelper = new DriverPropertyInfoHelper();
-  public static final String DEFAULT_DB = "admin";
-  private static final Pattern AUTH_MECH_PATTERN = Pattern.compile("([?&])authMechanism=([\\w_-]+)&?");
-  private static final Pattern AUTH_SOURCE_PATTERN = Pattern.compile("([?&])authSource=([\\w_-]+)&?");
+  private final DriverPropertyInfoHelper propertyInfoHelper = new DriverPropertyInfoHelper();
 
   static {
     try {
@@ -49,7 +38,7 @@ public class MongoJdbcDriver implements Driver {
    * jdbc:mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
    * The URL excepting the jdbc: prefix is passed as it is to the MongoDb native Java driver.
    */
-  public Connection connect(String url, Properties info) throws SQLInvalidAuthorizationSpecException {
+  public Connection connect(String url, Properties info) {
     if (url == null || !acceptsURL(url)) return null;
 
     int fetchDocumentsForMeta = FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT;
@@ -70,32 +59,10 @@ public class MongoJdbcDriver implements Driver {
       url = url.substring("jdbc:".length());
     }
 
-    ConnectionString connectionString = new ConnectionString(url);
-    AuthenticationMechanism authMechanism = null;
-    Matcher matcher = AUTH_MECH_PATTERN.matcher(url);
-    if (matcher.find()) {
-      url = removeParameter(url, matcher);
-      authMechanism = AuthenticationMechanism.fromMechanismName(matcher.group(2));
-    }
-    String authSource = null;
-    matcher = AUTH_SOURCE_PATTERN.matcher(url);
-    if (matcher.find()) {
-      url = removeParameter(url, matcher);
-      authSource = matcher.group(2);
-    }
-    String databaseNameFromUrl = nullize(connectionString.getDatabase());
-    MongoCredential credentialsFromUrl = connectionString.getCredential();
-    String source = credentialsFromUrl != null ? credentialsFromUrl.getSource() :
-                    authSource != null ? authSource :
-                    databaseNameFromUrl != null ? databaseNameFromUrl :
-                    DEFAULT_DB;
-
     String username = info.getProperty("user");
     String password = info.getProperty("password");
-    MongoConnectionParameters parameters = new MongoConnectionParameters(username, password == null ? null : password.toCharArray(),
-        source, databaseNameFromUrl, authMechanism);
 
-    return new MongoConnection(url, info, parameters, fetchDocumentsForMeta, useEs6);
+    return new MongoConnection(url, info, username, password, fetchDocumentsForMeta, useEs6);
   }
 
 

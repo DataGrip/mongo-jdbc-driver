@@ -23,6 +23,9 @@ import static java.util.Collections.emptyList;
  * @author Liudmila Kornilova
  **/
 public class Util {
+  private static final String MONGODB_PREFIX = "mongodb://";
+  private static final String MONGODB_SRV_PREFIX = "mongodb+srv://";
+
   public static String nullize(String text) {
     return text == null || text.isEmpty() ? null : text;
   }
@@ -128,5 +131,29 @@ public class Util {
       }
     }
     return result.isEmpty() ? emptyList() : result;
+  }
+
+  @NotNull
+  public static String insertCredentials(@NotNull String uri, @Nullable String username, @Nullable String password) {
+    if (username == null) return uri;
+    boolean isSrv = false;
+    String uriWithoutPrefix;
+    if (uri.startsWith(MONGODB_SRV_PREFIX)) {
+      uriWithoutPrefix = uri.substring(MONGODB_SRV_PREFIX.length());
+      isSrv = true;
+    }
+    else if (uri.startsWith(MONGODB_PREFIX)) {
+      uriWithoutPrefix = uri.substring(MONGODB_PREFIX.length());
+    }
+    else {
+      return uri;
+    }
+
+    int idx = uriWithoutPrefix.indexOf("/");
+    String userAndHostInformation = idx == -1 ? uriWithoutPrefix : uriWithoutPrefix.substring(0, idx);
+    if (userAndHostInformation.contains("@")) return uri;
+
+    String passwordPart = password == null ? "" : ":" + password;
+    return (isSrv ? MONGODB_SRV_PREFIX : MONGODB_PREFIX) + username + passwordPart + "@" + uriWithoutPrefix;
   }
 }

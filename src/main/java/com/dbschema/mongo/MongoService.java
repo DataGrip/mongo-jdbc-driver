@@ -9,6 +9,7 @@ import com.mongodb.MongoSecurityException;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -24,10 +25,11 @@ public class MongoService implements AutoCloseable {
   public static final List<String> createdDatabases = new ArrayList<>();
 
 
-  public MongoService(@NotNull String uri, @NotNull Properties prop, @NotNull MongoConnectionParameters parameters, int fetchDocumentsForMeta) {
+  public MongoService(@NotNull String uri, @NotNull Properties prop, @Nullable String username,
+                      @Nullable String password, int fetchDocumentsForMeta) {
     this.uri = uri;
     this.fetchDocumentsForMeta = fetchDocumentsForMeta;
-    client = new JMongoClient(uri, prop, parameters);
+    client = new JMongoClient(uri, prop, username, password);
   }
 
   @Override

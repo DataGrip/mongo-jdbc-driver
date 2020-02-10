@@ -2,6 +2,7 @@ package com.dbschema.mongo;
 
 import com.dbschema.mongo.nashorn.MongoNashornScriptEngine;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
 import java.util.Map;
@@ -15,9 +16,9 @@ public class MongoConnection implements Connection {
   private boolean isClosed = false;
   private boolean isReadOnly = false;
 
-  public MongoConnection(@NotNull String url, @NotNull Properties info, @NotNull MongoConnectionParameters parameters,
+  public MongoConnection(@NotNull String url, @NotNull Properties info, @Nullable String username, @Nullable String password,
                          int fetchDocumentsForMeta, boolean useEs6) {
-    this.service = new MongoService(url, info, parameters, fetchDocumentsForMeta);
+    this.service = new MongoService(url, info, username, password, fetchDocumentsForMeta);
     this.scriptEngine = new MongoNashornScriptEngine(this, useEs6);
     try {
       setSchema(service.getDatabaseNameFromUrl());
