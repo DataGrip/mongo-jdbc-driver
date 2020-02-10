@@ -7,10 +7,7 @@ import com.mongodb.MongoCommandException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.bulk.BulkWriteUpsert;
-import com.mongodb.client.AggregateIterable;
-import com.mongodb.client.ListIndexesIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.*;
 import com.mongodb.client.model.*;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
@@ -81,7 +78,9 @@ public class JMongoCollection extends AbstractJSObject {
         func("find",                          this::find, Map.class),
         func("find",                          this::find, Map.class, Map.class),
         notImplemented("findAndModify",       ObjectKind.COLLECTION),
-        notImplemented("findOne",             ObjectKind.COLLECTION),
+        func("findOne",                       () -> find(true)),
+        func("findOne",                       (m) -> find(m, true), Map.class),
+        func("findOne",                       (m, p) -> find(m, p, true), Map.class, Map.class),
         func("findOneAndDelete",              m -> nativeCollection.findOneAndDelete(toBson(m)), Map.class),
         func("findOneAndDelete",              this::findOneAndDelete, Map.class, Map.class),
         func("findOneAndReplace",             (m1, m2) -> nativeCollection.findOneAndReplace(toBson(m1), toBson(m2)), Map.class, Map.class),
@@ -288,11 +287,23 @@ public class JMongoCollection extends AbstractJSObject {
   }
 
   public JFindIterable find(Map<?, ?> map) {
-    return new JFindIterable(nativeCollection.find(toBson(map)));
+    return find(map, false);
+  }
+
+  public JFindIterable find(Map<?, ?> map, boolean onlyOne) {
+    FindIterable<Document> find = nativeCollection.find(toBson(map));
+    if (onlyOne) find.limit(1);
+    return new JFindIterable(find);
   }
 
   public JFindIterable find(Map<?, ?> map, Map<?, ?> proj) {
-    return new JFindIterable(nativeCollection.find(toBson(map)).projection(toBson(proj)));
+    return find(map, proj, false);
+  }
+
+  public JFindIterable find(Map<?, ?> map, Map<?, ?> proj, boolean onlyOne) {
+    FindIterable<Document> find = nativeCollection.find(toBson(map)).projection(toBson(proj));
+    if (onlyOne) find.limit(1);
+    return new JFindIterable(find);
   }
 
   public Document deleteOne(Map<?, ?> filter) {
@@ -372,7 +383,13 @@ public class JMongoCollection extends AbstractJSObject {
   //---------------------------------------------------------------
 
   public JFindIterable find() {
-    return new JFindIterable(nativeCollection.find());
+    return find(false);
+  }
+
+  private JFindIterable find(boolean onlyOne) {
+    FindIterable<Document> find = nativeCollection.find();
+    if (onlyOne) find.limit(1);
+    return new JFindIterable(find);
   }
 
   public JAggregateIterable aggregateVararg(@SuppressWarnings("rawtypes") List<Map> pipeline) {
