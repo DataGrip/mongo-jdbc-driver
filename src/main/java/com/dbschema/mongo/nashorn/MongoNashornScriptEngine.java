@@ -41,8 +41,8 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
   private static final Pattern PATTERN_SHOW_PROFILE = Pattern.compile("SHOW\\s+PROFILE\\s*", Pattern.CASE_INSENSITIVE);
 
   @Language("JavaScript")
-  private static final String STARTUP_SCRIPT = "var ObjectId = function( oid ) { return new org.bson.types.ObjectId( oid );}\n" +
-      "var ISODate = function( str ) { return new java.text.SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\").parse(str);}";
+  private static final String STARTUP_SCRIPT = "var ObjectId = function(oid) { return new org.bson.types.ObjectId(oid);}\n" +
+      "var ISODate = function(str) { return com.dbschema.mongo.nashorn.JMongoUtil.parseDate(str === undefined ? null : str); }";
 
   private final MongoConnection connection;
   private final boolean useEs6;

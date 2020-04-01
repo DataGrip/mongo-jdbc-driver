@@ -4,21 +4,45 @@ import com.dbschema.mongo.nashorn.parser.JsonLoaderCallback;
 import com.dbschema.mongo.nashorn.parser.JsonParseException;
 import com.dbschema.mongo.nashorn.parser.JsonParser;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import org.bson.BsonDateTime;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.dbschema.mongo.Util.tryCast;
+import static java.time.temporal.ChronoField.*;
 
 @SuppressWarnings("UnusedReturnValue")
 public class JMongoUtil {
   private static final Pattern REGEX_BODY = Pattern.compile("/(.*)/[a-z]*");
+  /**
+   * yyyy-MM-dd['T'HH:mm:ss.SSS['Z']]
+   */
+  private static final DateTimeFormatter DATE_FORMATTER = new DateTimeFormatterBuilder()
+      .parseCaseInsensitive()
+      .append(DateTimeFormatter.ISO_LOCAL_DATE)
+      .optionalStart()
+      .appendLiteral('T')
+      .append(DateTimeFormatter.ISO_LOCAL_TIME)
+      .optionalStart()
+      .appendLiteral('Z')
+      .optionalEnd()
+      .optionalEnd()
+      .toFormatter();
 
   public static Document parse(String text) {
     Thread.dumpStack();
@@ -99,5 +123,32 @@ public class JMongoUtil {
       if (s.charAt(i) == c) return i;
     }
     return -1;
+  }
+
+  @SuppressWarnings("unused")
+  @NotNull
+  public static BsonDateTime parseDate(@Nullable String str) {
+    if (str == null) {
+      return new BsonDateTime(Instant.now().toEpochMilli());
+    }
+    TemporalAccessor accessor = DATE_FORMATTER.parse(str);
+    LocalDateTime localDateTime = LocalDateTime.of(
+        getFieldOrZero(accessor, YEAR),
+        getFieldOrZero(accessor, MONTH_OF_YEAR),
+        getFieldOrZero(accessor, DAY_OF_MONTH),
+        getFieldOrZero(accessor, HOUR_OF_DAY),
+        getFieldOrZero(accessor, MINUTE_OF_HOUR),
+        getFieldOrZero(accessor, SECOND_OF_MINUTE),
+        getFieldOrZero(accessor, NANO_OF_SECOND));
+    return new BsonDateTime(localDateTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli());
+  }
+
+  private static int getFieldOrZero(TemporalAccessor accessor, TemporalField field) {
+    try {
+      return accessor.get(field);
+    }
+    catch (UnsupportedTemporalTypeException ignored) {
+    }
+    return 0;
   }
 }
