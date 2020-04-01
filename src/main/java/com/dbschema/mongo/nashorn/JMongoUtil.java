@@ -4,7 +4,6 @@ import com.dbschema.mongo.nashorn.parser.JsonLoaderCallback;
 import com.dbschema.mongo.nashorn.parser.JsonParseException;
 import com.dbschema.mongo.nashorn.parser.JsonParser;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import org.bson.BsonDateTime;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jetbrains.annotations.Contract;
@@ -19,6 +18,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.UnsupportedTemporalTypeException;
+import java.util.Date;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -127,10 +127,13 @@ public class JMongoUtil {
 
   @SuppressWarnings("unused")
   @NotNull
-  public static BsonDateTime parseDate(@Nullable String str) {
-    if (str == null) {
-      return new BsonDateTime(Instant.now().toEpochMilli());
-    }
+  public static Date now() {
+    return new Date(Instant.now().toEpochMilli());
+  }
+
+  @SuppressWarnings("unused")
+  @NotNull
+  public static Date parseDate(@NotNull String str) {
     TemporalAccessor accessor = DATE_FORMATTER.parse(str);
     LocalDateTime localDateTime = LocalDateTime.of(
         getFieldOrZero(accessor, YEAR),
@@ -140,7 +143,7 @@ public class JMongoUtil {
         getFieldOrZero(accessor, MINUTE_OF_HOUR),
         getFieldOrZero(accessor, SECOND_OF_MINUTE),
         getFieldOrZero(accessor, NANO_OF_SECOND));
-    return new BsonDateTime(localDateTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli());
+    return new Date(localDateTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli());
   }
 
   private static int getFieldOrZero(TemporalAccessor accessor, TemporalField field) {
