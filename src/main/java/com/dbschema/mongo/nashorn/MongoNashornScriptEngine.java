@@ -42,7 +42,8 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
 
   @Language("JavaScript")
   private static final String STARTUP_SCRIPT = "var ObjectId = function(oid) { return new org.bson.types.ObjectId(oid);}\n" +
-      "var ISODate = function(str) { return str === undefined || str === null ? com.dbschema.mongo.nashorn.JMongoUtil.now() : com.dbschema.mongo.nashorn.JMongoUtil.parseDate(str); }";
+      "var ISODate = function(str) { return str === undefined || str === null ? com.dbschema.mongo.nashorn.JMongoUtil.now() : com.dbschema.mongo.nashorn.JMongoUtil.parseDate(str); }\n" +
+      "var UUID = function(str) { return str === undefined || str === null ? java.util.UUID.randomUUID() : java.util.UUID.fromString(str) }";
 
   private final MongoConnection connection;
   private final boolean useEs6;
