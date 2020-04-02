@@ -168,4 +168,26 @@ public class JMongoUtil {
     }
     return new Binary((byte) (int) subtype, Base64.getDecoder().decode(data));
   }
+
+  @SuppressWarnings("unused")
+  public static long numberLong(@Nullable Object o) {
+    if (o instanceof Number) {
+      return ((Number) o).longValue();
+    }
+    else if (o instanceof String) {
+      return Long.parseLong((String) o);
+    }
+    return 0;
+  }
+
+  @SuppressWarnings("unused")
+  public static int numberInt(@Nullable Object o) {
+    if (o instanceof Number) {
+      return ((Number) o).intValue();
+    }
+    else if (o instanceof String) {
+      return Integer.parseInt((String) o);
+    }
+    return 0;
+  }
 }
