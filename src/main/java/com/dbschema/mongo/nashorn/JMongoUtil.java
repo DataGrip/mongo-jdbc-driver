@@ -6,6 +6,7 @@ import com.dbschema.mongo.nashorn.parser.JsonParser;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.bson.types.Binary;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +19,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.UnsupportedTemporalTypeException;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -153,5 +155,17 @@ public class JMongoUtil {
     catch (UnsupportedTemporalTypeException ignored) {
     }
     return 0;
+  }
+
+  @SuppressWarnings("unused")
+  @NotNull
+  public static Binary binData(@Nullable Integer subtype, @Nullable String data) {
+    if (data == null) {
+      throw new IllegalArgumentException("BinData data must be a String");
+    }
+    if (subtype == null || subtype < 0 || subtype > 255) {
+      throw new IllegalArgumentException("BinData subtype must be a Number between 0 and 255 inclusive");
+    }
+    return new Binary((byte) (int) subtype, Base64.getDecoder().decode(data));
   }
 }
