@@ -46,7 +46,8 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
       "var UUID = function(str) { return str === undefined || str === null ? java.util.UUID.randomUUID() : java.util.UUID.fromString(str) }\n" +
       "var BinData = function(type, data) { return com.dbschema.mongo.nashorn.JMongoUtil.binData(type === undefined ? null : type, data === undefined ? null : data); }\n" +
       "var NumberLong = function(number) { return com.dbschema.mongo.nashorn.JMongoUtil.numberLong(number === undefined ? null : number); }\n" +
-      "var NumberInt = function(number) { return com.dbschema.mongo.nashorn.JMongoUtil.numberInt(number === undefined ? null : number); }\n";
+      "var NumberInt = function(number) { return com.dbschema.mongo.nashorn.JMongoUtil.numberInt(number === undefined ? null : number); }\n" +
+      "var NumberDecimal = function(number) { return com.dbschema.mongo.nashorn.JMongoUtil.numberDecimal(number === undefined ? null : number); }\n";
 
   private final MongoConnection connection;
   private final boolean useEs6;

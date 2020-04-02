@@ -7,10 +7,12 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
+import org.bson.types.Decimal128;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -189,5 +191,18 @@ public class JMongoUtil {
       return Integer.parseInt((String) o);
     }
     return 0;
+  }
+
+  @SuppressWarnings("unused")
+  public static Decimal128 numberDecimal(@Nullable Object o) {
+    if (o instanceof Number) {
+      if (o instanceof Integer) return new Decimal128((int) o);
+      if (o instanceof Long) return new Decimal128((long) o);
+      return new Decimal128(BigDecimal.valueOf(((Number) o).doubleValue()));
+    }
+    else if (o instanceof String) {
+      return Decimal128.parse((String) o);
+    }
+    return new Decimal128(0);
   }
 }
