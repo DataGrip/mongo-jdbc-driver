@@ -6,6 +6,7 @@ import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoIterable;
+import org.bson.UuidRepresentation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,6 +34,9 @@ public class JMongoClient implements AutoCloseable {
           .applyToConnectionPoolSettings(b -> b.maxSize(maxPoolSize));
       if ("true".equals(prop.getProperty("ssl"))) {
         builder.applyToSslSettings(s -> s.enabled(true));
+      }
+      if (connectionString.getUuidRepresentation() == null) {
+        builder.uuidRepresentation(UuidRepresentation.STANDARD);
       }
       this.mongoClient = MongoClients.create(builder.build());
     }
