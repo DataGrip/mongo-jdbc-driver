@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import static com.dbschema.mongo.DriverPropertyInfoHelper.*;
 import static com.dbschema.mongo.Util.insertCredentials;
@@ -38,6 +39,14 @@ public class JMongoClient implements AutoCloseable {
       if (connectionString.getUuidRepresentation() == null) {
         String uuidRepresentation = prop.getProperty(UUID_REPRESENTATION, UUID_REPRESENTATION_DEFAULT);
         builder.uuidRepresentation(createUuidRepresentation(uuidRepresentation));
+      }
+      if (connectionString.getServerSelectionTimeout() == null) {
+        int timeout = Integer.parseInt(prop.getProperty(SERVER_SELECTION_TIMEOUT, SERVER_SELECTION_TIMEOUT_DEFAULT));
+        builder.applyToClusterSettings(b -> b.serverSelectionTimeout(timeout, TimeUnit.MILLISECONDS));
+      }
+      if (connectionString.getConnectTimeout() == null) {
+        int timeout = Integer.parseInt(prop.getProperty(CONNECT_TIMEOUT, CONNECT_TIMEOUT_DEFAULT));
+        builder.applyToSocketSettings(b -> b.connectTimeout(timeout, TimeUnit.MILLISECONDS));
       }
       this.mongoClient = MongoClients.create(builder.build());
     }
