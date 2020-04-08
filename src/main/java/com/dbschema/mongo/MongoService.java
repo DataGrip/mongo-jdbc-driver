@@ -32,6 +32,10 @@ public class MongoService implements AutoCloseable {
     client = new JMongoClient(uri, prop, username, password);
   }
 
+  public JMongoClient getClient() {
+    return client;
+  }
+
   @Override
   public void close() throws SQLAlreadyClosedException {
     checkClosed();

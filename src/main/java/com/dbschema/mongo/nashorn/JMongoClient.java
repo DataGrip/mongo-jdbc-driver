@@ -6,6 +6,7 @@ import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoIterable;
+import org.bson.Document;
 import org.bson.UuidRepresentation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -101,6 +102,6 @@ public class JMongoClient implements AutoCloseable {
 
   public void testConnectivity() throws SQLAlreadyClosedException {
     checkClosed();
-    mongoClient.getClusterDescription();
+    mongoClient.getDatabase("test").runCommand(new Document("serverStatus", null));
   }
 }

@@ -62,7 +62,9 @@ public class MongoJdbcDriver implements Driver {
     String username = info.getProperty("user");
     String password = info.getProperty("password");
 
-    return new MongoConnection(url, info, username, password, fetchDocumentsForMeta, useEs6);
+    MongoConnection mongoConnection = new MongoConnection(url, info, username, password, fetchDocumentsForMeta, useEs6);
+    mongoConnection.getService().getClient().testConnectivity();
+    return mongoConnection;
   }
 
 
