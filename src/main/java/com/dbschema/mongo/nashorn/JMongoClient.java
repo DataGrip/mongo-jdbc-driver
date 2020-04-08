@@ -13,8 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import static com.dbschema.mongo.DriverPropertyInfoHelper.MAX_POOL_SIZE;
-import static com.dbschema.mongo.DriverPropertyInfoHelper.MAX_POOL_SIZE_DEFAULT;
+import static com.dbschema.mongo.DriverPropertyInfoHelper.*;
 import static com.dbschema.mongo.Util.insertCredentials;
 
 
@@ -36,13 +35,33 @@ public class JMongoClient implements AutoCloseable {
         builder.applyToSslSettings(s -> s.enabled(true));
       }
       if (connectionString.getUuidRepresentation() == null) {
-        builder.uuidRepresentation(UuidRepresentation.STANDARD);
+        String uuidRepresentation = prop.getProperty(UUID_REPRESENTATION, UUID_REPRESENTATION_DEFAULT);
+        builder.uuidRepresentation(createUuidRepresentation(uuidRepresentation));
       }
       this.mongoClient = MongoClients.create(builder.build());
     }
     catch (Exception e) {
       throw new SQLException(e);
     }
+  }
+
+  private static UuidRepresentation createUuidRepresentation(String value) {
+    if (value.equalsIgnoreCase("unspecified")) {
+      return UuidRepresentation.UNSPECIFIED;
+    }
+    if (value.equalsIgnoreCase("javaLegacy")) {
+      return UuidRepresentation.JAVA_LEGACY;
+    }
+    if (value.equalsIgnoreCase("csharpLegacy")) {
+      return UuidRepresentation.C_SHARP_LEGACY;
+    }
+    if (value.equalsIgnoreCase("pythonLegacy")) {
+      return UuidRepresentation.PYTHON_LEGACY;
+    }
+    if (value.equalsIgnoreCase("standard")) {
+      return UuidRepresentation.STANDARD;
+    }
+    throw new IllegalArgumentException("Unknown uuid representation: " + value);
   }
 
   private int getMaxPoolSize(@NotNull Properties prop) {
