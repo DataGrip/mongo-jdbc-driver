@@ -54,7 +54,6 @@ public class MongoService implements AutoCloseable {
 
   public List<String> getDatabaseNames() throws SQLAlreadyClosedException {
     checkClosed();
-    client.testConnectivity();
 
     final List<String> names = new ArrayList<>();
     try {
