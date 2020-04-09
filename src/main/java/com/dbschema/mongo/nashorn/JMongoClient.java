@@ -111,6 +111,6 @@ public class JMongoClient implements AutoCloseable {
 
   public void testConnectivity() throws SQLAlreadyClosedException {
     checkClosed();
-    mongoClient.getDatabase("test").runCommand(new Document("serverStatus", null));
+    mongoClient.getDatabase("test").runCommand(new Document("usersInfo", 1));
   }
 }
