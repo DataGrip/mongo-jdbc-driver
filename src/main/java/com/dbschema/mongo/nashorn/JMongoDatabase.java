@@ -195,7 +195,7 @@ public class JMongoDatabase extends AbstractJSObject {
 
   public static Document runCommand(@NotNull MongoDatabase mongoDatabase, @NotNull String command) {
     try {
-      return mongoDatabase.runCommand(new Document(command, null));
+      return mongoDatabase.runCommand(new Document(command, 1));
     }
     catch (MongoCommandException e) {
       return toDocument(e.getResponse());
@@ -216,7 +216,7 @@ public class JMongoDatabase extends AbstractJSObject {
   }
 
   private Iterable<String> version() {
-    Document info = mongoDatabase.runCommand(new Document("buildinfo", null));
+    Document info = mongoDatabase.runCommand(new Document("buildinfo", 1));
     String v = info.getString("version");
     return v == null ? null : Collections.singletonList(v);
   }

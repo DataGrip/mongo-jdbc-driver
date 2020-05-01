@@ -97,8 +97,9 @@ public class MongoService implements AutoCloseable {
     checkClosed();
     JMongoDatabase db = client.getDatabase("test");
     try {
-      Document info = db.runCommand(new Document("buildinfo", null));
-      return info.getString("version");
+      Document info = db.runCommand(new Document("buildInfo", 1));
+      String version = info.getString("version");
+      return version == null ? "UNKNOWN" : version;
     }
     catch (MongoSecurityException e) {
       throw new SQLException(e);
