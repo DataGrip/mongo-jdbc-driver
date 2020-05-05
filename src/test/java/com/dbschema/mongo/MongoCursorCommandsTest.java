@@ -23,7 +23,7 @@ import static com.dbschema.mongo.TestUtil.doTest;
  **/
 @RunWith(Parameterized.class)
 public class MongoCursorCommandsTest {
-  private static final String TEST_DATA_PATH = "src/test/resources/commands/cursor";
+  private static final String TEST_DATA_PATH = "src/test/resources/commands/nashorn/cursor";
   private static Connection connection;
   private final String testName;
 

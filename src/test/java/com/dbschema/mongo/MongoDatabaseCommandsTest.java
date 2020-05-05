@@ -23,7 +23,7 @@ import static com.dbschema.mongo.TestUtil.doTest;
  **/
 @RunWith(Parameterized.class)
 public class MongoDatabaseCommandsTest {
-  private static final String TEST_DATA_PATH = "src/test/resources/commands/databases";
+  private static final String TEST_DATA_PATH = "src/test/resources/commands/nashorn/databases";
   private static Connection connection;
   private final String testName;
 
