@@ -19,6 +19,7 @@ import static org.junit.Assert.*;
 public class TestUtil {
   public static final String URL = "mongodb://admin:admin@localhost:27017/admin";
   private static final Pattern MONGO_ID_PATTERN = Pattern.compile("[0-9a-f]{24}");
+  private static final Pattern MONGO_UUID_PATTERN = Pattern.compile("[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}");
 
   public static String print(@NotNull ResultSet resultSet) throws SQLException {
     StringBuilder sb = new StringBuilder("|");
@@ -87,7 +88,7 @@ public class TestUtil {
 
   private static void compare(String testDataPath, String name, String actual) throws IOException {
     File expectedFile = new File(testDataPath + "/" + name + ".expected.txt");
-    actual = replaceId(actual).trim();
+    actual = replaceUuid(replaceId(actual)).trim();
     if (!expectedFile.exists()) {
       assertTrue(expectedFile.createNewFile());
       FileUtils.write(expectedFile, actual, StandardCharsets.UTF_8);
@@ -117,6 +118,10 @@ public class TestUtil {
 
   public static String replaceId(@NotNull String value) {
     return MONGO_ID_PATTERN.matcher(value).replaceAll("<ObjectID>");
+  }
+
+  public static String replaceUuid(@NotNull String value) {
+    return MONGO_UUID_PATTERN.matcher(value).replaceAll("<UUID>");
   }
 
   public static int getNumberOfConnections(@NotNull Connection connection) throws SQLException {
