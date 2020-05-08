@@ -7,11 +7,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
+import static org.junit.Assume.assumeFalse;
 
 /**
  * @author Liudmila Kornilova
@@ -45,40 +48,46 @@ public class TestUtil {
   }
 
   public static void doTest(String name, Connection connection, String testDataPath, String expectedDataPath) throws IOException, SQLException {
-    boolean hasResults = !name.endsWith("-undefined");
-    boolean throwsE = name.endsWith("-throws");
+    File expectedFileIgnored = new File(expectedDataPath + "/" + name + "-ignored.expected.txt");
+    assumeFalse(expectedFileIgnored.exists());
     File testFile = new File(testDataPath + "/" + name + ".js");
     String test = FileUtils.readFileToString(testFile, StandardCharsets.UTF_8);
     String[] before = new String[1];
-    String[] command = new String[1];
+    List<String> commands = new ArrayList<>();
     String[] clear = new String[1];
     TestDataReader.read(test, Arrays.asList(
         new TestDataReader.SectionHandler("before", s -> before[0] = s),
-        new TestDataReader.SectionHandler("command", s -> command[0] = s),
+        new TestDataReader.SectionHandler("command", commands::add),
         new TestDataReader.SectionHandler("clear", s -> clear[0] = s)
     ));
     try (Statement statement = connection.createStatement()) {
       runIgnore(statement, clear);
       try {
         run(statement, before);
-        assertNotNull("Command cannot be null", command[0]);
+        StringBuilder actual = new StringBuilder();
+        assertFalse("Command cannot be null", commands.isEmpty());
         try {
-          boolean result = statement.execute(command[0]);
-          if (!hasResults) {
-            assertFalse("Command should not produce nothing", result);
-          }
-          else {
-            assertTrue("Command should produce result set", result);
-            ResultSet resultSet = statement.getResultSet();
-            assertNotNull("Result set cannot be null", resultSet);
-            String actual = print(resultSet);
-            compare(expectedDataPath, name, actual);
+          for (String command : commands) {
+
+            boolean result = statement.execute(command);
+            if (result) {
+              ResultSet resultSet = statement.getResultSet();
+              assertNotNull("Result set cannot be null", resultSet);
+              actual.append(print(resultSet)).append("\n");
+            }
+            else {
+              actual.append("No result\n");
+            }
           }
         }
         catch (Throwable t) {
-          if (!throwsE) throw t;
-          compare(expectedDataPath, name, t.getMessage());
+          System.err.println("IGNORED:\n");
+          t.printStackTrace();
+          String message = t.getMessage();
+          String msg = message.contains("\n") ? message.substring(0, message.indexOf("\n")) : message;
+          actual.append(msg).append("\n");
         }
+        compare(expectedDataPath, name, actual.toString());
       }
       finally {
         runIgnore(statement, clear);

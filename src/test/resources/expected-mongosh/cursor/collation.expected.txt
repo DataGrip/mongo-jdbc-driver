@@ -1,0 +1,4 @@
+|map|
+|Document{{_id=1, x=a}}|
+|Document{{_id=2, x=A}}|
+|Document{{_id=3, x=á}}|

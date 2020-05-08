@@ -1,0 +1,3 @@
+|map|
+|Document{{_id=<ObjectID>, category=cat1, v=1}}|
+|Document{{_id=<ObjectID>, category=cat2, v=2}}|

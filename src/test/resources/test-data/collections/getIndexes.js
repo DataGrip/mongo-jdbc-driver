@@ -6,4 +6,4 @@ db.col.createIndex({category: 1}, {collation: {locale: "fr"}});
 // command
 db.col.getIndexes();
 // clear
-db.getCollection('col').drop();
+db.col.drop();

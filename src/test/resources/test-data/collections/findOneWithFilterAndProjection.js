@@ -5,4 +5,4 @@ db.col.insert({key: "value3", a: 2});
 // command
 db.col.findOne({a: 2}, {key: 1});
 // clear
-db.getCollection('col').drop();
+db.col.drop();

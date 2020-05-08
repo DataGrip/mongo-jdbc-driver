@@ -1,0 +1,2 @@
+|map|
+|{acknowledged=true, deletedCount=2}|

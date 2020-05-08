@@ -5,4 +5,4 @@ db.col.insert({name: "value2", v: 3});
 // command
 db.col.aggregate([{$group: {_id: "$name", total: {$sum: "$v"}}}, {$sort: {total: -1}}]);
 // clear
-db.getCollection('col').drop();
+db.col.drop();

@@ -5,4 +5,4 @@ db.col.insert({category: "cat2", v: 3});
 // command
 db.col.createIndex({category: 1}, {collation: {locale: "fr"}});
 // clear
-db.getCollection('col').drop();
+db.col.drop();

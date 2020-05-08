@@ -18,6 +18,10 @@ public class DriverPropertyInfoHelper {
   public static final String MAX_POOL_SIZE = "max_connection_pool_size";
   public static final int MAX_POOL_SIZE_DEFAULT = 3;
   private static final String GET_MAX_SIZE_DOCS = "https://mongodb.github.io/mongo-java-driver/3.6/javadoc/com/mongodb/connection/ConnectionPoolSettings.html#getMaxSize--";
+  public static final String SCRIPT_ENGINE = "script_engine";
+  public static final String MONGOSH_SCRIPT_ENGINE = "mongosh";
+  public static final String NASHORN_SCRIPT_ENGINE = "nashorn";
+  public static final String DEFAULT_SCRIPT_ENGINE = MONGOSH_SCRIPT_ENGINE;
 
 
   public DriverPropertyInfo[] getPropertyInfo() {
@@ -35,6 +39,8 @@ public class DriverPropertyInfoHelper {
         "to return meta information from DatabaseMetaData.getColumns method.", null);
 
     addPropInfo(propInfos, USE_ES6, Boolean.toString(USE_ES6_DEFAULT), "Start Nashorn script engine with ecmascript 6 standard", null);
+    addPropInfo(propInfos, SCRIPT_ENGINE, DEFAULT_SCRIPT_ENGINE, "Script engine that is used to evaluate mongo shell scripts",
+        new String[]{MONGOSH_SCRIPT_ENGINE, NASHORN_SCRIPT_ENGINE});
 
     addPropInfo(propInfos, MAX_POOL_SIZE, Integer.toString(MAX_POOL_SIZE_DEFAULT), "MongoDB connections pool size per one connection from IDE. See " + GET_MAX_SIZE_DOCS, null);
 

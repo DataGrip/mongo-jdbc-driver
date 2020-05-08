@@ -5,4 +5,4 @@ db.col.insert({"_id": 3, name: "Lyusya"});
 // command
 db.col.find().skip(1);
 // clear
-db.getCollection('col').drop();
+db.col.drop();

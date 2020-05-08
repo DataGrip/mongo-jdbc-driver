@@ -10,10 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 
 import static com.mongodb.MongoClientSettings.getDefaultCodecRegistry;
@@ -35,10 +32,15 @@ public class Util {
   }
 
   public static ResultSet ok(Object result) {
+    if (result instanceof Map<?, ?>) return ok((Map<?, ?>) result);
+    if (result instanceof List<?>) {
+      String name = Util.all((List<?>) result, o -> o instanceof Map) ? "map" : "result";
+      return new ListResultSet(Util.map((List<?>) result, o -> new Object[]{o}), new String[]{name});
+    }
     return new ListResultSet(result, new String[]{"result"});
   }
 
-  public static ResultSet ok(Document result) {
+  public static ResultSet ok(Map<?, ?> result) {
     return new ListResultSet(result, new String[]{"map"});
   }
 
@@ -103,6 +105,14 @@ public class Util {
       return clazz.cast(obj);
     }
     return null;
+  }
+
+  @Contract(pure=true)
+  public static <T> boolean all(@NotNull Collection<? extends T> collection, @NotNull Function<? super T, Boolean> predicate) {
+    for (T v : collection) {
+      if (!predicate.apply(v)) return false;
+    }
+    return true;
   }
 
   @NotNull

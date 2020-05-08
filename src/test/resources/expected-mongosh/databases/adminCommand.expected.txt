@@ -1,0 +1,1 @@
+com.mongodb.MongoCommandException: Command failed with error 59 (CommandNotFound): 'no such command: 'version'' on server localhost:27017. The full response is {"ok": 0.0, "errmsg": "no such command: 'version'", "code": 59, "codeName": "CommandNotFound"}

@@ -1,0 +1,2 @@
+|map|
+|Document{{_id=<ObjectID>, key=value, array=[1, 2, 3, Document{{another_object=  .$# }}]}}|

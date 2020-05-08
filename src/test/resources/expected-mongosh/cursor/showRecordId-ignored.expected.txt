@@ -1,0 +1,4 @@
+|map|
+|Document{{_id=1, name=Vasya, $recordId=1}}|
+|Document{{_id=2, name=Petya, $recordId=2}}|
+|Document{{_id=3, name=Lyusya, $recordId=3}}|
