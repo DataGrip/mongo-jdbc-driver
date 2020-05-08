@@ -23,7 +23,8 @@ import static com.dbschema.mongo.TestUtil.doTest;
  **/
 @RunWith(Parameterized.class)
 public class MongoDatabaseCommandsTest {
-  private static final String TEST_DATA_PATH = "src/test/resources/commands/nashorn/databases";
+  private static final String TEST_DATA_PATH = "src/test/resources/test-data/databases";
+  private static final String EXPECTED_TEST_DATA_PATH = "src/test/resources/expected-nashorn/databases";
   private static Connection connection;
   private final String testName;
 
@@ -54,6 +55,6 @@ public class MongoDatabaseCommandsTest {
 
   @Test
   public void test() throws IOException, SQLException {
-    doTest(testName, connection, TEST_DATA_PATH);
+    doTest(testName, connection, TEST_DATA_PATH, EXPECTED_TEST_DATA_PATH);
   }
 }

@@ -44,7 +44,7 @@ public class TestUtil {
     return sb.toString();
   }
 
-  public static void doTest(String name, Connection connection, String testDataPath) throws IOException, SQLException {
+  public static void doTest(String name, Connection connection, String testDataPath, String expectedDataPath) throws IOException, SQLException {
     boolean hasResults = !name.endsWith("-undefined");
     boolean throwsE = name.endsWith("-throws");
     File testFile = new File(testDataPath + "/" + name + ".js");
@@ -72,12 +72,12 @@ public class TestUtil {
             ResultSet resultSet = statement.getResultSet();
             assertNotNull("Result set cannot be null", resultSet);
             String actual = print(resultSet);
-            compare(testDataPath, name, actual);
+            compare(expectedDataPath, name, actual);
           }
         }
         catch (Throwable t) {
           if (!throwsE) throw t;
-          compare(testDataPath, name, t.getMessage());
+          compare(expectedDataPath, name, t.getMessage());
         }
       }
       finally {
