@@ -107,4 +107,9 @@ public class JMongoClient implements AutoCloseable {
     checkClosed();
     return new JMongoDatabase(mongoClient.getDatabase(databaseName), mongoClient);
   }
+
+  @NotNull
+  public MongoClient getMongoClient() {
+    return mongoClient;
+  }
 }

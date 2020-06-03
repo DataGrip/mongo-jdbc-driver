@@ -5,4 +5,4 @@ db.col.insert({name: "value2", v: 3});
 // command
 db.col.estimatedDocumentCount({maxTimeMS: 1000});
 // clear
-db.getCollection('col').drop();
+db.col.drop();

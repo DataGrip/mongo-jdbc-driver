@@ -11,4 +11,4 @@ db.restaurant.updateMany(
     {$set: {"Review": true}}
 );
 // clear
-db.getCollection('restaurant').drop();
+db.restaurant.drop();

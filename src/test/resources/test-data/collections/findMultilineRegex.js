@@ -5,4 +5,4 @@ db.col.insert({category: "cat2", title: "t4", v: 3});
 // command
 db.col.find({category: /^S/m});
 // clear
-db.getCollection('col').drop();
+db.col.drop();

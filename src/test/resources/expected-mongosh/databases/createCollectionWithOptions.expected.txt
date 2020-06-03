@@ -1,0 +1,2 @@
+No result
+com.mongodb.mongosh.result.CommandException: unrecognized create collection options field: unknown

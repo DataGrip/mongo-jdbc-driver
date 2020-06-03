@@ -1,5 +1,6 @@
 package com.dbschema.mongo;
 
+import com.dbschema.mongo.mongosh.MongoshScriptEngine;
 import com.dbschema.mongo.nashorn.MongoNashornScriptEngine;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -9,6 +10,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
+import static com.dbschema.mongo.DriverPropertyInfoHelper.MONGOSH_SCRIPT_ENGINE;
+import static com.dbschema.mongo.DriverPropertyInfoHelper.NASHORN_SCRIPT_ENGINE;
+
 public class MongoConnection implements Connection {
   private final MongoService service;
   private final MongoScriptEngine scriptEngine;
@@ -17,9 +21,18 @@ public class MongoConnection implements Connection {
   private boolean isReadOnly = false;
 
   public MongoConnection(@NotNull String url, @NotNull Properties info, @Nullable String username, @Nullable String password,
-                         int fetchDocumentsForMeta, boolean useEs6) throws SQLException {
+                         int fetchDocumentsForMeta, @NotNull String scriptEngine, boolean useEs6) throws SQLException {
     this.service = new MongoService(url, info, username, password, fetchDocumentsForMeta);
-    this.scriptEngine = new MongoNashornScriptEngine(this, useEs6);
+    switch (scriptEngine) {
+      case MONGOSH_SCRIPT_ENGINE:
+        this.scriptEngine = new MongoshScriptEngine(this);
+        break;
+      case NASHORN_SCRIPT_ENGINE:
+        this.scriptEngine = new MongoNashornScriptEngine(this, useEs6);
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown script engine " + scriptEngine);
+    }
     try {
       setSchema(service.getDatabaseNameFromUrl());
     }

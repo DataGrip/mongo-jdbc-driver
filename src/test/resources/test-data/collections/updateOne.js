@@ -33,4 +33,4 @@ db.books.updateOne(
     }
 );
 // clear
-db.getCollection('books').drop();
+db.books.drop();

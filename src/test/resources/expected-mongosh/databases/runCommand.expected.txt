@@ -1,0 +1,2 @@
+|map|
+|Document{{users=[Document{{_id=admin.admin, userId=<UUID>, user=admin, db=admin, roles=[Document{{role=root, db=admin}}], mechanisms=[SCRAM-SHA-1, SCRAM-SHA-256]}}], ok=1}}|

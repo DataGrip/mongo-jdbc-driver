@@ -1,0 +1,3 @@
+|map|
+|Document{{_id=value2, total=5}}|
+|Document{{_id=value1, total=1}}|

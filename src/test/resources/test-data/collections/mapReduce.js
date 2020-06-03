@@ -14,4 +14,4 @@ var reduceFunction1 = function(keyCustId, valuesPrices) { return Array.sum(value
 // command
 db.orders.mapReduce( mapFunction1, reduceFunction1 );
 // clear
-db.getCollection('orders').drop();
+db.orders.drop();

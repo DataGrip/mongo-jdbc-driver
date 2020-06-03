@@ -5,4 +5,4 @@ db.col.insert({"_id": 3});
 // command
 db.col.find().comment("some comment");
 // clear
-db.getCollection('col').drop();
+db.col.drop();
