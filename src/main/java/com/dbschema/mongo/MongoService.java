@@ -145,7 +145,7 @@ public class MongoService implements AutoCloseable {
       list.remove("system.version");
     }
     catch (Throwable ex) {
-      System.out.println("Cannot list collection names for " + catalog + ". " + ex);
+      System.err.println("Cannot list collection names for " + catalog + ". " + ex);
     }
     return list;
   }
@@ -161,7 +161,7 @@ public class MongoService implements AutoCloseable {
         }
       }
       catch (Throwable ex) {
-        System.out.println("Error discovering collection " + dbOrCatalog + "." + collectionName + ". " + ex);
+        System.err.println("Error discovering collection " + dbOrCatalog + "." + collectionName + ". " + ex);
         ex.printStackTrace();
       }
     }
@@ -201,7 +201,7 @@ public class MongoService implements AutoCloseable {
                   if (!solvedFields.contains(metaField) && mongoCollection.find(query).iterator().hasNext()) {
                     solvedFields.add(metaField);
                     metaField.createReferenceTo(collection);
-                    System.out.println("Found ref " + metaField.parentJson.name + " ( " + metaField.name + " ) ref " + collection.name);
+                    System.err.println("Found ref " + metaField.parentJson.name + " ( " + metaField.name + " ) ref " + collection.name);
                   }
                 }
               }
@@ -212,7 +212,7 @@ public class MongoService implements AutoCloseable {
       }
       catch (Throwable ex) {
         ex.printStackTrace();
-        System.out.println("Error in discover foreign keys " + ex);
+        System.err.println("Error in discover foreign keys " + ex);
       }
     }
   }
