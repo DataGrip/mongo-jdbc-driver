@@ -1,0 +1,4 @@
+|result|
+|switched to db my-db|
+
+|map|

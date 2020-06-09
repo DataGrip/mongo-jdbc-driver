@@ -171,4 +171,11 @@ public class Util {
     String passwordPart = password == null ? "" : ":" + password;
     return (isSrv ? MONGODB_SRV_PREFIX : MONGODB_PREFIX) + username + passwordPart + "@" + uriWithoutPrefix;
   }
+
+  @NotNull
+  public static String trimEnd(@NotNull String str, char end) {
+    int i = str.length() - 1;
+    while (i >= 0 && str.charAt(i) == end) i--;
+    return str.substring(0, i + 1);
+  }
 }

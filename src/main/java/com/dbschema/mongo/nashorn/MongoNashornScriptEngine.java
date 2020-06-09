@@ -26,6 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.dbschema.mongo.Util.ok;
+import static com.dbschema.mongo.Util.trimEnd;
 
 /**
  * @author Liudmila Kornilova
@@ -100,13 +101,13 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
   @Nullable
   @Override
   public ResultSet execute(@NotNull String query, int fetchSize) throws SQLException {
-    Matcher matcherSetDb = PATTERN_USE_DATABASE.matcher(query);
+    Matcher matcherSetDb = PATTERN_USE_DATABASE.matcher(trimEnd(query.trim(), ';').trim());
     if (matcherSetDb.matches()) {
-      String db = matcherSetDb.group(1).trim();
+      String db = matcherSetDb.group(1);
       if ((db.startsWith("\"") && db.endsWith("\"")) || (db.startsWith("'") && db.endsWith("'"))) {
         db = db.substring(1, db.length() - 1);
       }
-      connection.setSchema(db);
+      connection.setSchema(db.trim());
       return ok();
     }
     Matcher matcherCreateDatabase = PATTERN_CREATE_DATABASE.matcher(query);

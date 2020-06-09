@@ -10,15 +10,18 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.dbschema.mongo.Util.ok;
+import static com.dbschema.mongo.Util.trimEnd;
 
 /**
  * @author Liudmila Kornilova
  **/
 public class MongoshScriptEngine implements MongoScriptEngine {
-  private static final Pattern CLEAR_CONTEXT = Pattern.compile("clearContext\\s*\\(\\s*\\);?");
+  private static final Pattern USE_DATABASE = Pattern.compile("use\\s+(.*)", Pattern.CASE_INSENSITIVE);
+  private static final Pattern CLEAR_CONTEXT = Pattern.compile("clearContext\\s*\\(\\s*\\)\\s*;?");
   private final MongoConnection connection;
   private MongoShell repl;
 
@@ -41,6 +44,14 @@ public class MongoshScriptEngine implements MongoScriptEngine {
       if (CLEAR_CONTEXT.matcher(query.trim()).matches()) {
         repl = null;
         return null;
+      }
+      Matcher useCommand = USE_DATABASE.matcher(trimEnd(query.trim(), ';').trim());
+      if (useCommand.matches()) {
+        String db = useCommand.group(1);
+        if ((db.startsWith("\"") && db.endsWith("\"")) || (db.startsWith("'") && db.endsWith("'"))) {
+          db = db.substring(1, db.length() - 1);
+        }
+        query = "use " + db.trim();
       }
       MongoShell repl = getRepl();
       MongoShellResult<?> result = repl.eval(query);
