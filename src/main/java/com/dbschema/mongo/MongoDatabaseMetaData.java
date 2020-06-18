@@ -52,22 +52,6 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     return retVal;
   }
 
-  private Pattern getPattern(String inputPattern) {
-    if (inputPattern == null)
-        return null;
-
-    if (inputPattern.indexOf('%') == -1 && inputPattern.indexOf('_') == -1)
-	return null;
-
-    String regExp = inputPattern.replace("%", ".*").replace('_', '.');
-    try {
-	return Pattern.compile(regExp);
-    }
-    catch (IllegalArgumentException e) {
-	return null;
-    }
-  }
- 
   /**
    * @see java.sql.DatabaseMetaData#getTables(java.lang.String, java.lang.String, java.lang.String,
    * java.lang.String[])
@@ -77,13 +61,13 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     resultSet.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME",
         "TABLE_TYPE", "REMARKS", "TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "SELF_REFERENCING_COL_NAME",
         "REF_GENERATION");
-    Pattern pSchema = getPattern(schemaPattern);
-    Pattern pTable = getPattern(tableNamePattern);
+    Pattern pSchema = PatternSupport.getPattern(schemaPattern);
+    Pattern pTable = PatternSupport.getPattern(tableNamePattern);
 
     for (String schema : con.getService().getDatabaseNames()) {
-      if (schemaPattern == null || schemaPattern.equals(schema) || (pSchema != null && pSchema.matcher(schema).matches())) {
+      if (schemaPattern == null || (pSchema == null && schemaPattern.equals(schema)) || (pSchema != null && pSchema.matcher(schema).matches())) {
         for (String tableName : con.getService().getCollectionNames(schema)) {
-          if (tableNamePattern == null || tableNamePattern.equals(tableName) || (pTable != null && pTable.matcher(tableName).matches()))
+          if (tableNamePattern == null || (pTable == null && tableNamePattern.equals(tableName)) || (pTable != null && pTable.matcher(tableName).matches()))
             resultSet.addRow(createTableRow(schema, tableName));
         }
       }
@@ -129,9 +113,9 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
 
     Map<String, String[]> columnsData = new HashMap<>();
     if (collection != null) {
-      Pattern p = getPattern(columnNamePattern);
+      Pattern p = PatternSupport.getPattern(columnNamePattern);
       for (MetaField field : collection.fields) {
-        if (columnNamePattern == null || columnNamePattern.equals(field.name) || (p != null && p.matcher(field.name).matches())) {
+        if (columnNamePattern == null || (p == null && columnNamePattern.equals(field.name)) || (p != null && p.matcher(field.name).matches())) {
           exportColumnsRecursive(schemaName, collection, columnsData, field);
         }
       }
@@ -553,8 +537,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
   }
 
   public String getSearchStringEscape() {
-
-    return null;
+    return "\\";
   }
 
   public String getExtraNameCharacters() {
@@ -1498,11 +1481,11 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
   public ResultSet getSchemas(String catalogName, String schemaPattern) throws SQLAlreadyClosedException {
     List<String> mongoDbs = con.getService().getDatabaseNames();
     ListResultSet retVal = new ListResultSet();
-    Pattern p = getPattern(schemaPattern);
+    Pattern p = PatternSupport.getPattern(schemaPattern);
 
     retVal.setColumnNames("TABLE_SCHEM", "TABLE_CATALOG");
     for (String mongoDb : mongoDbs) {
-      if (schemaPattern == null || schemaPattern.equals(mongoDb) || (p != null && p.matcher(mongoDb).matches()))
+      if (schemaPattern == null || (p == null && schemaPattern.equals(mongoDb)) || (p != null && p.matcher(mongoDb).matches()))
         retVal.addRow(new String[]{mongoDb, DB_NAME});
     }
     return retVal;
