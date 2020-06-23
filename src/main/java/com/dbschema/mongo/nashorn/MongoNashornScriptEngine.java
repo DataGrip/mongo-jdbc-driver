@@ -178,4 +178,8 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
       throw new SQLException(ex.getMessage());
     }
   }
+
+  @Override
+  public void close() {
+  }
 }

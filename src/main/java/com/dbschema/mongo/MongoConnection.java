@@ -139,6 +139,7 @@ public class MongoConnection implements Connection {
     checkClosed();
     isClosed = true;
     service.close();
+    scriptEngine.close();
   }
 
   @Override

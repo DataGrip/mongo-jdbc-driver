@@ -42,6 +42,7 @@ public class MongoshScriptEngine implements MongoScriptEngine {
   public ResultSet execute(@NotNull String query, int fetchSize) throws SQLException {
     try {
       if (CLEAR_CONTEXT.matcher(query.trim()).matches()) {
+        if (repl != null) repl.close();
         repl = null;
         return null;
       }
@@ -72,5 +73,10 @@ public class MongoshScriptEngine implements MongoScriptEngine {
     catch (Exception e) {
       throw new SQLException(e);
     }
+  }
+
+  @Override
+  public void close() {
+    if (repl != null) repl.close();
   }
 }

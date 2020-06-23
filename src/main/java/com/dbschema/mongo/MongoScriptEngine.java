@@ -12,4 +12,6 @@ import java.sql.SQLException;
 public interface MongoScriptEngine {
   @Nullable
   ResultSet execute(@NotNull String query, int fetchSize) throws SQLException;
+
+  void close();
 }
