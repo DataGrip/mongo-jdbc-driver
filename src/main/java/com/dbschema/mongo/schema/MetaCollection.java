@@ -141,7 +141,7 @@ public class MetaCollection extends MetaJson {
                 metaIndex.addColumn(metaField);
               }
               else {
-                System.out.println("MongoJDBC discover index cannot find metaField '" + fieldNameObj + "' for index " + indexObject);
+                System.err.println("MongoJDBC discover index cannot find metaField '" + fieldNameObj + "' for index " + indexObject);
               }
             }
           }
@@ -149,7 +149,7 @@ public class MetaCollection extends MetaJson {
       }
     }
     catch (Throwable ex) {
-      System.out.println("Error in discover indexes " + dbCollection + "." + this + ". " + ex);
+      System.err.println("Error in discover indexes " + dbCollection + "." + this + ". " + ex);
     }
   }
 
