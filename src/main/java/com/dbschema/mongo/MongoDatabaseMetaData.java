@@ -1118,22 +1118,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getExportedKeys(String catalogName, String schemaName, String tableNamePattern) throws SQLAlreadyClosedException {
-    con.getService().discoverReferences();
-
-
-    ListResultSet result = new ListResultSet();
-    result.setColumnNames("PKTABLE_CAT", "PKTABLE_SCHEMA", "PKTABLE_NAME", "PKCOLUMN_NAME", "FKTABLE_CAT", "FKTABLE_SCHEM",
-        "FKTABLE_NAME", "FKCOLUMN_NAME", "KEY_SEQ", "UPDATE_RULE", "DELETE_RULE", "FK_NAME", "PK_NAME", "DEFERRABILITY");
-
-    MetaCollection pkCollection = con.getService().getMetaCollection(schemaName, tableNamePattern);
-    if (pkCollection != null) {
-      for (MetaCollection fromCollection : con.getService().getMetaCollections()) {
-        for (MetaField fromFiled : fromCollection.fields) {
-          getExportedKeysRecursive(result, pkCollection, fromCollection, fromFiled);
-        }
-      }
-    }
-    return result;
+    return null;
   }
 
   private void getExportedKeysRecursive(ListResultSet result, MetaCollection pkCollection, MetaCollection fromCollection, MetaField fromFiled) {
@@ -1170,21 +1155,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    */
   @Override
   public ResultSet getImportedKeys(String catalogName, String schemaName, String tableNamePattern) throws SQLAlreadyClosedException {
-    con.getService().discoverReferences();
-
-
-    ListResultSet result = new ListResultSet();
-    result.setColumnNames("PKTABLE_CAT", "PKTABLE_SCHEM", "PKTABLE_NAME", "PKCOLUMN_NAME", "FKTABLE_CAT", "FKTABLE_SCHEM",
-        "FKTABLE_NAME", "FKCOLUMN_NAME", "KEY_SEQ", "UPDATE_RULE", "DELETE_RULE", "FK_NAME", "PK_NAME", "DEFERRABILITY");
-
-
-    MetaCollection fromCollection = con.getService().getMetaCollection(schemaName, tableNamePattern);
-    if (fromCollection != null) {
-      for (MetaField fromFiled : fromCollection.fields) {
-        getImportedKeysRecursive(result, fromFiled);
-      }
-    }
-    return result;
+    return null;
   }
 
   private void getImportedKeysRecursive(ListResultSet result, MetaField fromFiled) {

@@ -4,22 +4,21 @@ import com.dbschema.mongo.nashorn.JMongoClient;
 import com.dbschema.mongo.nashorn.JMongoCollection;
 import com.dbschema.mongo.nashorn.JMongoDatabase;
 import com.dbschema.mongo.schema.MetaCollection;
-import com.dbschema.mongo.schema.MetaField;
 import com.mongodb.MongoSecurityException;
 import com.mongodb.client.MongoClient;
 import org.bson.Document;
-import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
 public class MongoService implements AutoCloseable {
   private boolean isClosed = false;
   private final JMongoClient client;
   private final String uri;
-  private final HashMap<String, MetaCollection> metaCollections = new HashMap<>();
   private final int fetchDocumentsForMeta;
 
   // USE STATIC SO OPENING A NEW CONNECTION WILL REMEMBER THIS
@@ -88,11 +87,6 @@ public class MongoService implements AutoCloseable {
     return list;
   }
 
-  public Collection<MetaCollection> getMetaCollections() {
-    return metaCollections.values();
-  }
-
-
   @NotNull
   public String getVersion() throws SQLException {
     checkClosed();
@@ -110,19 +104,7 @@ public class MongoService implements AutoCloseable {
 
   public MetaCollection getMetaCollection(@NotNull String catalogName, String collectionName) throws SQLAlreadyClosedException {
     if (collectionName == null || collectionName.length() == 0) return null;
-    int idx = collectionName.indexOf('.');
-    if (idx > -1) collectionName = collectionName.substring(0, idx);
-
-    String key = catalogName + "." + collectionName;
-    MetaCollection metaCollection = metaCollections.get(key);
-    if (metaCollection == null) {
-      metaCollection = discoverCollection(catalogName, collectionName);
-      if (metaCollection != null) {
-        metaCollections.put(key, metaCollection);
-      }
-    }
-    return metaCollection;
-
+    return discoverCollection(catalogName, collectionName);
   }
 
   public String getURI() {
@@ -177,46 +159,6 @@ public class MongoService implements AutoCloseable {
     }
     return null;
   }
-
-
-  private boolean referencesDiscovered = false;
-
-  public void discoverReferences() {
-    if (!referencesDiscovered) {
-      try {
-        referencesDiscovered = true;
-        final List<MetaField> unsolvedFields = new ArrayList<>();
-        final List<MetaField> solvedFields = new ArrayList<>();
-        for (MetaCollection collection : metaCollections.values()) {
-          collection.collectFieldsWithObjectId(unsolvedFields);
-        }
-        if (!unsolvedFields.isEmpty()) {
-          for (MetaCollection collection : metaCollections.values()) {
-            final JMongoCollection mongoCollection = getJMongoCollection(collection.db, collection.name);
-            if (mongoCollection != null) {
-              for (MetaField metaField : unsolvedFields) {
-                for (ObjectId objectId : metaField.objectIds) {
-                  final Map<String, Object> query = new HashMap<>(); //new BasicDBObject();
-                  query.put("_id", objectId);
-                  if (!solvedFields.contains(metaField) && mongoCollection.find(query).iterator().hasNext()) {
-                    solvedFields.add(metaField);
-                    metaField.createReferenceTo(collection);
-                    System.err.println("Found ref " + metaField.parentJson.name + " ( " + metaField.name + " ) ref " + collection.name);
-                  }
-                }
-              }
-            }
-          }
-        }
-
-      }
-      catch (Throwable ex) {
-        ex.printStackTrace();
-        System.err.println("Error in discover foreign keys " + ex);
-      }
-    }
-  }
-
 
   @Override
   public String toString() {
