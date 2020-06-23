@@ -1,17 +1,18 @@
 package com.dbschema.mongo;
 
 import com.dbschema.mongo.nashorn.JMongoClient;
-import com.dbschema.mongo.nashorn.JMongoCollection;
-import com.dbschema.mongo.nashorn.JMongoDatabase;
 import com.dbschema.mongo.schema.MetaCollection;
 import com.mongodb.MongoSecurityException;
 import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -73,13 +74,29 @@ public class MongoService implements AutoCloseable {
     return names;
   }
 
-  public JMongoDatabase getDatabase(String dbName) throws SQLAlreadyClosedException {
+  public MongoDatabase getDatabase(String dbName) throws SQLAlreadyClosedException {
     checkClosed();
     return client.getDatabase(dbName);
   }
 
-  public List<JMongoDatabase> getDatabases() throws SQLAlreadyClosedException {
-    final List<JMongoDatabase> list = new ArrayList<>();
+  @NotNull
+  public List<MongoDatabase> getDatabases(MongoNamePattern dbName) throws SQLAlreadyClosedException {
+    checkClosed();
+    String plain = dbName.asPlain();
+    if (plain != null) {
+      return Collections.singletonList(client.getDatabase(plain));
+    }
+    List<MongoDatabase> databases = new ArrayList<>();
+    for (String databaseName : client.getMongoClient().listDatabaseNames()) {
+      if (dbName.matches(databaseName)) {
+        databases.add(client.getMongoClient().getDatabase(databaseName));
+      }
+    }
+    return databases;
+  }
+
+  public List<MongoDatabase> getDatabases() throws SQLAlreadyClosedException {
+    final List<MongoDatabase> list = new ArrayList<>();
 
     for (String dbName : getDatabaseNames()) {
       list.add(getDatabase(dbName));
@@ -90,7 +107,7 @@ public class MongoService implements AutoCloseable {
   @NotNull
   public String getVersion() throws SQLException {
     checkClosed();
-    JMongoDatabase db = client.getDatabase("test");
+    MongoDatabase db = client.getDatabase("test");
     try {
       Document info = db.runCommand(new Document("buildInfo", 1));
       String version = info.getString("version");
@@ -102,9 +119,33 @@ public class MongoService implements AutoCloseable {
   }
 
 
-  public MetaCollection getMetaCollection(@NotNull String catalogName, String collectionName) throws SQLAlreadyClosedException {
-    if (collectionName == null || collectionName.length() == 0) return null;
-    return discoverCollection(catalogName, collectionName);
+  @NotNull
+  public List<MetaCollection> getMetaCollections(@Nullable String databasePattern, @Nullable String collectionPattern) throws SQLAlreadyClosedException {
+    MongoNamePattern collectionName = MongoNamePattern.create(collectionPattern);
+    List<MongoDatabase> databases = getDatabases(MongoNamePattern.create(databasePattern));
+    List<MetaCollection> collections = new ArrayList<>();
+    for (MongoDatabase database : databases) {
+      try {
+        String plainCollectionName = collectionName.asPlain();
+        if (plainCollectionName != null) {
+          MongoCollection<Document> collection = database.getCollection(plainCollectionName);
+          collections.add(new MetaCollection(collection, fetchDocumentsForMeta));
+        }
+        else {
+          for (String name : database.listCollectionNames()) {
+            if (collectionName.matches(name)) {
+              MongoCollection<Document> collection = database.getCollection(name);
+              collections.add(new MetaCollection(collection, fetchDocumentsForMeta));
+            }
+          }
+        }
+      }
+      catch (Throwable ex) {
+        System.err.println("Error discovering collection " + database + " " + collectionName + ". " + ex);
+        ex.printStackTrace();
+      }
+    }
+    return collections;
   }
 
   public String getURI() {
@@ -116,7 +157,7 @@ public class MongoService implements AutoCloseable {
     checkClosed();
     List<String> list = new ArrayList<>();
     try {
-      JMongoDatabase db = client.getDatabase(catalog);
+      MongoDatabase db = client.getDatabase(catalog);
       if (db != null) {
         for (String str : db.listCollectionNames()) {
           list.add(str);
@@ -130,34 +171,6 @@ public class MongoService implements AutoCloseable {
       System.err.println("Cannot list collection names for " + catalog + ". " + ex);
     }
     return list;
-  }
-
-
-  public MetaCollection discoverCollection(String dbOrCatalog, String collectionName) throws SQLAlreadyClosedException {
-    final JMongoDatabase mongoDatabase = getDatabase(dbOrCatalog);
-    if (mongoDatabase != null) {
-      try {
-        final JMongoCollection mongoCollection = mongoDatabase.getCollection(collectionName);
-        if (mongoCollection != null) {
-          return new MetaCollection(mongoCollection, dbOrCatalog, collectionName, fetchDocumentsForMeta);
-        }
-      }
-      catch (Throwable ex) {
-        System.err.println("Error discovering collection " + dbOrCatalog + "." + collectionName + ". " + ex);
-        ex.printStackTrace();
-      }
-    }
-    return null;
-  }
-
-
-  private JMongoCollection getJMongoCollection(String databaseName, String collectionName) throws SQLAlreadyClosedException {
-    checkClosed();
-    final JMongoDatabase mongoDatabase = client.getDatabase(databaseName);
-    if (mongoDatabase != null) {
-      return mongoDatabase.getCollection(collectionName);
-    }
-    return null;
   }
 
   @Override

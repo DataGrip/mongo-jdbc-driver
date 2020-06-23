@@ -45,6 +45,11 @@ public final class MongoNamePattern {
     this.pattern = null;
   }
 
+  @Nullable
+  public String asPlain() {
+    return plain;
+  }
+
   public boolean matches(@NotNull String name) {
     return plain != null ? plain.equals(name) :
            pattern == null || pattern.matcher(name).matches();
@@ -58,7 +63,7 @@ public final class MongoNamePattern {
    * @return A suitable Pattern if the input has wildcard characters in it, or NULL if no pattern matching required.
    */
   @NotNull
-  static MongoNamePattern create(String inputPattern) throws IllegalArgumentException {
+  public static MongoNamePattern create(String inputPattern) throws IllegalArgumentException {
     if (inputPattern == null) return new MongoNamePattern();
     String plain = toPlain(inputPattern);
     if (plain != null) return new MongoNamePattern(plain);
@@ -72,6 +77,7 @@ public final class MongoNamePattern {
         escaped = !escaped;
       }
       else if (escaped) {
+        escaped = false;
         if (c == '_' || c == '%') sb.append(c);
         else
           throw new IllegalArgumentException("Illegal char escape " + c + " at position " + i + " string: " + inputPattern);
@@ -99,6 +105,7 @@ public final class MongoNamePattern {
         escaped = !escaped;
       }
       else if (escaped) {
+        escaped = false;
         if (c == '_') plain.append("_");
         else if (c == '%') plain.append("%");
         else

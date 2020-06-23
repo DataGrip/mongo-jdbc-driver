@@ -1,10 +1,10 @@
 package com.dbschema.mongo.schema;
 
-import com.dbschema.mongo.nashorn.JFindIterable;
-import com.dbschema.mongo.nashorn.JMongoCollection;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.ListIndexesIterable;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import org.bson.types.ObjectId;
+import org.bson.Document;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -13,16 +13,14 @@ import java.util.List;
 import java.util.Map;
 
 public class MetaCollection extends MetaJson {
-
   private boolean isFirstDiscover = true;
 
   public final String db;
   public final List<MetaIndex> metaIndexes = new ArrayList<>();
 
-  public MetaCollection(final JMongoCollection mongoCollection, final String db, final String name, final int fetchDocumentsForMeta) {
-    super(null, name, TYPE_MAP);
-    this.db = db;
-
+  public MetaCollection(final MongoCollection<?> mongoCollection, final int fetchDocumentsForMeta) {
+    super(null, mongoCollection.getNamespace().getCollectionName(), TYPE_MAP);
+    db = mongoCollection.getNamespace().getDatabaseName();
     discoverCollectionFirstRecords(mongoCollection, fetchDocumentsForMeta);
     discoverIndexes(mongoCollection);
 
@@ -35,19 +33,18 @@ public class MetaCollection extends MetaJson {
   }
 
 
-  private boolean discoverCollectionFirstRecords(JMongoCollection mongoCollection, int iterations) {
+  private void discoverCollectionFirstRecords(MongoCollection<?> mongoCollection, int iterations) {
     MongoCursor<?> cursor = mongoCollection.find().iterator();
     int iteration = 0;
     while (cursor.hasNext() && ++iteration <= iterations) {
       discoverMap(this, cursor.next());
     }
     cursor.close();
-    return iteration >= iterations;
   }
 
-  private void discoverCollectionRandomRecords(JMongoCollection mongoCollection, int iterations) {
+  private void discoverCollectionRandomRecords(MongoCollection<Document> mongoCollection, int iterations) {
     int skip = 10, i = 0;
-    JFindIterable jFindIterable = mongoCollection.find(); // .limit(-1)
+    FindIterable<Document> jFindIterable = mongoCollection.find(); // .limit(-1)
     while (i++ < iterations) {
       final MongoCursor<?> crs = jFindIterable.iterator();
       while (i++ < iterations && crs.hasNext()) {
@@ -82,11 +79,7 @@ public class MetaCollection extends MetaJson {
           }
         }
         else {
-          MetaField field = parentMap.createField((String) key, type, getJavaType(value), isFirstDiscover);
-          // VALUES WHICH ARE OBJECTID AND ARE NOT _id IN THE ROOT MAP
-          if (value instanceof ObjectId && !"_id".equals(field.getNameWithPath())) {
-            field.addObjectId((ObjectId) value);
-          }
+          parentMap.createField((String) key, type, getJavaType(value), isFirstDiscover);
         }
       }
       for (MetaField field : parentMap.fields) {
@@ -122,7 +115,7 @@ public class MetaCollection extends MetaJson {
   private static final String KEY_UNIQUE = "unique";
   private static final String KEY_KEY = "key";
 
-  private void discoverIndexes(JMongoCollection dbCollection) {
+  private void discoverIndexes(MongoCollection<?> dbCollection) {
     try {
       ListIndexesIterable<?> iterable = dbCollection.listIndexes();
       for (Object indexObject : iterable) {

@@ -16,14 +16,13 @@ public class MetaJson extends MetaField {
     super(parentJson, name, (type == TYPE_LIST ? "list" : "map"), type);
   }
 
-  public MetaField createField(String name, String typeName, int type, boolean mandatoryIfNew) {
+  public void createField(String name, String typeName, int type, boolean mandatoryIfNew) {
     for (MetaField column : fields) {
-      if (column.name.equals(name)) return column;
+      if (column.name.equals(name)) return;
     }
     MetaField field = new MetaField(this, name, typeName, type);
     field.setMandatory(mandatoryIfNew);
     fields.add(field);
-    return field;
   }
 
   public MetaJson createJsonMapField(String name, boolean mandatoryIfNew) {
@@ -44,21 +43,6 @@ public class MetaJson extends MetaField {
     json.setMandatory(mandatoryIfNew);
     fields.add(json);
     return json;
-  }
-
-  public MetaField getColumn(String name) {
-    for (MetaField column : fields) {
-      if (column.name.equals(name)) return column;
-    }
-    return null;
-  }
-
-  @Override
-  public void collectFieldsWithObjectId(List<MetaField> unsolvedFields) {
-    super.collectFieldsWithObjectId(unsolvedFields);
-    for (MetaField field : fields) {
-      field.collectFieldsWithObjectId(unsolvedFields);
-    }
   }
 
   public MetaField findField(String name) {

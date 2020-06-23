@@ -1,7 +1,7 @@
 package com.dbschema.mongo;
 
-import com.dbschema.mongo.nashorn.JMongoCollection;
-import com.dbschema.mongo.nashorn.JMongoDatabase;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
 import org.bson.Document;
 
@@ -11,7 +11,6 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -87,14 +86,14 @@ public class MongoPreparedStatement implements PreparedStatement {
     return executeUpdate(query);
   }
 
-  private JMongoDatabase getDatabase(String name) throws SQLAlreadyClosedException {
-    for (JMongoDatabase scan : connection.getService().getDatabases()) {
+  private MongoDatabase getDatabase(String name) throws SQLAlreadyClosedException {
+    for (MongoDatabase scan : connection.getService().getDatabases(MongoNamePattern.create(null))) {
       if (scan.getName().equalsIgnoreCase(name)) {
         return scan;
       }
     }
     if ("db".equals(name) && connection.getSchema() != null) {
-      for (JMongoDatabase scan : connection.getService().getDatabases()) {
+      for (MongoDatabase scan : connection.getService().getDatabases()) {
         if (scan.getName().equalsIgnoreCase(connection.getSchema())) {
           return scan;
         }
@@ -120,7 +119,7 @@ public class MongoPreparedStatement implements PreparedStatement {
         Matcher matcher = PATTERN_UPDATE.matcher(sql);
         final Object id = documentParam.get("_id");
         if (matcher.matches()) {
-          JMongoCollection collection = getCollectionMandatory(matcher.group(1), true);
+          MongoCollection<Document> collection = getCollectionMandatory(matcher.group(1));
           if (id == null) {
             collection.insertOne(documentParam);
           }
@@ -131,9 +130,8 @@ public class MongoPreparedStatement implements PreparedStatement {
         }
         matcher = PATTERN_DELETE.matcher(sql);
         if (matcher.matches()) {
-          JMongoCollection collection = getCollectionMandatory(matcher.group(1), false);
-          HashMap<String, Object> m = new HashMap<>();
-          m.put("_id", id);
+          MongoCollection<Document> collection = getCollectionMandatory(matcher.group(1));
+          Document m = new Document("_id", id);
           collection.deleteOne(m);
           return 1;
         }
@@ -147,8 +145,8 @@ public class MongoPreparedStatement implements PreparedStatement {
   private static final Pattern PATTERN_DOT = Pattern.compile("(.*)\\.(.*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
 
-  private JMongoCollection getCollectionMandatory(String collectionRef, boolean createCollectionIfMissing) throws SQLException {
-    JMongoDatabase mongoDatabase = null;
+  private MongoCollection<Document> getCollectionMandatory(String collectionRef) throws SQLException {
+    MongoDatabase mongoDatabase = null;
     Matcher matcherDbIdentifier = PATTERN_DB_IDENTIFIER.matcher(collectionRef);
     Matcher matcherDbDot = PATTERN_DOT.matcher(collectionRef);
     if (matcherDbIdentifier.matches()) {
@@ -164,13 +162,7 @@ public class MongoPreparedStatement implements PreparedStatement {
     if (matcherCollectionIdentifier.matches()) {
       collectionRef = matcherDbIdentifier.group(1);
     }
-    JMongoCollection collection = mongoDatabase.getCollection(collectionRef);
-    if (collection == null && createCollectionIfMissing) {
-      mongoDatabase.createCollection(collectionRef);
-      collection = mongoDatabase.getCollection(collectionRef);
-    }
-    if (collection == null) throw new SQLException("Cannot find collection '" + collectionRef + "'.");
-    return collection;
+    return mongoDatabase.getCollection(collectionRef);
   }
 
   @Override

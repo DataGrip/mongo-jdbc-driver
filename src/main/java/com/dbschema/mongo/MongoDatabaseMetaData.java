@@ -1,14 +1,15 @@
 package com.dbschema.mongo;
 
 import com.dbschema.mongo.resultSet.ListResultSet;
-import com.dbschema.mongo.schema.*;
+import com.dbschema.mongo.schema.MetaCollection;
+import com.dbschema.mongo.schema.MetaField;
+import com.dbschema.mongo.schema.MetaIndex;
+import com.dbschema.mongo.schema.MetaJson;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Mongo databases are equivalent to catalogs for this driver. Schemas aren't used. Mongo collections are
@@ -101,7 +102,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     // every collection "table" has two columns - "_id" column which is the primary key, and a "document"
     // column which is the JSON document corresponding to the "_id". An "_id" value can be specified on
     // insert, or it can be omitted, in which case MongoDB generates a unique value.
-    MetaCollection collection = con.getService().getMetaCollection(schemaName, tableNamePattern);
+    List<MetaCollection> collections = con.getService().getMetaCollections(schemaName, tableNamePattern);
 
     ListResultSet result = new ListResultSet();
     result.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME",
@@ -110,34 +111,33 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
         "ORDINAL_POSITION", "IS_NULLABLE", "SCOPE_CATLOG", "SCOPE_SCHEMA", "SCOPE_TABLE",
         "SOURCE_DATA_TYPE", "IS_AUTOINCREMENT");
 
-    Map<String, String[]> columnsData = new HashMap<>();
-    if (collection != null) {
+    List<String[]> columnsData = new ArrayList<>();
+    for (MetaCollection collection : collections) {
       MongoNamePattern p = MongoNamePattern.create(columnNamePattern);
       for (MetaField field : collection.fields) {
         if (p.matches(field.name)) {
-          exportColumnsRecursive(schemaName, collection, columnsData, field);
+          exportColumnsRecursive(collection, columnsData, field);
         }
       }
     }
-    ArrayList<String[]> columns = new ArrayList<>(columnsData.values());
-    columns.sort((o1, o2) -> {
+    columnsData.sort((o1, o2) -> {
       String n1 = o1[3];
       String n2 = o2[3];
       if ("_id".equals(n1)) return -1;
       if ("_id".equals(n2)) return 1;
       return n1.compareTo(n2);
     });
-    for (String[] column : columns) {
+    for (String[] column : columnsData) {
       result.addRow(column);
     }
     return result;
   }
 
-  private void exportColumnsRecursive(String schemaName, MetaCollection collection, Map<String, String[]> columnsData, MetaField field) {
+  private void exportColumnsRecursive(MetaCollection collection, List<String[]> columnsData, MetaField field) {
     String name = field.getNameWithPath();
-    columnsData.put(name, new String[]{
+    columnsData.add(new String[]{
         DB_NAME, // "TABLE_CAT",
-        schemaName, // "TABLE_SCHEMA",
+        collection.db, // "TABLE_SCHEMA",
         collection.name, // "TABLE_NAME", (i.e. MongoDB Collection Name)
         name, // "COLUMN_NAME",
         "" + field.type, // "DATA_TYPE",
@@ -163,7 +163,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     if (field instanceof MetaJson) {
       MetaJson json = (MetaJson) field;
       for (MetaField children : json.fields) {
-        exportColumnsRecursive(schemaName, collection, columnsData, children);
+        exportColumnsRecursive(collection, columnsData, children);
       }
     }
   }
@@ -188,8 +188,8 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     ListResultSet result = new ListResultSet();
     result.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME", "KEY_SEQ", "PK_NAME");
 
-    MetaCollection collection = con.getService().getMetaCollection(schemaName, tableNamePattern);
-    if (collection != null) {
+    List<MetaCollection> collections = con.getService().getMetaCollections(schemaName, tableNamePattern);
+    for (MetaCollection collection : collections) {
       for (MetaIndex index : collection.metaIndexes) {
         if (index.pk) {
           for (MetaField field : index.metaFields) {
@@ -255,9 +255,8 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     result.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "NON_UNIQUE", "INDEX_QUALIFIER", "INDEX_NAME",
         "TYPE", "ORDINAL_POSITION", "COLUMN_NAME", "ASC_OR_DESC", "CARDINALITY", "PAGES", "FILTER_CONDITION");
 
-    MetaCollection collection = con.getService().getMetaCollection(schemaName, tableNamePattern);
-
-    if (collection != null) {
+    List<MetaCollection> collections = con.getService().getMetaCollections(schemaName, tableNamePattern);
+    for (MetaCollection collection : collections) {
       for (MetaIndex index : collection.metaIndexes) {
         if (!index.pk) {
           for (MetaField field : index.metaFields) {
@@ -1117,72 +1116,16 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
   }
 
   @Override
-  public ResultSet getExportedKeys(String catalogName, String schemaName, String tableNamePattern) throws SQLAlreadyClosedException {
+  public ResultSet getExportedKeys(String catalogName, String schemaName, String tableNamePattern) {
     return null;
-  }
-
-  private void getExportedKeysRecursive(ListResultSet result, MetaCollection pkCollection, MetaCollection fromCollection, MetaField fromFiled) {
-    for (MetaReference iReference : fromFiled.references) {
-      if (iReference.pkCollection == pkCollection) {
-
-        result.addRow(new String[]{
-            pkCollection.db, //PKTABLE_CAT
-            null, //PKTABLE_SCHEM
-            pkCollection.name,//PKTABLE_NAME
-            "_id", //PKCOLUMN_NAME
-            fromCollection.db,//FKTABLE_CAT
-            null, //FKTABLE_SCHEM
-            fromFiled.getMetaCollection().name, //FKTABLE_NAME
-            iReference.fromField.getNameWithPath(),//FKCOLUMN_NAME
-            "1",//KEY_SEQ 1,2
-            "" + DatabaseMetaData.importedKeyNoAction, //UPDATE_RULE
-            "" + DatabaseMetaData.importedKeyNoAction, //DELETE_RULE
-            "Ref", //FK_NAME
-            null, //PK_NAME
-            "" + DatabaseMetaData.importedKeyInitiallyImmediate //DEFERRABILITY
-        });
-      }
-    }
-    if (fromFiled instanceof MetaJson) {
-      for (MetaField field : ((MetaJson) fromFiled).fields) {
-        getExportedKeysRecursive(result, pkCollection, fromCollection, field);
-      }
-    }
   }
 
   /**
    * @see java.sql.DatabaseMetaData#getExportedKeys(java.lang.String, java.lang.String, java.lang.String)
    */
   @Override
-  public ResultSet getImportedKeys(String catalogName, String schemaName, String tableNamePattern) throws SQLAlreadyClosedException {
+  public ResultSet getImportedKeys(String catalogName, String schemaName, String tableNamePattern) {
     return null;
-  }
-
-  private void getImportedKeysRecursive(ListResultSet result, MetaField fromFiled) {
-    for (MetaReference reference : fromFiled.references) {
-
-      result.addRow(new String[]{
-          reference.pkCollection.db, //PKTABLE_CAT
-          null, //PKTABLE_SCHEMA
-          reference.pkCollection.name,//PKTABLE_NAME
-          "_id", //PKCOLUMN_NAME
-          reference.fromField.getMetaCollection().db,//FKTABLE_CAT
-          null, //FKTABLE_SCHEM
-          reference.fromField.getMetaCollection().name, //FKTABLE_NAME
-          reference.fromField.getNameWithPath(),//FKCOLUMN_NAME
-          "1",//KEY_SEQ 1,2
-          "" + DatabaseMetaData.importedKeyNoAction, //UPDATE_RULE
-          "" + DatabaseMetaData.importedKeyNoAction, //DELETE_RULE
-          "Ref", //FK_NAME
-          null, //PK_NAME
-          "" + DatabaseMetaData.importedKeyInitiallyImmediate //DEFERRABILITY
-      });
-    }
-    if (fromFiled instanceof MetaJson) {
-      for (MetaField field : ((MetaJson) fromFiled).fields) {
-        getImportedKeysRecursive(result, field);
-      }
-    }
   }
 
   /**

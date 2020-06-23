@@ -1,13 +1,11 @@
 package com.dbschema.mongo.nashorn;
 
-import com.dbschema.mongo.MongoConnection;
-import com.dbschema.mongo.MongoScriptEngine;
-import com.dbschema.mongo.MongoService;
-import com.dbschema.mongo.SQLAlreadyClosedException;
+import com.dbschema.mongo.*;
 import com.dbschema.mongo.resultSet.AggregateResultSet;
 import com.dbschema.mongo.resultSet.ListResultSet;
 import com.dbschema.mongo.resultSet.ResultSetIterator;
 import com.mongodb.AggregationOutput;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.bson.Document;
@@ -89,12 +87,13 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
 
   private void updateBindings(@NotNull ScriptEngine engine) throws SQLAlreadyClosedException {
     final Bindings binding = engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE);
-    for (JMongoDatabase db : connection.getService().getDatabases()) {
-      binding.put(db.getName(), db);
+    for (MongoDatabase db : connection.getService().getDatabases(MongoNamePattern.create(null))) {
+      binding.put(db.getName(), new JMongoDatabase(db, connection.getService().getClient().getMongoClient()));
     }
     String currentDatabase = connection.getSchema();
     if (currentDatabase != null) {
-      binding.put("db", connection.getService().getDatabase(currentDatabase));
+      MongoDatabase database = connection.getService().getClient().getDatabase(currentDatabase);
+      binding.put("db", new JMongoDatabase(database, connection.getService().getClient().getMongoClient()));
     }
   }
 
@@ -113,7 +112,7 @@ public class MongoNashornScriptEngine implements MongoScriptEngine {
     Matcher matcherCreateDatabase = PATTERN_CREATE_DATABASE.matcher(query);
     if (matcherCreateDatabase.matches()) {
       final String dbName = matcherCreateDatabase.group(1);
-      connection.getService().getDatabase(dbName);
+      connection.getService().getClient().getDatabase(dbName);
       MongoService.createdDatabases.add(dbName);
       return ok();
     }
