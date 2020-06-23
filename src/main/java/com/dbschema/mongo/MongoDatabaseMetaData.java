@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * Mongo databases are equivalent to catalogs for this driver. Schemas aren't used. Mongo collections are
@@ -61,13 +60,13 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     resultSet.setColumnNames("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME",
         "TABLE_TYPE", "REMARKS", "TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "SELF_REFERENCING_COL_NAME",
         "REF_GENERATION");
-    Pattern pSchema = PatternSupport.getPattern(schemaPattern);
-    Pattern pTable = PatternSupport.getPattern(tableNamePattern);
+    MongoNamePattern pSchema = MongoNamePattern.create(schemaPattern);
+    MongoNamePattern pTable = MongoNamePattern.create(tableNamePattern);
 
     for (String schema : con.getService().getDatabaseNames()) {
-      if (schemaPattern == null || (pSchema == null && schemaPattern.equals(schema)) || (pSchema != null && pSchema.matcher(schema).matches())) {
+      if (pSchema.matches(schema)) {
         for (String tableName : con.getService().getCollectionNames(schema)) {
-          if (tableNamePattern == null || (pTable == null && tableNamePattern.equals(tableName)) || (pTable != null && pTable.matcher(tableName).matches()))
+          if (pTable.matches(tableName))
             resultSet.addRow(createTableRow(schema, tableName));
         }
       }
@@ -113,9 +112,9 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
 
     Map<String, String[]> columnsData = new HashMap<>();
     if (collection != null) {
-      Pattern p = PatternSupport.getPattern(columnNamePattern);
+      MongoNamePattern p = MongoNamePattern.create(columnNamePattern);
       for (MetaField field : collection.fields) {
-        if (columnNamePattern == null || (p == null && columnNamePattern.equals(field.name)) || (p != null && p.matcher(field.name).matches())) {
+        if (p.matches(field.name)) {
           exportColumnsRecursive(schemaName, collection, columnsData, field);
         }
       }
@@ -1481,11 +1480,11 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
   public ResultSet getSchemas(String catalogName, String schemaPattern) throws SQLAlreadyClosedException {
     List<String> mongoDbs = con.getService().getDatabaseNames();
     ListResultSet retVal = new ListResultSet();
-    Pattern p = PatternSupport.getPattern(schemaPattern);
+    MongoNamePattern p = MongoNamePattern.create(schemaPattern);
 
     retVal.setColumnNames("TABLE_SCHEM", "TABLE_CATALOG");
     for (String mongoDb : mongoDbs) {
-      if (schemaPattern == null || (p == null && schemaPattern.equals(mongoDb)) || (p != null && p.matcher(mongoDb).matches()))
+      if (p.matches(mongoDb))
         retVal.addRow(new String[]{mongoDb, DB_NAME});
     }
     return retVal;
