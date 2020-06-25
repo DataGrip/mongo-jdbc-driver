@@ -14,8 +14,8 @@ import static com.dbschema.mongo.DriverPropertyInfoHelper.MONGOSH_SCRIPT_ENGINE;
 import static com.dbschema.mongo.DriverPropertyInfoHelper.NASHORN_SCRIPT_ENGINE;
 
 public class MongoConnection implements Connection {
-  private final MongoService service;
-  private final MongoScriptEngine scriptEngine;
+  private MongoService service;
+  private MongoScriptEngine scriptEngine;
   private String schema;
   private boolean isClosed = false;
   private boolean isReadOnly = false;
@@ -139,7 +139,9 @@ public class MongoConnection implements Connection {
     checkClosed();
     isClosed = true;
     service.close();
+    service = null;
     scriptEngine.close();
+    scriptEngine = null;
   }
 
   @Override

@@ -1,6 +1,7 @@
 package com.dbschema.mongo.resultSet;
 
 import com.dbschema.mongo.SQLAlreadyClosedException;
+import com.mongodb.mongosh.result.Cursor;
 
 import java.io.Closeable;
 import java.io.InputStream;
@@ -59,6 +60,9 @@ public class ResultSetIterator implements ResultSet {
       catch (Throwable t) {
         throw new SQLException(t);
       }
+    }
+    else if (iterator instanceof Cursor<?>) {
+      ((Cursor<?>) iterator).close();
     }
   }
 
