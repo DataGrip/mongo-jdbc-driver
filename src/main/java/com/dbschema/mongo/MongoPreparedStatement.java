@@ -46,7 +46,7 @@ public class MongoPreparedStatement implements PreparedStatement {
   @Override
   public ResultSet executeQuery(String query) throws SQLException {
     checkClosed();
-    if (lastResultSet != null) {
+    if (lastResultSet != null && !lastResultSet.isClosed()) {
       lastResultSet.close();
     }
     if (query == null) {
