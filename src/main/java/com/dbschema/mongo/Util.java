@@ -9,10 +9,13 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.sql.ResultSet;
 import java.util.*;
 import java.util.function.Function;
 
+import static com.dbschema.mongo.DriverPropertyInfoHelper.ENCODE_CREDENTIALS;
 import static com.mongodb.MongoClientSettings.getDefaultCodecRegistry;
 import static java.util.Collections.emptyList;
 
@@ -22,6 +25,28 @@ import static java.util.Collections.emptyList;
 public class Util {
   private static final String MONGODB_PREFIX = "mongodb://";
   private static final String MONGODB_SRV_PREFIX = "mongodb+srv://";
+  /* see URLEncoder */
+  static BitSet dontNeedEncoding = new BitSet(256);
+
+  static {
+    for (int i = 97; i <= 122; ++i) {
+      dontNeedEncoding.set(i);
+    }
+
+    for (int i = 65; i <= 90; ++i) {
+      dontNeedEncoding.set(i);
+    }
+
+    for (int i = 48; i <= 57; ++i) {
+      dontNeedEncoding.set(i);
+    }
+
+    dontNeedEncoding.set(32);
+    dontNeedEncoding.set(45);
+    dontNeedEncoding.set(95);
+    dontNeedEncoding.set(46);
+    dontNeedEncoding.set(42);
+  }
 
   public static String nullize(String text) {
     return text == null || text.isEmpty() ? null : text;
@@ -143,8 +168,14 @@ public class Util {
     return result.isEmpty() ? emptyList() : result;
   }
 
+
   @NotNull
   public static String insertCredentials(@NotNull String uri, @Nullable String username, @Nullable String password) {
+    return insertCredentials(uri, username, password, true);
+  }
+
+  @NotNull
+  public static String insertCredentials(@NotNull String uri, @Nullable String username, @Nullable String password, boolean automaticEncoding) {
     if (username == null) {
       if (password != null) {
         System.err.println("WARNING: Password is ignored because username is not specified");
@@ -168,8 +199,38 @@ public class Util {
     String userAndHostInformation = idx == -1 ? uriWithoutPrefix : uriWithoutPrefix.substring(0, idx);
     if (userAndHostInformation.contains("@")) return uri;
 
-    String passwordPart = password == null ? "" : ":" + password;
-    return (isSrv ? MONGODB_SRV_PREFIX : MONGODB_PREFIX) + username + passwordPart + "@" + uriWithoutPrefix;
+    String passwordPart = password == null ? "" : ":" + encode(password, automaticEncoding, "password");
+    return (isSrv ? MONGODB_SRV_PREFIX : MONGODB_PREFIX) + encode(username, automaticEncoding, "username") + passwordPart + "@" + uriWithoutPrefix;
+  }
+
+  private static String encode(String text, boolean automaticEncoding, String what) {
+    if (!automaticEncoding) return text;
+    boolean shouldEncode = false;
+    for (int i = 0; i < text.length(); i++) {
+      char c = text.charAt(i);
+      if (dontNeedEncoding.get(c)) continue;
+      if (c == '%' && i + 2 < text.length() && isEncodedCharId(text.charAt(i + 1)) && isEncodedCharId(text.charAt(i + 2))) {
+        continue;
+      }
+      shouldEncode = true;
+      break;
+    }
+    if (!shouldEncode) return text;
+
+    System.err.println("WARNING: " + what + " was automatically url-encoded. To turn it off set " + ENCODE_CREDENTIALS + " driver property to false.");
+    try {
+      return URLEncoder.encode(text, "UTF-8").replaceAll("\\+", "%20");
+    }
+    catch (UnsupportedEncodingException e) {
+      e.printStackTrace();
+    }
+    return text;
+  }
+
+  private static boolean isEncodedCharId(char c) {
+    return c >= '0' && c <= '9' ||
+        c >= 'a' && c <= 'f' ||
+        c >= 'A' && c <= 'F';
   }
 
   @NotNull

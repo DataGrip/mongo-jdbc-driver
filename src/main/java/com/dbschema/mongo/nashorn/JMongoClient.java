@@ -26,7 +26,11 @@ public class JMongoClient implements AutoCloseable {
 
   public JMongoClient(@NotNull String uri, @NotNull Properties prop, @Nullable String username, @Nullable String password) throws SQLException {
     try {
-      uri = insertCredentials(uri, username, password);
+      boolean automaticEncoding = ENCODE_CREDENTIALS_DEFAULT;
+      if (prop.getProperty(ENCODE_CREDENTIALS) != null) {
+        automaticEncoding = Boolean.parseBoolean(prop.getProperty(ENCODE_CREDENTIALS));
+      }
+      uri = insertCredentials(uri, username, password, automaticEncoding);
       ConnectionString connectionString = new ConnectionString(uri);
       databaseNameFromUrl = connectionString.getDatabase();
       int maxPoolSize = getMaxPoolSize(prop);

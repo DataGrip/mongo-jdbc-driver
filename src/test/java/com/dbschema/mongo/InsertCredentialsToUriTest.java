@@ -28,6 +28,11 @@ public class InsertCredentialsToUriTest {
     assertEquals("mongodb://new_username@localhost:27017/admin", insertCredentials(NO_CREDENTIALS, USERNAME, null));
     assertEquals("mongodb+srv://new_username:new_password@172.16.254.1:27017", insertCredentials(NO_CREDENTIALS_SRV, USERNAME, PASSWORD));
     assertEquals("mongodb://new_username:new_password@localhost", insertCredentials(NO_CREDENTIALS_NO_PORT, USERNAME, PASSWORD));
+    assertEquals("mongodb://at%40%20percent%25:new_password@localhost", insertCredentials(NO_CREDENTIALS_NO_PORT, "at@ percent%", PASSWORD));
+    assertEquals("mongodb://at@ percent%:new_password@localhost", insertCredentials(NO_CREDENTIALS_NO_PORT, "at@ percent%", PASSWORD, false));
+    assertEquals("mongodb://at%40%20name:new_password@localhost", insertCredentials(NO_CREDENTIALS_NO_PORT, "at%40%20name", PASSWORD));
+    assertEquals("mongodb://at%2540%2520name%3D:new_password@localhost", insertCredentials(NO_CREDENTIALS_NO_PORT, "at%40%20name=", PASSWORD));
+    assertEquals("mongodb://admin:hello%25%40%24%20world%2525%3D%2B@localhost", insertCredentials(NO_CREDENTIALS_NO_PORT, "admin", "hello%@$ world%25=+"));
   }
 
   @Test

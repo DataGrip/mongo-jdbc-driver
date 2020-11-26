@@ -22,10 +22,15 @@ public class DriverPropertyInfoHelper {
   public static final String MONGOSH_SCRIPT_ENGINE = "mongosh";
   public static final String NASHORN_SCRIPT_ENGINE = "nashorn";
   public static final String DEFAULT_SCRIPT_ENGINE = MONGOSH_SCRIPT_ENGINE;
+  public static final String ENCODE_CREDENTIALS = "auto_encode_username_and_password";
+  public static final boolean ENCODE_CREDENTIALS_DEFAULT = true;
 
 
   public DriverPropertyInfo[] getPropertyInfo() {
     ArrayList<DriverPropertyInfo> propInfos = new ArrayList<>();
+
+    addPropInfo(propInfos, ENCODE_CREDENTIALS, Boolean.toString(ENCODE_CREDENTIALS_DEFAULT), "Connection url requires username and password to be url encoded." +
+        " This setting turns on automatic url-encoding", null);
 
     addPropInfo(propInfos, UUID_REPRESENTATION, UUID_REPRESENTATION_DEFAULT, "UUID representation defines how UUIDs are decoded and encoded.\n" +
             "'standard' - newly created UUIDs are encoded using binary subtype 4. All UUIDs of subtype 3 are shown as raw binary values without decoding to UUID.\n" +
