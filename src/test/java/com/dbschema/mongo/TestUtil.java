@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.ArrayList;
@@ -21,9 +23,32 @@ import static org.junit.Assume.assumeFalse;
  * @author Liudmila Kornilova
  **/
 public class TestUtil {
-  public static final String URL = "mongodb://admin:admin@localhost:27017/admin";
+  public static final String PATH_TO_URI = "src/test/resources/URI.txt";
+  public static final String URL;
   private static final Pattern MONGO_ID_PATTERN = Pattern.compile("[0-9a-f]{24}");
   private static final Pattern MONGO_UUID_PATTERN = Pattern.compile("[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}");
+
+  static {
+    String url;
+    try {
+      url = FileUtils.readFileToString(new File(PATH_TO_URI), StandardCharsets.UTF_8);
+    }
+    catch (IOException e) {
+      url = "File was not read. " + e.getMessage();
+    }
+    URL = url;
+  }
+
+  @NotNull
+  private static String getHostPort(String uri) {
+    try {
+      URI u = new URI(uri);
+      return u.getHost() + ":" + u.getPort();
+    }
+    catch (URISyntaxException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   public static String print(@NotNull ResultSet resultSet, @NotNull CommandOptions options) throws SQLException {
     StringBuilder sb = new StringBuilder("|");
@@ -99,7 +124,7 @@ public class TestUtil {
 
   private static void compare(String testDataPath, String name, String actual) throws IOException {
     File expectedFile = new File(testDataPath + "/" + name + ".expected.txt");
-    actual = replaceUuid(replaceId(actual)).trim();
+    actual = replaceHostPort(replaceUuid(replaceId(actual))).trim();
     if (!expectedFile.exists()) {
       assertTrue(expectedFile.createNewFile());
       FileUtils.write(expectedFile, actual, StandardCharsets.UTF_8);
@@ -109,6 +134,10 @@ public class TestUtil {
       String expected = FileUtils.readFileToString(expectedFile, StandardCharsets.UTF_8);
       assertEquals(expected.trim(), actual);
     }
+  }
+
+  private static String replaceHostPort(String actual) {
+    return actual.replaceAll(Pattern.quote(getHostPort(URL)), "%mongohostport%");
   }
 
   private static void run(Statement statement, String[] q) throws SQLException {
