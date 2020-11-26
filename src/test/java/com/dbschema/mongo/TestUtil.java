@@ -1,6 +1,7 @@
 package com.dbschema.mongo;
 
 import com.dbschema.mongo.Command.CommandOptions;
+import com.dbschema.mongo.nashorn.JMongoDatabase;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -75,6 +76,7 @@ public class TestUtil {
   }
 
   public static void doTest(String name, Connection connection, String testDataPath, String expectedDataPath) throws IOException, SQLException {
+    String database = getDatabase(connection);
     File expectedFileIgnored = new File(expectedDataPath + "/" + name + "-ignored.expected.txt");
     assumeFalse(expectedFileIgnored.exists());
     File testFile = new File(testDataPath + "/" + name + ".js");
@@ -118,7 +120,22 @@ public class TestUtil {
       }
       finally {
         runIgnore(statement, clear);
+        run(statement, "use " + database);
       }
+    }
+  }
+
+  @NotNull
+  private static String getDatabase(Connection connection) {
+    try (Statement statement = connection.createStatement()) {
+      statement.execute("db");
+      ResultSet resultSet = statement.getResultSet();
+      assertTrue(resultSet.next());
+      Object object = resultSet.getObject(1);
+      return object instanceof JMongoDatabase ? ((JMongoDatabase) object).getName() : object.toString();
+    }
+    catch (SQLException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -142,18 +159,29 @@ public class TestUtil {
 
   private static void run(Statement statement, String[] q) throws SQLException {
     if (q[0] != null && !q[0].isEmpty()) {
-      statement.execute(q[0]);
+      run(statement, q[0]);
     }
   }
 
   private static void runIgnore(Statement statement, String[] q) {
     try {
       if (q[0] != null && !q[0].isEmpty()) {
-        statement.execute(q[0]);
+        run(statement, q[0]);
       }
     }
     catch (Throwable ignored) {
     }
+  }
+
+  private static void run(Statement statement, String q) throws SQLException {
+    if (q.startsWith("use ")) {
+      int semicolon = q.indexOf(";");
+      semicolon = semicolon == -1 ? q.length() : semicolon;
+      statement.execute(q.substring(0, semicolon));
+      if (semicolon >= q.length() - 1) return;
+      q = q.substring(semicolon + 1);
+    }
+    statement.execute(q);
   }
 
   public static String replaceId(@NotNull String value) {

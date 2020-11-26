@@ -1,4 +1,5 @@
 // before
+use testdb;
 db.col.insertOne({key: "value"});
 db.col.aggregate({$out: "newCol"});
 // command
