@@ -1,5 +1,6 @@
 package com.dbschema.mongo;
 
+import com.dbschema.mongo.Command.CommandOptions;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,7 +25,7 @@ public class TestUtil {
   private static final Pattern MONGO_ID_PATTERN = Pattern.compile("[0-9a-f]{24}");
   private static final Pattern MONGO_UUID_PATTERN = Pattern.compile("[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}");
 
-  public static String print(@NotNull ResultSet resultSet) throws SQLException {
+  public static String print(@NotNull ResultSet resultSet, @NotNull CommandOptions options) throws SQLException {
     StringBuilder sb = new StringBuilder("|");
     ResultSetMetaData metaData = resultSet.getMetaData();
     boolean first = true;
@@ -40,7 +41,8 @@ public class TestUtil {
       for (int i = 1; i <= metaData.getColumnCount(); i++) {
         if (first) first = false;
         else sb.append("|");
-        sb.append(resultSet.getObject(i));
+        Object o = resultSet.getObject(i);
+        sb.append(options.dontCheckValue ? o.getClass().getSimpleName() : o);
       }
       sb.append("|").append("\n");
     }
@@ -53,12 +55,12 @@ public class TestUtil {
     File testFile = new File(testDataPath + "/" + name + ".js");
     String test = FileUtils.readFileToString(testFile, StandardCharsets.UTF_8);
     String[] before = new String[1];
-    List<String> commands = new ArrayList<>();
+    List<Command> commands = new ArrayList<>();
     String[] clear = new String[1];
     TestDataReader.read(test, Arrays.asList(
-        new TestDataReader.SectionHandler("before", s -> before[0] = s),
-        new TestDataReader.SectionHandler("command", commands::add),
-        new TestDataReader.SectionHandler("clear", s -> clear[0] = s)
+        new TestDataReader.SectionHandler("before", (s, properties) -> before[0] = s),
+        new TestDataReader.SectionHandler("command", (s, properties) -> commands.add(new Command(s, new CommandOptions("true".equals(properties.get("dontCheckValue")))))),
+        new TestDataReader.SectionHandler("clear", (s, properties) -> clear[0] = s)
     ));
     try (Statement statement = connection.createStatement()) {
       runIgnore(statement, clear);
@@ -67,13 +69,13 @@ public class TestUtil {
         StringBuilder actual = new StringBuilder();
         assertFalse("Command cannot be null", commands.isEmpty());
         try {
-          for (String command : commands) {
+          for (Command command : commands) {
 
-            boolean result = statement.execute(command);
+            boolean result = statement.execute(command.command);
             if (result) {
               ResultSet resultSet = statement.getResultSet();
               assertNotNull("Result set cannot be null", resultSet);
-              actual.append(print(resultSet)).append("\n");
+              actual.append(print(resultSet, command.options)).append("\n");
             }
             else {
               actual.append("No result\n");
