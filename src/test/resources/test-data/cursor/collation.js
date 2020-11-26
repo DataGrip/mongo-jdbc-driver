@@ -1,7 +1,7 @@
 // before
-db.col.insert({"_id": 1, "x": "a"});
-db.col.insert({"_id": 2, "x": "A"});
-db.col.insert({"_id": 3, "x": "á"});
+db.col.insertOne({"_id": 1, "x": "a"});
+db.col.insertOne({"_id": 2, "x": "A"});
+db.col.insertOne({"_id": 3, "x": "á"});
 // command
 db.col.find({x: "a"}).collation({locale: "en_US", strength: 1});
 // clear

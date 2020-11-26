@@ -1,6 +1,6 @@
 // before
-db.col.insert({key: "value1"});
-db.col.insert({key: "value2"});
+db.col.insertOne({key: "value1"});
+db.col.insertOne({key: "value2"});
 // command
 db.col.findOne();
 // clear

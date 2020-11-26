@@ -1,5 +1,5 @@
 // before
-db.col.insert({key: "value"});
+db.col.insertOne({key: "value"});
 db.col.aggregate({$out: "newCol"});
 // command
 db.newCol.find();

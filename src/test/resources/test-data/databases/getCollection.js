@@ -1,5 +1,5 @@
 // before
-db.col.insert({a: 1});
+db.col.insertOne({a: 1});
 // command
 db.getCollection('col');
 // clear

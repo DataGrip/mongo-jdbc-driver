@@ -1,5 +1,5 @@
 // before
-db.orders.insert({
+db.orders.insertOne({
     _id: ObjectId("50a8240b927d5d8b5891743c"),
     cust_id: "abc123",
     ord_date: new Date("Oct 04, 2012"),

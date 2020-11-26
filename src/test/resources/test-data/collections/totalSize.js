@@ -1,5 +1,5 @@
 // before
-db.col.insert({key: "value"});
+db.col.insertOne({key: "value"});
 // command
 db.col.totalSize();
 // clear
