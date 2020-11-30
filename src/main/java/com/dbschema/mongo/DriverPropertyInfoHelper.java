@@ -24,6 +24,7 @@ public class DriverPropertyInfoHelper {
   public static final String DEFAULT_SCRIPT_ENGINE = MONGOSH_SCRIPT_ENGINE;
   public static final String ENCODE_CREDENTIALS = "auto_encode_username_and_password";
   public static final boolean ENCODE_CREDENTIALS_DEFAULT = true;
+  public static final String APPLICATION_NAME = "appName";
 
 
   public DriverPropertyInfo[] getPropertyInfo() {
@@ -48,6 +49,8 @@ public class DriverPropertyInfoHelper {
         new String[]{MONGOSH_SCRIPT_ENGINE, NASHORN_SCRIPT_ENGINE});
 
     addPropInfo(propInfos, MAX_POOL_SIZE, Integer.toString(MAX_POOL_SIZE_DEFAULT), "MongoDB connections pool size per one connection from IDE. See " + GET_MAX_SIZE_DOCS, null);
+
+    addPropInfo(propInfos, APPLICATION_NAME, null, "Sets the logical name of the application.", null);
 
     return propInfos.toArray(new DriverPropertyInfo[0]);
   }

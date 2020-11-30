@@ -239,4 +239,8 @@ public class Util {
     while (i >= 0 && str.charAt(i) == end) i--;
     return str.substring(0, i + 1);
   }
+
+  public static boolean isNullOrEmpty(@Nullable String value) {
+    return value == null || value.isEmpty();
+  }
 }

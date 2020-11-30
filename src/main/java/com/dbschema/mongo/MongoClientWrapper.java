@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.dbschema.mongo.DriverPropertyInfoHelper.*;
 import static com.dbschema.mongo.Util.insertCredentials;
+import static com.dbschema.mongo.Util.isNullOrEmpty;
 
 
 public class MongoClientWrapper implements AutoCloseable {
@@ -36,6 +37,10 @@ public class MongoClientWrapper implements AutoCloseable {
       MongoClientSettings.Builder builder = MongoClientSettings.builder()
           .applyConnectionString(connectionString)
           .applyToConnectionPoolSettings(b -> b.maxSize(maxPoolSize));
+      String application = prop.getProperty(APPLICATION_NAME);
+      if (!isNullOrEmpty(application)) {
+        builder.applicationName(application);
+      }
       if ("true".equals(prop.getProperty("ssl"))) {
         builder.applyToSslSettings(s -> s.enabled(true));
       }
