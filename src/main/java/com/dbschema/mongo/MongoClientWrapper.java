@@ -1,6 +1,5 @@
-package com.dbschema.mongo.nashorn;
+package com.dbschema.mongo;
 
-import com.dbschema.mongo.SQLAlreadyClosedException;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -19,12 +18,12 @@ import static com.dbschema.mongo.DriverPropertyInfoHelper.*;
 import static com.dbschema.mongo.Util.insertCredentials;
 
 
-public class JMongoClient implements AutoCloseable {
+public class MongoClientWrapper implements AutoCloseable {
   private boolean isClosed = false;
   private final MongoClient mongoClient;
   public final String databaseNameFromUrl;
 
-  public JMongoClient(@NotNull String uri, @NotNull Properties prop, @Nullable String username, @Nullable String password) throws SQLException {
+  public MongoClientWrapper(@NotNull String uri, @NotNull Properties prop, @Nullable String username, @Nullable String password) throws SQLException {
     try {
       boolean automaticEncoding = ENCODE_CREDENTIALS_DEFAULT;
       if (prop.getProperty(ENCODE_CREDENTIALS) != null) {

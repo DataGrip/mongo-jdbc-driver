@@ -1,6 +1,5 @@
 package com.dbschema.mongo;
 
-import com.dbschema.mongo.nashorn.JMongoClient;
 import com.dbschema.mongo.schema.MetaCollection;
 import com.mongodb.MongoSecurityException;
 import com.mongodb.client.MongoClient;
@@ -18,7 +17,7 @@ import java.util.Properties;
 
 public class MongoService implements AutoCloseable {
   private boolean isClosed = false;
-  private final JMongoClient client;
+  private final MongoClientWrapper client;
   private final String uri;
   private final int fetchDocumentsForMeta;
 
@@ -30,10 +29,10 @@ public class MongoService implements AutoCloseable {
                       @Nullable String password, int fetchDocumentsForMeta) throws SQLException {
     this.uri = uri;
     this.fetchDocumentsForMeta = fetchDocumentsForMeta;
-    client = new JMongoClient(uri, prop, username, password);
+    client = new MongoClientWrapper(uri, prop, username, password);
   }
 
-  public JMongoClient getClient() {
+  public MongoClientWrapper getClient() {
     return client;
   }
 
