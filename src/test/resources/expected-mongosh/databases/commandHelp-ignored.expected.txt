@@ -1,3 +1,0 @@
-|map|
-|Get stats on a database. Not instantaneous. Slower for databases with large .ns files.
-Example: { dbStats:1, scale:1 }|

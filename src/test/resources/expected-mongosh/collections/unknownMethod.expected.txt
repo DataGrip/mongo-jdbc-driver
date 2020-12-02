@@ -1,1 +1,1 @@
-java.lang.Exception: TypeError: (intermediate value).col.unknownMethod is not a function
+java.lang.Exception: TypeError: Proxy({_mongo: {_internalState: {...}, _databases: {...}, _uri: "mongodb://localhost/", _options: undefined, _serviceProvider: JavaObject[com.mongodb.mongosh.service.JavaServiceProvider]}, _database: Proxy({...}, {...}), _name: "col.unknownMethod"}, {get: (target, prop) => {

@@ -1,1 +1,1 @@
-java.lang.Exception: TypeError: (intermediate value).cloneDatabase is not a function
+java.lang.Exception: MongoshUnimplementedError: `cloneDatabase()` was removed because it was deprecated in MongoDB 4.0

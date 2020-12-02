@@ -1,6 +1,4 @@
-|result|
-|null|
-
+No result
 No result
 |result|
 |3|
