@@ -240,6 +240,10 @@ public class Util {
     return str.substring(0, i + 1);
   }
 
+  public static boolean isTrue(@Nullable String value) {
+    return value != null && (value.equals("1") || value.toLowerCase(Locale.ENGLISH).equals("true"));
+  }
+
   public static boolean isNullOrEmpty(@Nullable String value) {
     return value == null || value.isEmpty();
   }

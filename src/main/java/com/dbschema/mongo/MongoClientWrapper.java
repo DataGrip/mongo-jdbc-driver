@@ -10,13 +10,16 @@ import org.bson.UuidRepresentation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.KeyStore;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static com.dbschema.mongo.DriverPropertyInfoHelper.*;
-import static com.dbschema.mongo.Util.insertCredentials;
-import static com.dbschema.mongo.Util.isNullOrEmpty;
+import static com.dbschema.mongo.SSLUtil.getTrustEverybodySSLContext;
+import static com.dbschema.mongo.Util.*;
 
 
 public class MongoClientWrapper implements AutoCloseable {
@@ -42,7 +45,30 @@ public class MongoClientWrapper implements AutoCloseable {
         builder.applicationName(application);
       }
       if ("true".equals(prop.getProperty("ssl"))) {
-        builder.applyToSslSettings(s -> s.enabled(true));
+        boolean allowInvalidCertificates = uri.contains("tlsAllowInvalidCertificates=true") || uri.contains("sslAllowInvalidCertificates=true")
+            || isTrue(prop.getProperty(ALLOW_INVALID_CERTIFICATES, Boolean.toString(ALLOW_INVALID_CERTIFICATES_DEFAULT)));
+        builder.applyToSslSettings(s -> {
+          s.enabled(true);
+          if (allowInvalidCertificates) {
+            String keyStoreType = System.getProperty("javax.net.ssl.keyStoreType", KeyStore.getDefaultType());
+            String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword", "");
+            String keyStoreUrl = System.getProperty("javax.net.ssl.keyStore", "");
+            // check keyStoreUrl
+            if (!isNullOrEmpty(keyStoreUrl)) {
+              try {
+                new URL(keyStoreUrl);
+              } catch (MalformedURLException e) {
+                keyStoreUrl = "file:" + keyStoreUrl;
+              }
+            }
+            try {
+              s.context(getTrustEverybodySSLContext(keyStoreUrl, keyStoreType, keyStorePassword));
+            }
+            catch (SSLUtil.SSLParamsException e) {
+              throw new RuntimeException(e);
+            }
+          }
+        });
       }
       if (connectionString.getUuidRepresentation() == null) {
         String uuidRepresentation = prop.getProperty(UUID_REPRESENTATION, UUID_REPRESENTATION_DEFAULT);

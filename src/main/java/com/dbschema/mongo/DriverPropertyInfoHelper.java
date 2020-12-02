@@ -25,6 +25,8 @@ public class DriverPropertyInfoHelper {
   public static final String ENCODE_CREDENTIALS = "auto_encode_username_and_password";
   public static final boolean ENCODE_CREDENTIALS_DEFAULT = true;
   public static final String APPLICATION_NAME = "appName";
+  public static final String ALLOW_INVALID_CERTIFICATES = "tlsAllowInvalidCertificates";
+  public static final boolean ALLOW_INVALID_CERTIFICATES_DEFAULT = false;
 
 
   public DriverPropertyInfo[] getPropertyInfo() {
@@ -40,6 +42,8 @@ public class DriverPropertyInfoHelper {
 
     addPropInfo(propInfos, SERVER_SELECTION_TIMEOUT, SERVER_SELECTION_TIMEOUT_DEFAULT, "How long the driver will wait for server selection to succeed before throwing an exception.", null);
     addPropInfo(propInfos, CONNECT_TIMEOUT, CONNECT_TIMEOUT_DEFAULT, "How long a connection can take to be opened before timing out.", null);
+    addPropInfo(propInfos, ALLOW_INVALID_CERTIFICATES, Boolean.toString(ALLOW_INVALID_CERTIFICATES_DEFAULT),
+        "Bypasses the validation checks for server certificates", new String[]{"true", "false"});
 
     addPropInfo(propInfos, FETCH_DOCUMENTS_FOR_METAINFO, Integer.toString(FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT), "Number of documents that will be fetched per collection in order " +
         "to return meta information from DatabaseMetaData.getColumns method.", null);
