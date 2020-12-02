@@ -49,6 +49,8 @@ public class MongoClientWrapper implements AutoCloseable {
             || isTrue(prop.getProperty(ALLOW_INVALID_CERTIFICATES, Boolean.toString(ALLOW_INVALID_CERTIFICATES_DEFAULT)));
         builder.applyToSslSettings(s -> {
           s.enabled(true);
+          boolean allowInvalidHostnames = isTrue(prop.getProperty(ALLOW_INVALID_HOSTNAMES, Boolean.toString(ALLOW_INVALID_HOSTNAMES_DEFAULT)));
+          if (allowInvalidHostnames) s.invalidHostNameAllowed(true);
           if (allowInvalidCertificates) {
             String keyStoreType = System.getProperty("javax.net.ssl.keyStoreType", KeyStore.getDefaultType());
             String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword", "");
