@@ -32,7 +32,7 @@ dependencies {
     compile group: 'org.jetbrains', name: 'annotations', version: '15.0'
     compile group: 'org.apache.commons', name: 'commons-text', version: '1.8'
     compile group: 'org.graalvm.js', name: 'js', version: '20.0.0'
-    compile files('libs/java-shell-0.2.2.jar')
+    compile files('libs/java-shell-0.3.jar')
     testCompile 'junit:junit:4.12'
     testCompile group: 'commons-io', name: 'commons-io', version: '2.6'
 }

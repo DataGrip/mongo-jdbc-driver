@@ -1,1 +1,2 @@
-No result
+|map|
+|Document{{nIndexesWas=2, ok=1}}|

@@ -1,1 +1,1 @@
-java.lang.Exception: MongoshUnimplementedError: `cloneDatabase()` was removed because it was deprecated in MongoDB 4.0
+java.lang.Exception: MongoshDeprecatedError: [COMMON-10003] `cloneDatabase()` was removed because it was deprecated in MongoDB 4.0
