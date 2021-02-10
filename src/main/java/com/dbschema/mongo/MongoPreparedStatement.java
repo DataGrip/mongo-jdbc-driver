@@ -2,7 +2,7 @@ package com.dbschema.mongo;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.ReplaceOptions;
 import org.bson.Document;
 
 import java.io.InputStream;
@@ -124,7 +124,7 @@ public class MongoPreparedStatement implements PreparedStatement {
             collection.insertOne(documentParam);
           }
           else {
-            collection.replaceOne(new Document("_id", id), documentParam, new UpdateOptions().upsert(true));
+            collection.replaceOne(new Document("_id", id), documentParam, new ReplaceOptions().upsert(true));
           }
           return 1;
         }
