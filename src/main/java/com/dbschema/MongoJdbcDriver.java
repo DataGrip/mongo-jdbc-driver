@@ -8,7 +8,8 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.dbschema.mongo.DriverPropertyInfoHelper.*;
+import static com.dbschema.mongo.DriverPropertyInfoHelper.FETCH_DOCUMENTS_FOR_METAINFO;
+import static com.dbschema.mongo.DriverPropertyInfoHelper.FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT;
 
 
 /**
@@ -50,11 +51,6 @@ public class MongoJdbcDriver implements Driver {
       }
     }
     if (fetchDocumentsForMeta < 0) fetchDocumentsForMeta = 0;
-    boolean useEs6 = USE_ES6_DEFAULT;
-    if (info.getProperty(USE_ES6) != null) {
-      useEs6 = Boolean.parseBoolean(info.getProperty(USE_ES6));
-    }
-    String scriptEngine = info.getProperty(SCRIPT_ENGINE, DEFAULT_SCRIPT_ENGINE);
 
     if (url.startsWith("jdbc:")) {
       url = url.substring("jdbc:".length());
@@ -63,7 +59,7 @@ public class MongoJdbcDriver implements Driver {
     String username = info.getProperty("user");
     String password = info.getProperty("password");
 
-    return new MongoConnection(url, info, username, password, fetchDocumentsForMeta, scriptEngine, useEs6);
+    return new MongoConnection(url, info, username, password, fetchDocumentsForMeta);
   }
 
 

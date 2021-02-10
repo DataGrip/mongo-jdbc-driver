@@ -1,1 +1,0 @@
-Method cursor.isClosed is not implemented

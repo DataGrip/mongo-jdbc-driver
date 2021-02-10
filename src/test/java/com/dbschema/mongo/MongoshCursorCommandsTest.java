@@ -15,8 +15,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
 
-import static com.dbschema.mongo.DriverPropertyInfoHelper.MONGOSH_SCRIPT_ENGINE;
-import static com.dbschema.mongo.DriverPropertyInfoHelper.SCRIPT_ENGINE;
 import static com.dbschema.mongo.TestUtil.URL;
 import static com.dbschema.mongo.TestUtil.doTest;
 
@@ -26,7 +24,6 @@ import static com.dbschema.mongo.TestUtil.doTest;
 @RunWith(Parameterized.class)
 public class MongoshCursorCommandsTest {
   private static final String TEST_DATA_PATH = "src/test/resources/test-data/cursor";
-  private static final String EXPECTED_TEST_DATA_PATH = "src/test/resources/expected-mongosh/cursor";
   private static Connection connection;
   private final String testName;
 
@@ -48,7 +45,6 @@ public class MongoshCursorCommandsTest {
   @BeforeClass
   public static void before() throws SQLException {
     Properties properties = new Properties();
-    properties.setProperty(SCRIPT_ENGINE, MONGOSH_SCRIPT_ENGINE);
     connection = new MongoJdbcDriver().connect(URL, properties);
   }
 
@@ -59,6 +55,6 @@ public class MongoshCursorCommandsTest {
 
   @Test
   public void test() throws IOException, SQLException {
-    doTest(testName, connection, TEST_DATA_PATH, EXPECTED_TEST_DATA_PATH);
+    doTest(testName, connection, TEST_DATA_PATH);
   }
 }

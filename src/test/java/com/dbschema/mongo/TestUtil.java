@@ -1,7 +1,6 @@
 package com.dbschema.mongo;
 
 import com.dbschema.mongo.Command.CommandOptions;
-import com.dbschema.mongo.nashorn.JMongoDatabase;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -75,9 +74,9 @@ public class TestUtil {
     return sb.toString();
   }
 
-  public static void doTest(String name, Connection connection, String testDataPath, String expectedDataPath) throws IOException, SQLException {
+  public static void doTest(String name, Connection connection, String testDataPath) throws IOException, SQLException {
     String database = getDatabase(connection);
-    File expectedFileIgnored = new File(expectedDataPath + "/" + name + "-ignored.expected.txt");
+    File expectedFileIgnored = new File(testDataPath + "/" + name + "-ignored.expected.txt");
     assumeFalse(expectedFileIgnored.exists());
     File testFile = new File(testDataPath + "/" + name + ".js");
     String test = FileUtils.readFileToString(testFile, StandardCharsets.UTF_8);
@@ -116,7 +115,7 @@ public class TestUtil {
           String msg = message.contains("\n") ? message.substring(0, message.indexOf("\n")) : message;
           actual.append(msg).append("\n");
         }
-        compare(expectedDataPath, name, actual.toString());
+        compare(testDataPath, name, actual.toString());
       }
       finally {
         runIgnore(statement, clear);
@@ -131,8 +130,7 @@ public class TestUtil {
       statement.execute("db");
       ResultSet resultSet = statement.getResultSet();
       assertTrue(resultSet.next());
-      Object object = resultSet.getObject(1);
-      return object instanceof JMongoDatabase ? ((JMongoDatabase) object).getName() : object.toString();
+      return resultSet.getObject(1).toString();
     }
     catch (SQLException e) {
       throw new RuntimeException(e);

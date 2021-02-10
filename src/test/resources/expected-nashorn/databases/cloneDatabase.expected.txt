@@ -1,1 +1,0 @@
-Method db.cloneDatabase is not implemented

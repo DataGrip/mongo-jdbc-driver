@@ -1,2 +1,0 @@
-|map|
-|Document{{_id=<ObjectID>, key=value1}}|
