@@ -4,9 +4,5 @@ out
 build
 target
 dbs.iml
-gradle
-gradlew
-gradlew.bat
-gradle.properties
 resources/retrace
 .DS_Store
