@@ -2,7 +2,7 @@
 db.orders.insertOne({
     _id: ObjectId("50a8240b927d5d8b5891743c"),
     cust_id: "abc123",
-    ord_date: new Date("Oct 04, 2012"),
+    ord_date: new Date("2012-10-04"),
     status: 'A',
     price: 25,
     items: [ { sku: "mmm", qty: 5, price: 2.5 },

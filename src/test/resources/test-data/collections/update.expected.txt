@@ -1,2 +1,2 @@
 |map|
-|{0=DeprecationWarning: Collection.update() is deprecated. Use updateOne, updateMany or bulkWrite.}|
+|{0=DeprecationWarning: Collection.update() is deprecated. Use updateOne, updateMany, or bulkWrite.}|

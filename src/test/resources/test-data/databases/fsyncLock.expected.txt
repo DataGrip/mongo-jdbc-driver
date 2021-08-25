@@ -1,0 +1,5 @@
+|map|
+|Document{{info=now locked against writes, use db.fsyncUnlock() to unlock, lockCount=1, seeAlso=http://dochub.mongodb.org/core/fsynccommand, ok=1}}|
+
+|map|
+|Document{{info=fsyncUnlock completed, lockCount=0, ok=1}}|

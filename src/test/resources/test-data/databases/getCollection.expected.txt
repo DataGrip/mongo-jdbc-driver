@@ -1,2 +1,2 @@
 |result|
-|col|
+|admin.col|
