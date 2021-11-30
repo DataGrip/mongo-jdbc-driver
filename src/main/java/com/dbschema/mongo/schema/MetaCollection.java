@@ -1,5 +1,6 @@
 package com.dbschema.mongo.schema;
 
+import com.mongodb.MongoQueryException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.ListIndexesIterable;
 import com.mongodb.client.MongoCollection;
@@ -34,12 +35,16 @@ public class MetaCollection extends MetaJson {
 
 
   private void discoverCollectionFirstRecords(MongoCollection<?> mongoCollection, int iterations) {
-    MongoCursor<?> cursor = mongoCollection.find().iterator();
-    int iteration = 0;
-    while (cursor.hasNext() && ++iteration <= iterations) {
-      discoverMap(this, cursor.next());
+    try (MongoCursor<?> cursor = mongoCollection.find().iterator()) {
+      int iteration = 0;
+      while (cursor.hasNext() && ++iteration <= iterations) {
+        discoverMap(this, cursor.next());
+      }
     }
-    cursor.close();
+    catch (MongoQueryException e) {
+      if (e.getErrorCode() == 13) return; // Authorized
+      throw e;
+    }
   }
 
   private void discoverCollectionRandomRecords(MongoCollection<Document> mongoCollection, int iterations) {
