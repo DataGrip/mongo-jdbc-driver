@@ -27,6 +27,8 @@ shadowJar {
     mergeServiceFiles()
 }
 
+minh的
+
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
