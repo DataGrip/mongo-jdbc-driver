@@ -25,8 +25,6 @@ public class MongoJdbcDriver implements Driver {
   static {
     try {
       DriverManager.registerDriver(new MongoJdbcDriver());
-      Logger mongoLogger = Logger.getLogger("com.mongodb");
-      if (mongoLogger != null) mongoLogger.setLevel(Level.SEVERE);
     }
     catch (SQLException ex) {
       ex.printStackTrace();

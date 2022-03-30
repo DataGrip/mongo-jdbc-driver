@@ -6,3 +6,4 @@ target
 dbs.iml
 resources/retrace
 .DS_Store
+/src/test/resources/URI.txt

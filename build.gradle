@@ -1,15 +1,15 @@
 plugins {
     id 'java'
-    id 'org.hidetake.ssh' version '2.7.1'
     id "org.jetbrains.kotlin.jvm" version "1.5.21"
     id "com.github.johnrengelman.shadow" version "7.0.0"
 }
 
+group 'com.github.kornilova203'
+version '1.13'
+
 repositories {
     mavenCentral()
 }
-
-sourceCompatibility = 1.8
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
@@ -25,11 +25,4 @@ dependencies {
 shadowJar {
     archiveFileName = "mongo-jdbc-standalone-${version}.jar"
     mergeServiceFiles()
-}
-
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
-}
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
 }

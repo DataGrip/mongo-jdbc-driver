@@ -74,7 +74,7 @@ public class TestUtil {
     return sb.toString();
   }
 
-  public static void doTest(String name, Connection connection, String testDataPath) throws IOException, SQLException {
+  public static void doTest(@NotNull String name, @NotNull Connection connection, @NotNull String testDataPath) throws IOException, SQLException {
     String database = getDatabase(connection);
     File expectedFileIgnored = new File(testDataPath + "/" + name + "-ignored.expected.txt");
     assumeFalse(expectedFileIgnored.exists());

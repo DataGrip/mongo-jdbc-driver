@@ -37,15 +37,16 @@ public class MongoshCollectionCommandsTest {
     File[] files = testsDir.listFiles();
     assert files != null;
     return Arrays.asList(Util.map(
-        Util.filter(files,
-            file -> file.getName().endsWith(".js")),
-        file -> new Object[]{file.getName().substring(0, file.getName().length() - ".js".length())}));
+            Util.filter(files, file -> file.getName().endsWith(".js"), File[].class),
+            file -> new Object[]{file.getName().substring(0, file.getName().length() - ".js".length())},
+            Object[][].class));
   }
 
   @BeforeClass
   public static void before() throws SQLException {
     Properties properties = new Properties();
     connection = new MongoJdbcDriver().connect(URL, properties);
+    assert connection != null;
   }
 
   @AfterClass

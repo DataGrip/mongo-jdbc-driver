@@ -88,26 +88,24 @@ public class Util {
 
   @NotNull
   @Contract(pure = true)
-  public static <T> T[] filter(@NotNull T[] collection, @NotNull Condition<? super T> condition) {
+  public static <T> T[] filter(@NotNull T[] collection, @NotNull Condition<? super T> condition, @NotNull Class<? extends T[]> type) {
     List<T> result = new ArrayList<>();
     for (T t : collection) {
       if (condition.value(t)) {
         result.add(t);
       }
     }
-    //noinspection unchecked
-    return ((T[]) result.toArray());
+    return Arrays.copyOf(result.toArray(), result.size(), type);
   }
 
   @NotNull
   @Contract(pure = true)
-  public static <T, R> R[] map(@NotNull T[] collection, @NotNull Function<? super T, R> func) {
+  public static <T, R> R[] map(@NotNull T[] collection, @NotNull Function<? super T, R> func, @NotNull Class<? extends R[]> newType) {
     List<R> result = new ArrayList<>();
     for (T t : collection) {
       result.add(func.apply(t));
     }
-    //noinspection unchecked
-    return ((R[]) result.toArray());
+    return Arrays.copyOf(result.toArray(), result.size(), newType);
   }
 
   @Nullable
