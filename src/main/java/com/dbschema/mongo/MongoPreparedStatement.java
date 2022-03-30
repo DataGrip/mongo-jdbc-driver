@@ -4,6 +4,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.ReplaceOptions;
 import org.bson.Document;
+import org.intellij.lang.annotations.Language;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -20,7 +21,7 @@ public class MongoPreparedStatement implements PreparedStatement {
   private ResultSet lastResultSet;
   private boolean isClosed = false;
   private int maxRows = -1;
-  private final String query;
+  private final @Language("js") String query;
   private int fetchSize = -1;
 
   public MongoPreparedStatement(final MongoConnection connection) {
@@ -28,7 +29,7 @@ public class MongoPreparedStatement implements PreparedStatement {
     this.query = null;
   }
 
-  public MongoPreparedStatement(final MongoConnection connection, String query) {
+  public MongoPreparedStatement(final MongoConnection connection, @Language("js") String query) {
     this.connection = connection;
     this.query = query;
   }
@@ -44,7 +45,7 @@ public class MongoPreparedStatement implements PreparedStatement {
   }
 
   @Override
-  public ResultSet executeQuery(String query) throws SQLException {
+  public ResultSet executeQuery(@Language("js") String query) throws SQLException {
     checkClosed();
     if (lastResultSet != null && !lastResultSet.isClosed()) {
       lastResultSet.close();
@@ -57,7 +58,7 @@ public class MongoPreparedStatement implements PreparedStatement {
 
 
   @Override
-  public boolean execute(final String query) throws SQLException {
+  public boolean execute(@Language("js") String query) throws SQLException {
     executeQuery(query);
     return lastResultSet != null;
   }
@@ -107,7 +108,7 @@ public class MongoPreparedStatement implements PreparedStatement {
   private static final String ERROR_MESSAGE = "Allowed statements: update(<dbname>.<collectionName>) or delete(<dbname>.<collectionName>). Before calling this do setObject(0,<dbobject>).";
 
   @Override
-  public int executeUpdate(String sql) throws SQLException {
+  public int executeUpdate(@Language("js") String sql) throws SQLException {
     if (sql != null) {
       if (documentParam == null) {
         // IF HAS NO PARAMETERS, EXECUTE AS NORMAL SQL

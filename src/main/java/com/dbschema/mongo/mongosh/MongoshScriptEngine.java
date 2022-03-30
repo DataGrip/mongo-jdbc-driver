@@ -5,6 +5,7 @@ import com.dbschema.mongo.MongoScriptEngine;
 import com.dbschema.mongo.resultSet.ResultSetIterator;
 import com.mongodb.mongosh.MongoShell;
 import com.mongodb.mongosh.result.*;
+import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,7 +40,7 @@ public class MongoshScriptEngine implements MongoScriptEngine {
 
   @Nullable
   @Override
-  public ResultSet execute(@NotNull String query, int fetchSize) throws SQLException {
+  public ResultSet execute(@Language("js") @NotNull String query, int fetchSize) throws SQLException {
     try {
       if (CLEAR_CONTEXT.matcher(query.trim()).matches()) {
         if (repl != null) repl.close();
