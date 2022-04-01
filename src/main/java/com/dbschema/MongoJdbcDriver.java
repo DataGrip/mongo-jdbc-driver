@@ -2,14 +2,21 @@ package com.dbschema;
 
 import com.dbschema.mongo.DriverPropertyInfoHelper;
 import com.dbschema.mongo.MongoConnection;
+import com.dbschema.mongo.mongosh.LazyShellHolder;
+import com.dbschema.mongo.mongosh.PrecalculatingShellHolder;
+import com.dbschema.mongo.mongosh.ShellHolder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
 import java.util.Properties;
-import java.util.logging.Level;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
 import static com.dbschema.mongo.DriverPropertyInfoHelper.FETCH_DOCUMENTS_FOR_METAINFO;
 import static com.dbschema.mongo.DriverPropertyInfoHelper.FETCH_DOCUMENTS_FOR_METAINFO_DEFAULT;
+import static com.dbschema.mongo.Util.newNamedThreadFactory;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 
 
 /**
@@ -21,6 +28,8 @@ import static com.dbschema.mongo.DriverPropertyInfoHelper.FETCH_DOCUMENTS_FOR_ME
  */
 public class MongoJdbcDriver implements Driver {
   private final DriverPropertyInfoHelper propertyInfoHelper = new DriverPropertyInfoHelper();
+  private @Nullable ExecutorService executorService;
+  private @NotNull ShellHolder shellHolder;
 
   static {
     try {
@@ -31,6 +40,20 @@ public class MongoJdbcDriver implements Driver {
     }
   }
 
+  public MongoJdbcDriver() {
+    shellHolder = createShellHolder();
+  }
+
+  @NotNull
+  private ShellHolder createShellHolder() {
+    if ("true".equals(System.getProperty("mongosh.disableShellPrecalculation"))) {
+      return new LazyShellHolder();
+    }
+    if (executorService == null) {
+      executorService = newFixedThreadPool(10, newNamedThreadFactory("MongoShell ExecutorService"));
+    }
+    return new PrecalculatingShellHolder(executorService);
+  }
 
   /**
    * Connect to the database using a URL like :
@@ -56,8 +79,11 @@ public class MongoJdbcDriver implements Driver {
 
     String username = info.getProperty("user");
     String password = info.getProperty("password");
-
-    return new MongoConnection(url, info, username, password, fetchDocumentsForMeta);
+    synchronized (this) {
+      ShellHolder shellHolder = this.shellHolder;
+      this.shellHolder = createShellHolder();
+      return new MongoConnection(url, info, username, password, fetchDocumentsForMeta, shellHolder);
+    }
   }
 
 
@@ -106,5 +132,10 @@ public class MongoJdbcDriver implements Driver {
   @Override
   public Logger getParentLogger() {
     return null;
+  }
+
+  public void close() {
+    shellHolder.close();
+    if (executorService != null) executorService.shutdownNow();
   }
 }

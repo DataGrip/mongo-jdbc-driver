@@ -6,6 +6,7 @@ import org.bson.BsonValue;
 import org.bson.Document;
 import org.bson.codecs.DecoderContext;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,6 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.sql.ResultSet;
 import java.util.*;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 
 import static com.dbschema.mongo.DriverPropertyInfoHelper.ENCODE_CREDENTIALS;
@@ -275,5 +277,14 @@ public class Util {
       if (s.charAt(i) == c) return i;
     }
     return -1;
+  }
+
+  @NotNull
+  public static ThreadFactory newNamedThreadFactory(@NonNls @NotNull final String name) {
+    return r -> {
+      Thread thread = new Thread(r, name);
+      thread.setDaemon(true);
+      return thread;
+    };
   }
 }

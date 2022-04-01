@@ -24,20 +24,11 @@ public class MongoshScriptEngine implements MongoScriptEngine {
   private static final Pattern USE_DATABASE = Pattern.compile("use\\s+(.*)", Pattern.CASE_INSENSITIVE);
   private static final Pattern CLEAR_CONTEXT = Pattern.compile("clearContext\\s*\\(\\s*\\)\\s*;?");
   private final MongoConnection connection;
-  private MongoShell repl;
+  private final ShellHolder shellHolder;
 
-  public MongoshScriptEngine(@NotNull MongoConnection connection) {
+  public MongoshScriptEngine(@NotNull MongoConnection connection, @NotNull ShellHolder holder) {
     this.connection = connection;
-  }
-
-  private MongoShell getRepl() {
-    if (repl == null) {
-      // disable warning about not available runtime compilation
-      System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
-      repl = new MongoShell(connection.getService().getMongoClient(), null);
-      repl.eval("use " + connection.getSchema());
-    }
-    return repl;
+    shellHolder = holder;
   }
 
   @Nullable
@@ -45,8 +36,7 @@ public class MongoshScriptEngine implements MongoScriptEngine {
   public ResultSet execute(@Language("js") @NotNull String query, int fetchSize) throws SQLException {
     try {
       if (CLEAR_CONTEXT.matcher(query.trim()).matches()) {
-        if (repl != null) repl.close();
-        repl = null;
+        shellHolder.recreateShell();
         return null;
       }
       Matcher useCommand = USE_DATABASE.matcher(trimEnd(query.trim(), ';').trim());
@@ -57,7 +47,7 @@ public class MongoshScriptEngine implements MongoScriptEngine {
         }
         query = "use " + db.trim();
       }
-      MongoShell repl = getRepl();
+      MongoShell repl = shellHolder.getShell(connection);
       MongoShellResult<?> result = repl.eval(query);
       if (result instanceof CursorResult) {
         Cursor<?> cursor = ((CursorResult<?>) result).getValue();
@@ -66,7 +56,7 @@ public class MongoshScriptEngine implements MongoScriptEngine {
         }
         return new ResultSetIterator(cursor);
       }
-      MongoShellResult<?> db = getRepl().eval("db");
+      MongoShellResult<?> db = shellHolder.getShell(connection).eval("db");
       if (db instanceof StringResult) connection.setSchema(((StringResult) db).getValue());
       return result instanceof VoidResult || result instanceof BulkWriteResult || result instanceof InsertOneResult ||
                  result instanceof InsertManyResult || result instanceof MongoShellUpdateResult
@@ -80,6 +70,6 @@ public class MongoshScriptEngine implements MongoScriptEngine {
 
   @Override
   public void close() {
-    if (repl != null) repl.close();
+    shellHolder.close();
   }
 }

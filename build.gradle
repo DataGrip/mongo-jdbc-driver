@@ -22,6 +22,11 @@ dependencies {
     testImplementation group: 'commons-io', name: 'commons-io', version: '2.6'
 }
 
+test {
+    minHeapSize = "512m"
+    maxHeapSize = "1024m"
+}
+
 shadowJar {
     archiveFileName = "mongo-jdbc-standalone-${version}.jar"
     mergeServiceFiles()

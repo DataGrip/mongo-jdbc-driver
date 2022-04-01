@@ -1,6 +1,8 @@
 package com.dbschema.mongo;
 
 import com.dbschema.mongo.mongosh.MongoshScriptEngine;
+import com.dbschema.mongo.mongosh.PrecalculatingShellHolder;
+import com.dbschema.mongo.mongosh.ShellHolder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,9 +18,14 @@ public class MongoConnection implements Connection {
   private boolean isClosed = false;
   private boolean isReadOnly = false;
 
-  public MongoConnection(@NotNull String url, @NotNull Properties info, @Nullable String username, @Nullable String password, int fetchDocumentsForMeta) throws SQLException {
+  public MongoConnection(@NotNull String url,
+                         @NotNull Properties info,
+                         @Nullable String username,
+                         @Nullable String password,
+                         int fetchDocumentsForMeta,
+                         @NotNull ShellHolder shellHolder) throws SQLException {
     this.service = new MongoService(url, info, username, password, fetchDocumentsForMeta);
-    this.scriptEngine = new MongoshScriptEngine(this);
+    this.scriptEngine = new MongoshScriptEngine(this, shellHolder);
     try {
       setSchema(service.getDatabaseNameFromUrl());
     }
