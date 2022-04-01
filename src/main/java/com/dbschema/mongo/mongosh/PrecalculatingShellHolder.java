@@ -2,6 +2,7 @@ package com.dbschema.mongo.mongosh;
 
 import com.dbschema.mongo.MongoConnection;
 import com.mongodb.mongosh.MongoShell;
+import org.graalvm.polyglot.Engine;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,11 +13,13 @@ import java.util.concurrent.Future;
 
 public class PrecalculatingShellHolder implements ShellHolder {
   private final ExecutorService executorService;
+  private final Engine engine;
   private @NotNull Future<MongoShell> shellFuture;
   private @Nullable MongoShell shell;
 
-  public PrecalculatingShellHolder(@NotNull ExecutorService executorService) {
+  public PrecalculatingShellHolder(@NotNull ExecutorService executorService, @Nullable Engine engine) {
     this.executorService = executorService;
+    this.engine = engine;
     this.shellFuture = submitNewShell();
   }
 
@@ -25,7 +28,7 @@ public class PrecalculatingShellHolder implements ShellHolder {
     return executorService.submit(() -> {
       // disable warning about not available runtime compilation
       System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
-      MongoShell shell = new MongoShell();
+      MongoShell shell = new MongoShell(null, engine);
       shell.eval("'initial warm up'");
       return shell;
     });

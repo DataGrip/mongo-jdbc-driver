@@ -5,6 +5,7 @@ import com.dbschema.mongo.MongoConnection;
 import com.dbschema.mongo.mongosh.LazyShellHolder;
 import com.dbschema.mongo.mongosh.PrecalculatingShellHolder;
 import com.dbschema.mongo.mongosh.ShellHolder;
+import org.graalvm.polyglot.Engine;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,6 +30,7 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 public class MongoJdbcDriver implements Driver {
   private final DriverPropertyInfoHelper propertyInfoHelper = new DriverPropertyInfoHelper();
   private @Nullable ExecutorService executorService;
+  private @Nullable Engine sharedEngine;
   private @NotNull ShellHolder shellHolder;
 
   static {
@@ -52,7 +54,14 @@ public class MongoJdbcDriver implements Driver {
     if (executorService == null) {
       executorService = newFixedThreadPool(10, newNamedThreadFactory("MongoShell ExecutorService"));
     }
-    return new PrecalculatingShellHolder(executorService);
+    Engine engine = null;
+    if (!"true".equals(System.getProperty("mongosh.disableSharedEngine"))) {
+      if (sharedEngine == null) {
+        sharedEngine = Engine.create("js");
+      }
+      engine = sharedEngine;
+    }
+    return new PrecalculatingShellHolder(executorService, engine);
   }
 
   /**
@@ -136,6 +145,7 @@ public class MongoJdbcDriver implements Driver {
 
   public void close() {
     shellHolder.close();
+    if (sharedEngine != null) sharedEngine.close();
     if (executorService != null) executorService.shutdownNow();
   }
 }
