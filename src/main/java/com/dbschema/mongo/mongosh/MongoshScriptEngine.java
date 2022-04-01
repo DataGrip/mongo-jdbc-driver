@@ -32,7 +32,9 @@ public class MongoshScriptEngine implements MongoScriptEngine {
 
   private MongoShell getRepl() {
     if (repl == null) {
-      repl = new MongoShell(connection.getService().getMongoClient());
+      // disable warning about not available runtime compilation
+      System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
+      repl = new MongoShell(connection.getService().getMongoClient(), null);
       repl.eval("use " + connection.getSchema());
     }
     return repl;

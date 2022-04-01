@@ -1,2 +1,2 @@
-|result|
-|1|
+|map|
+|{0=DeprecationWarning: Collection.count() is deprecated. Use countDocuments or estimatedDocumentCount.}|
