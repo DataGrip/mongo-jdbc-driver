@@ -13,7 +13,7 @@ repositories {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation "org.mongodb:mongodb-driver-sync:4.5.1"
+    implementation "org.mongodb:mongodb-driver-sync:4.7.1"
     implementation group: 'org.jetbrains', name: 'annotations', version: '15.0'
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.8'
     implementation group: 'org.graalvm.js', name: 'js', version: '22.0.0.2'
