@@ -103,7 +103,10 @@ public class MongoJdbcDriver implements Driver {
    */
   @Override
   public boolean acceptsURL(String url) {
-    return url.startsWith("mongodb") || url.startsWith("jdbc:mongodb");
+    if (url.startsWith("jdbc:")) {
+      url = url.substring("jdbc:".length());
+    }
+    return url.startsWith("mongodb://") || url.startsWith("mongodb+srv://");
   }
 
   /**

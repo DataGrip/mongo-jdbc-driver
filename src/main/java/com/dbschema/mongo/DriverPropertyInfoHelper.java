@@ -4,6 +4,8 @@ import java.sql.DriverPropertyInfo;
 import java.util.ArrayList;
 
 public class DriverPropertyInfoHelper {
+  public static final String AUTH_MECHANISM = "authMechanism";
+  public static final String[] AUTH_MECHANISM_CHOICES = new String[]{"GSSAPI", "MONGODB-AWS", "MONGODB-X509", "PLAIN", "SCRAM-SHA-1", "SCRAM-SHA-256"};
   public static final String UUID_REPRESENTATION = "uuidRepresentation";
   public static final String UUID_REPRESENTATION_DEFAULT = "standard";
   public static final String[] UUID_REPRESENTATION_CHOICES = new String[]{"standard", "javaLegacy", "csharpLegacy", "pythonLegacy"};
@@ -27,6 +29,8 @@ public class DriverPropertyInfoHelper {
 
   public DriverPropertyInfo[] getPropertyInfo() {
     ArrayList<DriverPropertyInfo> propInfos = new ArrayList<>();
+
+    addPropInfo(propInfos, AUTH_MECHANISM, "", "MongoDB authentication mechanism", AUTH_MECHANISM_CHOICES);
 
     addPropInfo(propInfos, ENCODE_CREDENTIALS, Boolean.toString(ENCODE_CREDENTIALS_DEFAULT), "Connection url requires username and password to be url encoded." +
         " This setting turns on automatic url-encoding", null);

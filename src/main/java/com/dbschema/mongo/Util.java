@@ -1,6 +1,8 @@
 package com.dbschema.mongo;
 
 import com.dbschema.mongo.resultSet.ListResultSet;
+import com.mongodb.AuthenticationMechanism;
+import kotlin.Pair;
 import org.bson.BsonDocument;
 import org.bson.BsonValue;
 import org.bson.Document;
@@ -17,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 
+import static com.dbschema.mongo.DriverPropertyInfoHelper.AUTH_MECHANISM;
 import static com.dbschema.mongo.DriverPropertyInfoHelper.ENCODE_CREDENTIALS;
 import static com.mongodb.MongoClientSettings.getDefaultCodecRegistry;
 import static java.util.Collections.emptyList;
@@ -175,6 +178,33 @@ public class Util {
   }
 
   @NotNull
+  public static String insertAuthMechanism(@NotNull String uri, @Nullable String authMechanism) {
+    if (authMechanism == null) return uri;
+    AuthenticationMechanism mechanism;
+    try {
+      mechanism = AuthenticationMechanism.fromMechanismName(authMechanism);
+    } catch (IllegalArgumentException ignored) {
+      return uri;
+    }
+
+    Pair<String, String> pair = splitPrefix(uri);
+    String prefix = pair.getFirst();
+    String uriWithoutPrefix = pair.getSecond();
+
+    int idx = uriWithoutPrefix.indexOf("?");
+    String uriWithoutParameters = idx == -1 ? uriWithoutPrefix : uriWithoutPrefix.substring(0, idx + 1);
+    if (!uriWithoutParameters.endsWith("?")) {
+      uriWithoutParameters += uriWithoutParameters.contains("/") ? "?" : "/?";
+    }
+    String parameters = idx == -1 ? "" : uriWithoutPrefix.substring(idx + 1);
+    if (!parameters.contains(AUTH_MECHANISM)) {
+      parameters = parameters.isEmpty() || parameters.endsWith("&") ? parameters : parameters + "&";
+      parameters += AUTH_MECHANISM + "=" + mechanism.getMechanismName();
+    }
+    return prefix + uriWithoutParameters + parameters;
+  }
+
+  @NotNull
   public static String insertCredentials(@NotNull String uri, @Nullable String username, @Nullable String password, boolean automaticEncoding) {
     if (username == null) {
       if (password != null) {
@@ -182,25 +212,30 @@ public class Util {
       }
       return uri;
     }
-    boolean isSrv = false;
-    String uriWithoutPrefix;
-    if (uri.startsWith(MONGODB_SRV_PREFIX)) {
-      uriWithoutPrefix = uri.substring(MONGODB_SRV_PREFIX.length());
-      isSrv = true;
-    }
-    else if (uri.startsWith(MONGODB_PREFIX)) {
-      uriWithoutPrefix = uri.substring(MONGODB_PREFIX.length());
-    }
-    else {
-      return uri;
-    }
+    Pair<String, String> pair = splitPrefix(uri);
+    String prefix = pair.getFirst();
+    String uriWithoutPrefix = pair.getSecond();
 
     int idx = uriWithoutPrefix.indexOf("/");
     String userAndHostInformation = idx == -1 ? uriWithoutPrefix : uriWithoutPrefix.substring(0, idx);
     if (userAndHostInformation.contains("@")) return uri;
 
     String passwordPart = password == null ? "" : ":" + encode(password, automaticEncoding, "password");
-    return (isSrv ? MONGODB_SRV_PREFIX : MONGODB_PREFIX) + encode(username, automaticEncoding, "username") + passwordPart + "@" + uriWithoutPrefix;
+    return prefix + encode(username, automaticEncoding, "username") + passwordPart + "@" + uriWithoutPrefix;
+  }
+
+  private static Pair<String, String> splitPrefix(@NotNull String uri) {
+    boolean jdbc = false;
+    if (uri.startsWith("jdbc:")) {
+      jdbc = true;
+      uri = uri.substring("jdbc:".length());
+    }
+    if (uri.startsWith(MONGODB_SRV_PREFIX)) {
+      return new Pair<>((jdbc ? "jdbc:" : "") + MONGODB_SRV_PREFIX, uri.substring(MONGODB_SRV_PREFIX.length()));
+    } else if (uri.startsWith(MONGODB_PREFIX)) {
+      return new Pair<>((jdbc ? "jdbc:" : "") + MONGODB_PREFIX, uri.substring(MONGODB_PREFIX.length()));
+    }
+    throw new IllegalArgumentException("No valid prefix in uri: " + uri);
   }
 
   private static String encode(String text, boolean automaticEncoding, String what) {

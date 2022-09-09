@@ -33,7 +33,11 @@ public class MongoClientWrapper implements AutoCloseable {
       if (prop.getProperty(ENCODE_CREDENTIALS) != null) {
         automaticEncoding = Boolean.parseBoolean(prop.getProperty(ENCODE_CREDENTIALS));
       }
+
       uri = insertCredentials(uri, username, password, automaticEncoding);
+      String authMechanism = prop.getProperty(AUTH_MECHANISM);
+      uri = insertAuthMechanism(uri, authMechanism);
+
       ConnectionString connectionString = new ConnectionString(uri);
       databaseNameFromUrl = connectionString.getDatabase();
       int maxPoolSize = getMaxPoolSize(prop);
