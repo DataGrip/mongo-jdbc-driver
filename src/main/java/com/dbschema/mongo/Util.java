@@ -19,8 +19,7 @@ import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 
-import static com.dbschema.mongo.DriverPropertyInfoHelper.AUTH_MECHANISM;
-import static com.dbschema.mongo.DriverPropertyInfoHelper.ENCODE_CREDENTIALS;
+import static com.dbschema.mongo.DriverPropertyInfoHelper.*;
 import static com.mongodb.MongoClientSettings.getDefaultCodecRegistry;
 import static java.util.Collections.emptyList;
 
@@ -86,6 +85,13 @@ public class Util {
   public static <T> T find(@NotNull Iterator<? extends T> iterator, @NotNull Condition<? super T> condition) {
     while (iterator.hasNext()) {
       T value = iterator.next();
+      if (condition.value(value)) return value;
+    }
+    return null;
+  }
+
+  public static <T> T find(@NotNull T[] array, @NotNull Condition<? super T> condition) {
+    for (T value : array) {
       if (condition.value(value)) return value;
     }
     return null;
@@ -191,17 +197,49 @@ public class Util {
     String prefix = pair.getFirst();
     String uriWithoutPrefix = pair.getSecond();
 
+    Pair<String, String> pair2 = splitUriAndParameters(uriWithoutPrefix);
+    String uriWithoutParameters = pair2.getFirst();
+    String parameters = pair2.getSecond();
+
+    if (!parameters.contains(AUTH_MECHANISM)) {
+      parameters = parameters.isEmpty() || parameters.endsWith("&") ? parameters : parameters + "&";
+      parameters += AUTH_MECHANISM + "=" + mechanism.getMechanismName();
+    }
+    return prefix + uriWithoutParameters + parameters;
+  }
+
+  @NotNull
+  private static Pair<String, String> splitUriAndParameters(@NotNull String uriWithoutPrefix) {
     int idx = uriWithoutPrefix.indexOf("?");
     String uriWithoutParameters = idx == -1 ? uriWithoutPrefix : uriWithoutPrefix.substring(0, idx + 1);
     if (!uriWithoutParameters.endsWith("?")) {
       uriWithoutParameters += uriWithoutParameters.contains("/") ? "?" : "/?";
     }
     String parameters = idx == -1 ? "" : uriWithoutPrefix.substring(idx + 1);
-    if (!parameters.contains(AUTH_MECHANISM)) {
-      parameters = parameters.isEmpty() || parameters.endsWith("&") ? parameters : parameters + "&";
-      parameters += AUTH_MECHANISM + "=" + mechanism.getMechanismName();
-    }
-    return prefix + uriWithoutParameters + parameters;
+    return new Pair<>(uriWithoutParameters, parameters);
+  }
+
+  @NotNull
+  public static String insertSessionToken(@NotNull String uri, @Nullable String sessionToken) {
+    if (sessionToken == null || sessionToken.isEmpty()) return uri;
+
+    Pair<String, String> pair = splitPrefix(uri);
+    String prefix = pair.getFirst();
+    String uriWithoutPrefix = pair.getSecond();
+
+    Pair<String, String> pair2 = splitUriAndParameters(uriWithoutPrefix);
+    String uriWithoutParameters = pair2.getFirst();
+    String parameters = pair2.getSecond();
+    String key = "authMechanismProperties=";
+    String keyAndValue = find(parameters.split("&"), param -> param.startsWith(key));
+    String mechanismProperties = keyAndValue == null ? "" : keyAndValue.split("=")[1];
+    String parametersWithoutProperties = String.join("&", filter(parameters.split("&"), param -> !param.isEmpty() && !param.startsWith(key), String[].class));
+    mechanismProperties = mechanismProperties.isEmpty()
+            ? AWS_SESSION_TOKEN + ":" + sessionToken
+            : mechanismProperties.contains(AWS_SESSION_TOKEN)
+            ? mechanismProperties
+            : mechanismProperties + (mechanismProperties.endsWith(",") ? "" : ",") + AWS_SESSION_TOKEN + ":" + sessionToken;
+    return prefix + uriWithoutParameters + parametersWithoutProperties + "&" + key + mechanismProperties;
   }
 
   @NotNull
