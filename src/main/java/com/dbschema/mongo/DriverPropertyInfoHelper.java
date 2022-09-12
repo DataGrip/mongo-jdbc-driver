@@ -6,6 +6,7 @@ import java.util.ArrayList;
 public class DriverPropertyInfoHelper {
   public static final String AUTH_MECHANISM = "authMechanism";
   public static final String[] AUTH_MECHANISM_CHOICES = new String[]{"GSSAPI", "MONGODB-AWS", "MONGODB-X509", "PLAIN", "SCRAM-SHA-1", "SCRAM-SHA-256"};
+  public static final String AUTH_SOURCE = "authSource";
   public static final String AWS_SESSION_TOKEN = "AWS_SESSION_TOKEN";
   public static final String UUID_REPRESENTATION = "uuidRepresentation";
   public static final String UUID_REPRESENTATION_DEFAULT = "standard";
@@ -32,6 +33,10 @@ public class DriverPropertyInfoHelper {
     ArrayList<DriverPropertyInfo> propInfos = new ArrayList<>();
 
     addPropInfo(propInfos, AUTH_MECHANISM, "", "MongoDB authentication mechanism", AUTH_MECHANISM_CHOICES);
+    addPropInfo(propInfos, AUTH_SOURCE, "", "Specify the database name associated with the user's credentials.\n" +
+            "If authSource is unspecified, authSource defaults to the defaultauthdb specified in the connection string.\n" +
+            "If defaultauthdb is unspecified, then authSource defaults to admin.\n" +
+            "MongoDB will ignore authSource values if no username is provided.", null);
     addPropInfo(propInfos, AWS_SESSION_TOKEN, "", "AWS session token", null);
 
     addPropInfo(propInfos, ENCODE_CREDENTIALS, Boolean.toString(ENCODE_CREDENTIALS_DEFAULT), "Connection url requires username and password to be url encoded." +

@@ -192,7 +192,17 @@ public class Util {
     } catch (IllegalArgumentException ignored) {
       return uri;
     }
+    return insertUrlParameter(uri, AUTH_MECHANISM, mechanism.getMechanismName());
+  }
 
+  @NotNull
+  public static String insertAuthSource(@NotNull String uri, @Nullable String source) {
+    return insertUrlParameter(uri, AUTH_SOURCE, source);
+  }
+
+  @NotNull
+  public static String insertUrlParameter(@NotNull String uri, @NotNull String key, @Nullable String value) {
+    if (value == null || value.isEmpty()) return uri;
     Pair<String, String> pair = splitPrefix(uri);
     String prefix = pair.getFirst();
     String uriWithoutPrefix = pair.getSecond();
@@ -201,9 +211,9 @@ public class Util {
     String uriWithoutParameters = pair2.getFirst();
     String parameters = pair2.getSecond();
 
-    if (!parameters.contains(AUTH_MECHANISM)) {
+    if (!parameters.contains(key)) {
       parameters = parameters.isEmpty() || parameters.endsWith("&") ? parameters : parameters + "&";
-      parameters += AUTH_MECHANISM + "=" + mechanism.getMechanismName();
+      parameters += key + "=" + value;
     }
     return prefix + uriWithoutParameters + parameters;
   }

@@ -36,6 +36,7 @@ public class MongoClientWrapper implements AutoCloseable {
 
       uri = insertCredentials(uri, username, password, automaticEncoding);
       uri = insertAuthMechanism(uri, prop.getProperty(AUTH_MECHANISM));
+      uri = insertAuthSource(uri, prop.getProperty(AUTH_SOURCE));
       uri = insertSessionToken(uri, prop.getProperty(AWS_SESSION_TOKEN));
 
       ConnectionString connectionString = new ConnectionString(uri);
