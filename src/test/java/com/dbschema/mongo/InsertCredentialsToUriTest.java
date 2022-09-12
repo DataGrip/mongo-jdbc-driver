@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import static com.dbschema.mongo.Util.insertCredentials;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class InsertCredentialsToUriTest {
   private static final String NO_CREDENTIALS = "mongodb://localhost:27017/admin";
@@ -37,6 +38,13 @@ public class InsertCredentialsToUriTest {
 
   @Test
   public void invalidString() {
-    assertEquals("abc", insertCredentials("abc", USERNAME, PASSWORD));
+    IllegalArgumentException exception = null;
+    try {
+      assertEquals("abc", insertCredentials("abc", USERNAME, PASSWORD));
+    }
+    catch (IllegalArgumentException e) {
+      exception = e;
+    }
+    assertNotNull(exception);
   }
 }

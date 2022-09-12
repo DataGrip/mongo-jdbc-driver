@@ -8,6 +8,10 @@ public class DriverPropertyInfoHelper {
   public static final String[] AUTH_MECHANISM_CHOICES = new String[]{"GSSAPI", "MONGODB-AWS", "MONGODB-X509", "PLAIN", "SCRAM-SHA-1", "SCRAM-SHA-256"};
   public static final String AUTH_SOURCE = "authSource";
   public static final String AWS_SESSION_TOKEN = "AWS_SESSION_TOKEN";
+  public static final String SERVICE_NAME = "SERVICE_NAME";
+  public static final String SERVICE_REALM = "SERVICE_REALM";
+  public static final String CANONICALIZE_HOST_NAME = "CANONICALIZE_HOST_NAME";
+  public static final String[] CANONICALIZE_HOST_NAME_CHOICES = new String[]{Boolean.toString(false), Boolean.toString(true)};
   public static final String UUID_REPRESENTATION = "uuidRepresentation";
   public static final String UUID_REPRESENTATION_DEFAULT = "standard";
   public static final String[] UUID_REPRESENTATION_CHOICES = new String[]{"standard", "javaLegacy", "csharpLegacy", "pythonLegacy"};
@@ -38,6 +42,10 @@ public class DriverPropertyInfoHelper {
             "If defaultauthdb is unspecified, then authSource defaults to admin.\n" +
             "MongoDB will ignore authSource values if no username is provided.", null);
     addPropInfo(propInfos, AWS_SESSION_TOKEN, "", "AWS session token", null);
+    addPropInfo(propInfos, SERVICE_NAME, "", "Set the Kerberos service name when connecting to Kerberized MongoDB instances. This value must match the service name set on MongoDB instances to which you are connecting. Only valid when using the GSSAPI authentication mechanism.\n" +
+            "SERVICE_NAME defaults to mongodb for all clients and MongoDB instances. If you change the saslServiceName setting on a MongoDB instance, you must set SERVICE_NAME to match that setting. Only valid when using the GSSAPI authentication mechanism.", null);
+    addPropInfo(propInfos, CANONICALIZE_HOST_NAME, "", "Canonicalize the hostname of the client host machine when connecting to the Kerberos server. This may be required when hosts report different hostnames than what is in the Kerberos database. Defaults to false. Only valid when using the GSSAPI authentication mechanism.", CANONICALIZE_HOST_NAME_CHOICES);
+    addPropInfo(propInfos, SERVICE_REALM, "", "Set the Kerberos realm for the MongoDB service. This may be necessary to support cross-realm authentication where the user exists in one realm and the service in another. Only valid when using the GSSAPI authentication mechanism.", null);
 
     addPropInfo(propInfos, ENCODE_CREDENTIALS, Boolean.toString(ENCODE_CREDENTIALS_DEFAULT), "Connection url requires username and password to be url encoded." +
         " This setting turns on automatic url-encoding", null);

@@ -230,8 +230,8 @@ public class Util {
   }
 
   @NotNull
-  public static String insertSessionToken(@NotNull String uri, @Nullable String sessionToken) {
-    if (sessionToken == null || sessionToken.isEmpty()) return uri;
+  public static String insertAuthProperty(@NotNull String uri, @NotNull String name, @Nullable String value) {
+    if (value == null || value.isEmpty()) return uri;
 
     Pair<String, String> pair = splitPrefix(uri);
     String prefix = pair.getFirst();
@@ -245,11 +245,11 @@ public class Util {
     String mechanismProperties = keyAndValue == null ? "" : keyAndValue.split("=")[1];
     String parametersWithoutProperties = String.join("&", filter(parameters.split("&"), param -> !param.isEmpty() && !param.startsWith(key), String[].class));
     mechanismProperties = mechanismProperties.isEmpty()
-            ? AWS_SESSION_TOKEN + ":" + sessionToken
-            : mechanismProperties.contains(AWS_SESSION_TOKEN)
+            ? name + ":" + value
+            : mechanismProperties.contains(name)
             ? mechanismProperties
-            : mechanismProperties + (mechanismProperties.endsWith(",") ? "" : ",") + AWS_SESSION_TOKEN + ":" + sessionToken;
-    return prefix + uriWithoutParameters + parametersWithoutProperties + "&" + key + mechanismProperties;
+            : mechanismProperties + (mechanismProperties.endsWith(",") ? "" : ",") + name + ":" + value;
+    return prefix + uriWithoutParameters + parametersWithoutProperties + (parametersWithoutProperties.isEmpty() ? "" : "&") + key + mechanismProperties;
   }
 
   @NotNull

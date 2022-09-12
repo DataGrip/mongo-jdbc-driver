@@ -37,7 +37,16 @@ public class MongoClientWrapper implements AutoCloseable {
       uri = insertCredentials(uri, username, password, automaticEncoding);
       uri = insertAuthMechanism(uri, prop.getProperty(AUTH_MECHANISM));
       uri = insertAuthSource(uri, prop.getProperty(AUTH_SOURCE));
-      uri = insertSessionToken(uri, prop.getProperty(AWS_SESSION_TOKEN));
+      uri = insertAuthProperty(uri, AWS_SESSION_TOKEN, prop.getProperty(AWS_SESSION_TOKEN));
+      uri = insertAuthProperty(uri, SERVICE_NAME, prop.getProperty(SERVICE_NAME));
+      uri = insertAuthProperty(uri, SERVICE_REALM, prop.getProperty(SERVICE_REALM));
+      String canonicalizeHostName = prop.getProperty(CANONICALIZE_HOST_NAME);
+      if (Boolean.TRUE.toString().equalsIgnoreCase(canonicalizeHostName) || Boolean.FALSE.toString().equalsIgnoreCase(canonicalizeHostName)) {
+        uri = insertAuthProperty(uri, CANONICALIZE_HOST_NAME, canonicalizeHostName);
+      }
+      else if (canonicalizeHostName != null) {
+        System.err.println("Unknown " + CANONICALIZE_HOST_NAME + " value. Must be true or false.");
+      }
 
       ConnectionString connectionString = new ConnectionString(uri);
       databaseNameFromUrl = connectionString.getDatabase();
