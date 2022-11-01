@@ -196,6 +196,13 @@ public class Util {
   }
 
   @NotNull
+  public static String insertRetryWrites(@NotNull String uri, @Nullable String retryWrites) {
+    if (retryWrites == null) return uri;
+    String lowercase = retryWrites.toLowerCase(Locale.ENGLISH);
+    return lowercase.equals("true") || lowercase.equals("false") ? insertUrlParameter(uri, RETRY_WRITES, retryWrites) : uri;
+  }
+
+  @NotNull
   public static String insertAuthSource(@NotNull String uri, @Nullable String source) {
     return insertUrlParameter(uri, AUTH_SOURCE, source);
   }

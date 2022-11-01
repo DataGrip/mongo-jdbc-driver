@@ -31,6 +31,9 @@ public class DriverPropertyInfoHelper {
   public static final boolean ALLOW_INVALID_CERTIFICATES_DEFAULT = false;
   public static final String ALLOW_INVALID_HOSTNAMES = "tlsAllowInvalidHostnames";
   public static final boolean ALLOW_INVALID_HOSTNAMES_DEFAULT = false;
+  public static final String RETRY_WRITES = "retryWrites";
+  public static final String[] RETRY_WRITES_CHOICES = new String[]{Boolean.toString(false), Boolean.toString(true)};
+  private static final String RETRY_WRITES_DOCS = "https://www.mongodb.com/docs/manual/core/retryable-writes/";
 
 
   public DriverPropertyInfo[] getPropertyInfo() {
@@ -66,6 +69,8 @@ public class DriverPropertyInfoHelper {
         "to return meta information from DatabaseMetaData.getColumns method.", null);
 
     addPropInfo(propInfos, MAX_POOL_SIZE, Integer.toString(MAX_POOL_SIZE_DEFAULT), "MongoDB connections pool size per one connection from IDE. See " + GET_MAX_SIZE_DOCS, null);
+
+    addPropInfo(propInfos, RETRY_WRITES, null, "See " + RETRY_WRITES_DOCS, RETRY_WRITES_CHOICES);
 
     addPropInfo(propInfos, APPLICATION_NAME, null, "Sets the logical name of the application.", null);
 

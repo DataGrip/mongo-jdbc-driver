@@ -47,6 +47,7 @@ public class MongoClientWrapper implements AutoCloseable {
       else if (canonicalizeHostName != null) {
         System.err.println("Unknown " + CANONICALIZE_HOST_NAME + " value. Must be true or false.");
       }
+      uri = insertRetryWrites(uri, prop.getProperty(RETRY_WRITES));
 
       ConnectionString connectionString = new ConnectionString(uri);
       databaseNameFromUrl = connectionString.getDatabase();
