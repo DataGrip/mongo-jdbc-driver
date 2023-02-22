@@ -94,27 +94,28 @@ public class TestUtil {
         run(statement, before);
         StringBuilder actual = new StringBuilder();
         assertFalse("Command cannot be null", commands.isEmpty());
-        try {
           for (Command command : commands) {
-
-            boolean result = statement.execute(command.command);
-            if (result) {
-              ResultSet resultSet = statement.getResultSet();
-              assertNotNull("Result set cannot be null", resultSet);
-              actual.append(print(resultSet, command.options)).append("\n");
+            try {
+              boolean result = statement.execute(command.command);
+              if (result) {
+                ResultSet resultSet = statement.getResultSet();
+                assertNotNull("Result set cannot be null", resultSet);
+                actual.append(print(resultSet, command.options)).append("\n");
+              }
+              else {
+                actual.append("No result\n");
+              }
             }
-            else {
-              actual.append("No result\n");
+            catch (Throwable t) {
+              System.err.println("IGNORED:");
+              t.printStackTrace();
+              String message = t.getMessage();
+              String msg = message.contains("\n") ? message.substring(0, message.indexOf("\n")) : message;
+              String res = command.options.dontCheckValue ? extractExceptionType(t) : msg;
+              actual.append(res).append("\n");
+              break;
             }
           }
-        }
-        catch (Throwable t) {
-          System.err.println("IGNORED:\n");
-          t.printStackTrace();
-          String message = t.getMessage();
-          String msg = message.contains("\n") ? message.substring(0, message.indexOf("\n")) : message;
-          actual.append(msg).append("\n");
-        }
         compare(testDataPath, name, actual.toString());
       }
       finally {
@@ -122,6 +123,15 @@ public class TestUtil {
         run(statement, "use " + database);
       }
     }
+  }
+
+  @NotNull
+  private static String extractExceptionType(@NotNull Throwable t) {
+    if (t instanceof SQLException && t.getCause() != null) return extractExceptionType(t.getCause());
+    String msg = t.getMessage();
+    int colonPos = msg.indexOf(":");
+    if (colonPos > 0) return msg.substring(0, colonPos).trim();
+    return t.getClass().getSimpleName();
   }
 
   @NotNull

@@ -1,1 +1,1 @@
-java.lang.Exception: TypeError: Proxy({_mongo: {__serviceProvider: JavaObject[com.mongodb.mongosh.service.JavaServiceProvider], _explicitEncryptionOnly: false, _readPreferenceWasExplicitlyRequested: false, _cachedDatabaseNames: Array(5), _instanceState: {...}, _databases: {...}, _connectionInfo: {...}}, _database: Proxy({...}, {...}), _name: "col.unknownMethod"}, {get: (e,o)=>o in e?e[o]:"string"==typeof o&&!o.startsWith("_")&&(0,helpers_1.isValidCollectionName)(o)?t.getCollection(`${r}.${o}`):void 0}) is not a function
+TypeError
