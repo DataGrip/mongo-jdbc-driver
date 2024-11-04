@@ -23,9 +23,6 @@ import static com.dbschema.mongo.DriverPropertyInfoHelper.*;
 import static com.mongodb.MongoClientSettings.getDefaultCodecRegistry;
 import static java.util.Collections.emptyList;
 
-/**
- * @author Liudmila Kornilova
- **/
 public class Util {
   private static final String MONGODB_PREFIX = "mongodb://";
   private static final String MONGODB_SRV_PREFIX = "mongodb+srv://";

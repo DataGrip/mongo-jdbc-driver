@@ -19,9 +19,6 @@ import java.util.regex.Pattern;
 import static org.junit.Assert.*;
 import static org.junit.Assume.assumeFalse;
 
-/**
- * @author Liudmila Kornilova
- **/
 public class TestUtil {
   public static final String PATH_TO_URI = "src/test/resources/URI.txt";
   public static final String URL;

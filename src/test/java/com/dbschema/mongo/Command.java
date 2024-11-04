@@ -1,8 +1,5 @@
 package com.dbschema.mongo;
 
-/**
- * @author Liudmila Kornilova
- **/
 public class Command {
   public final String command;
   public final CommandOptions options;

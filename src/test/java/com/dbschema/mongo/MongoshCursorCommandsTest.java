@@ -18,9 +18,6 @@ import java.util.Properties;
 import static com.dbschema.mongo.TestUtil.URL;
 import static com.dbschema.mongo.TestUtil.doTest;
 
-/**
- * @author Liudmila Kornilova
- **/
 @RunWith(Parameterized.class)
 public class MongoshCursorCommandsTest {
   private static final String TEST_DATA_PATH = "src/test/resources/test-data/cursor";

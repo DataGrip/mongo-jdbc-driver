@@ -14,9 +14,6 @@ import static com.dbschema.mongo.TestUtil.URL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-/**
- * @author Liudmila Kornilova
- **/
 public class DatabaseMetadataTest {
   private static Connection connection;
 

@@ -17,9 +17,6 @@ import java.util.regex.Pattern;
 import static com.dbschema.mongo.Util.ok;
 import static com.dbschema.mongo.Util.trimEnd;
 
-/**
- * @author Liudmila Kornilova
- **/
 public class MongoshScriptEngine implements MongoScriptEngine {
   private static final Pattern USE_DATABASE = Pattern.compile("use\\s+(.*)", Pattern.CASE_INSENSITIVE);
   private static final Pattern CLEAR_CONTEXT = Pattern.compile("clearContext\\s*\\(\\s*\\)\\s*;?");

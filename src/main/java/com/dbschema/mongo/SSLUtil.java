@@ -12,9 +12,6 @@ import java.sql.SQLException;
 
 import static com.dbschema.mongo.Util.isNullOrEmpty;
 
-/**
- * @author Liudmila Kornilova
- **/
 public class SSLUtil {
   public static SSLContext getTrustEverybodySSLContext(String clientCertificateKeyStoreUrl, String clientCertificateKeyStoreType, String clientCertificateKeyStorePassword) throws SSLParamsException {
     KeyManagerFactory kmf;

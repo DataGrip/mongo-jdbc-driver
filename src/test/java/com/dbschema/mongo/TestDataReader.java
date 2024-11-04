@@ -7,9 +7,6 @@ import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * @author Liudmila Kornilova
- **/
 public class TestDataReader {
   private static final Pattern HEADER_PATTERN = Pattern.compile("//\\s*(?<name>\\S+)(?<properties>(\\s+\\S+)+)?");
 

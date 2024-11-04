@@ -12,9 +12,6 @@ import static com.dbschema.mongo.TestUtil.URL;
 import static com.dbschema.mongo.TestUtil.getNumberOfConnections;
 import static org.junit.Assert.assertEquals;
 
-/**
- * @author Liudmila Kornilova
- **/
 public class ConnectionClosedTest {
   @Test
   public void testConnectionIsClosed() throws SQLException {
