@@ -102,48 +102,27 @@ public class ListResultSet implements ResultSet {
     return Boolean.parseBoolean(getString(columnIndex));
   }
 
-  public byte getByte(int columnIndex) {
-
-    return 0;
+  public byte getByte(int columnIndex) throws SQLException {
+    return Byte.parseByte(getString(columnIndex));
   }
 
-  /**
-   * @see java.sql.ResultSet#getShort(int)
-   */
   public short getShort(int columnIndex) throws SQLException {
-    checkClosed();
     return Short.parseShort(getString(columnIndex));
   }
 
-  /**
-   * @see java.sql.ResultSet#getInt(int)
-   */
   public int getInt(int columnIndex) throws SQLException {
-    checkClosed();
     return Integer.parseInt(getString(columnIndex));
   }
 
-  /**
-   * @see java.sql.ResultSet#getLong(int)
-   */
   public long getLong(int columnIndex) throws SQLException {
-    checkClosed();
     return Long.parseLong(getString(columnIndex));
   }
 
-  /**
-   * @see java.sql.ResultSet#getFloat(int)
-   */
   public float getFloat(int columnIndex) throws SQLException {
-    checkClosed();
     return Float.parseFloat(getString(columnIndex));
   }
 
-  /**
-   * @see java.sql.ResultSet#getDouble(int)
-   */
   public double getDouble(int columnIndex) throws SQLException {
-    checkClosed();
     return Double.parseDouble(getString(columnIndex));
   }
 
@@ -152,9 +131,8 @@ public class ListResultSet implements ResultSet {
     return null;
   }
 
-  public byte[] getBytes(int columnIndex) {
-
-    return null;
+  public byte[] getBytes(int columnIndex) throws SQLException {
+    return getString(columnIndex).getBytes();
   }
 
   public Date getDate(int columnIndex) {
@@ -188,7 +166,6 @@ public class ListResultSet implements ResultSet {
   }
 
   public String getString(String columnLabel) throws SQLException {
-    checkClosed();
     int index = -1;
     if (columnNames == null) {
       throw new SQLException("Use of columnLabel requires setColumnNames to be called first.");
@@ -206,34 +183,27 @@ public class ListResultSet implements ResultSet {
   }
 
   public boolean getBoolean(String columnLabel) throws SQLException {
-    checkClosed();
-
-    return false;
+    return Boolean.parseBoolean(getString(columnLabel));
   }
 
-  public byte getByte(String columnLabel) {
-
-    return 0;
+  public byte getByte(String columnLabel) throws SQLException {
+    return Byte.parseByte(getString(columnLabel));
   }
 
-  public short getShort(String columnLabel) {
-
-    return 0;
+  public short getShort(String columnLabel) throws SQLException {
+    return Short.parseShort(getString(columnLabel));
   }
 
-  public int getInt(String columnLabel) {
-
-    return 0;
+  public int getInt(String columnLabel) throws SQLException {
+    return Integer.parseInt(getString(columnLabel));
   }
 
-  public long getLong(String columnLabel) {
-
-    return 0;
+  public long getLong(String columnLabel) throws SQLException {
+    return Long.parseLong(getString(columnLabel));
   }
 
-  public float getFloat(String columnLabel) {
-
-    return 0;
+  public float getFloat(String columnLabel) throws SQLException {
+    return Float.parseFloat(getString(columnLabel));
   }
 
   public double getDouble(String columnLabel) throws SQLException {

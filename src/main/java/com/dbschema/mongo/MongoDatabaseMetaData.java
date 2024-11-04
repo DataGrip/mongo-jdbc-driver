@@ -1,10 +1,7 @@
 package com.dbschema.mongo;
 
 import com.dbschema.mongo.resultSet.ListResultSet;
-import com.dbschema.mongo.schema.MetaCollection;
-import com.dbschema.mongo.schema.MetaField;
-import com.dbschema.mongo.schema.MetaIndex;
-import com.dbschema.mongo.schema.MetaJson;
+import com.dbschema.mongo.schema.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.*;
@@ -192,13 +189,13 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     for (MetaCollection collection : collections) {
       for (MetaIndex index : collection.metaIndexes) {
         if (index.pk) {
-          for (MetaField field : index.metaFields) {
+          for (MetaIndexField indexField : index.metaIndexFields) {
             result.addRow(new String[]{
                 collection.name, // "TABLE_CAT",
                 null, // "TABLE_SCHEMA",
                 collection.name, // "TABLE_NAME", (i.e. MongoDB Collection Name)
-                field.getNameWithPath(), // "COLUMN_NAME",
-                "" + index.metaFields.indexOf(field), // "ORDINAL_POSITION"
+                indexField.getNameWithPath(), // "COLUMN_NAME",
+                "" + index.metaIndexFields.indexOf(indexField), // "ORDINAL_POSITION"
                 index.name // "INDEX_NAME",
             });
           }
@@ -258,23 +255,21 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
     List<MetaCollection> collections = con.getService().getMetaCollections(schemaName, tableNamePattern);
     for (MetaCollection collection : collections) {
       for (MetaIndex index : collection.metaIndexes) {
-        if (!index.pk) {
-          for (MetaField field : index.metaFields) {
-            result.addRow(new String[]{collection.name, // "TABLE_CAT",
-                null, // "TABLE_SCHEMA",
-                collection.name, // "TABLE_NAME", (i.e. MongoDB Collection Name)
-                "YES", // "NON-UNIQUE",
-                collection.name, // "INDEX QUALIFIER",
-                index.name, // "INDEX_NAME",
-                "0", // "TYPE",
-                "" + index.metaFields.indexOf(field), // "ORDINAL_POSITION"
-                field.getNameWithPath(), // "COLUMN_NAME",
-                "A", // "ASC_OR_DESC",
-                "0", // "CARDINALITY",
-                "0", // "PAGES",
-                "" // "FILTER_CONDITION",
-            });
-          }
+        for (MetaIndexField indexField : index.metaIndexFields) {
+          result.addRow(new String[]{collection.name, // "TABLE_CAT",
+              null, // "TABLE_SCHEMA",
+              collection.name, // "TABLE_NAME", (i.e. MongoDB Collection Name)
+              index.pk || index.unique ? "NO" : "YES", // "NON-UNIQUE",
+              collection.name, // "INDEX QUALIFIER",
+              index.name, // "INDEX_NAME",
+              "" + DatabaseMetaData.tableIndexOther, // "TYPE",
+              "" + index.metaIndexFields.indexOf(indexField), // "ORDINAL_POSITION"
+              indexField.getNameWithPath(), // "COLUMN_NAME"
+              indexField.ascOrDesc == 1 ? "A" : indexField.ascOrDesc == -1 ? "D" : null, // "ASC_OR_DESC",
+              "0", // "CARDINALITY",
+              "0", // "PAGES",
+              "" // "FILTER_CONDITION",
+          });
         }
       }
     }

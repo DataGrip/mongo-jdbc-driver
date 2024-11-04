@@ -92,38 +92,38 @@ public class ResultSetIterator implements ResultSet {
   }
 
   @Override
-  public boolean getBoolean(int columnIndex) {
-    return false;
+  public boolean getBoolean(int columnIndex) throws SQLException {
+    return Boolean.parseBoolean(getString(columnIndex));
   }
 
   @Override
-  public byte getByte(int columnIndex) {
-    return 0;
+  public byte getByte(int columnIndex) throws SQLException {
+    return Byte.parseByte(getString(columnIndex));
   }
 
   @Override
-  public short getShort(int columnIndex) {
-    return 0;
+  public short getShort(int columnIndex) throws SQLException {
+    return Short.parseShort(getString(columnIndex));
   }
 
   @Override
-  public int getInt(int columnIndex) {
-    return 0;
+  public int getInt(int columnIndex) throws SQLException {
+    return Integer.parseInt(getString(columnIndex));
   }
 
   @Override
-  public long getLong(int columnIndex) {
-    return 0;
+  public long getLong(int columnIndex) throws SQLException {
+    return Long.parseLong(getString(columnIndex));
   }
 
   @Override
-  public float getFloat(int columnIndex) {
-    return 0;
+  public float getFloat(int columnIndex) throws SQLException {
+    return Float.parseFloat(getString(columnIndex));
   }
 
   @Override
-  public double getDouble(int columnIndex) {
-    return 0;
+  public double getDouble(int columnIndex) throws SQLException {
+    return Double.parseDouble(getString(columnIndex));
   }
 
   @Override
@@ -132,8 +132,8 @@ public class ResultSetIterator implements ResultSet {
   }
 
   @Override
-  public byte[] getBytes(int columnIndex) {
-    return new byte[0];
+  public byte[] getBytes(int columnIndex) throws SQLException {
+    return getString(columnIndex).getBytes();
   }
 
   @Override

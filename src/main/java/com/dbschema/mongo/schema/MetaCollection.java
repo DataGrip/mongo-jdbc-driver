@@ -28,7 +28,7 @@ public class MetaCollection extends MetaJson {
   }
 
   public MetaIndex createMetaIndex(String name, boolean pk, boolean unique) {
-    MetaIndex index = new MetaIndex(this, name, "_id_".endsWith(name), false);
+    MetaIndex index = new MetaIndex(this, name, pk, unique);
     metaIndexes.add(index);
     return index;
   }
@@ -133,13 +133,13 @@ public class MetaCollection extends MetaJson {
           if (columnsObj instanceof Map) {
             final Map<?, ?> columnsMap = (Map<?, ?>) columnsObj;
             MetaIndex metaIndex = createMetaIndex(indexName, indexIsPk, indexIsUnique);
-            for (Object fieldNameObj : columnsMap.keySet()) {
-              final MetaField metaField = findField((String) fieldNameObj);
+            for (Map.Entry<?, ?> fieldEntry : columnsMap.entrySet()) {
+              final MetaField metaField = findField((String) fieldEntry.getKey());
               if (metaField != null) {
-                metaIndex.addColumn(metaField);
+                metaIndex.addColumn(new MetaIndexField(metaField, (Integer) fieldEntry.getValue()));
               }
               else {
-                System.err.println("MongoJDBC discover index cannot find metaField '" + fieldNameObj + "' for index " + indexObject);
+                System.err.println("MongoJDBC discover index cannot find metaField '" + fieldEntry.getKey() + "' for index " + indexObject);
               }
             }
           }

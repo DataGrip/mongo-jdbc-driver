@@ -8,7 +8,7 @@ public class MetaIndex {
 
   public final MetaJson metaMap;
   public final String name;
-  public final List<MetaField> metaFields = new ArrayList<MetaField>();
+  public final List<MetaIndexField> metaIndexFields = new ArrayList<>();
   public final boolean pk, unique;
 
   public MetaIndex(MetaJson metaMap, String name, boolean pk, boolean unique) {
@@ -18,9 +18,9 @@ public class MetaIndex {
     this.unique = unique;
   }
 
-  public void addColumn(MetaField metaField) {
-    if (metaField != null) {
-      metaFields.add(metaField);
+  public void addColumn(MetaIndexField metaIndexField) {
+    if (metaIndexField != null) {
+      metaIndexFields.add(metaIndexField);
     }
   }
 }
