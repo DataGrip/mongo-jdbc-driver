@@ -1,6 +1,7 @@
 package com.dbschema.mongo;
 
 import com.dbschema.mongo.schema.MetaCollection;
+import com.mongodb.MongoCredential;
 import com.mongodb.MongoSecurityException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -26,10 +27,10 @@ public class MongoService implements AutoCloseable {
 
 
   public MongoService(@NotNull String uri, @NotNull Properties prop, @Nullable String username,
-                      @Nullable String password, int fetchDocumentsForMeta) throws SQLException {
+                      @Nullable String password, int fetchDocumentsForMeta, @Nullable MongoCredential.OidcCallbackContext callbackContext) throws SQLException {
     this.uri = uri;
     this.fetchDocumentsForMeta = fetchDocumentsForMeta;
-    client = new MongoClientWrapper(uri, prop, username, password);
+    client = new MongoClientWrapper(uri, prop, username, password, callbackContext);
   }
 
   public MongoClientWrapper getClient() {

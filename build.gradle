@@ -4,7 +4,7 @@ plugins {
     id "com.github.johnrengelman.shadow" version "7.0.0"
 }
 
-version '1.20'
+version '1.30'
 
 repositories {
     mavenCentral()
@@ -12,11 +12,12 @@ repositories {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation "org.mongodb:mongodb-driver-sync:4.11.1"
+    implementation "org.mongodb:mongodb-driver-sync:5.6.1"
     implementation group: 'org.jetbrains', name: 'annotations', version: '15.0'
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.10.0'
     implementation group: 'org.graalvm.js', name: 'js', version: '22.3.1'
     implementation files('libs/JMongosh-0.9.jar')
+    implementation group: 'com.nimbusds', name: 'oauth2-oidc-sdk', version: '11.+'
     testImplementation group: 'junit', name: 'junit', version: '4.13.1'
     testImplementation group: 'commons-io', name: 'commons-io', version: '2.7'
 }
@@ -29,4 +30,11 @@ test {
 shadowJar {
     archiveFileName = "mongo-jdbc-standalone-${version}.jar"
     mergeServiceFiles()
+    relocate 'com.nimbusds', 'shadow.com.nimbusds'
+
+    relocate('org', 'shadow.org') {
+        exclude 'org.ow2.asm:.*'
+        exclude 'net.minidev:.*'
+        exclude 'org.javassist:.*'
+    }
 }

@@ -441,7 +441,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * @see java.sql.DatabaseMetaData#getDriverVersion()
    */
   public String getDriverVersion() {
-    return "1.20";
+    return "1.30";
   }
 
   /**
