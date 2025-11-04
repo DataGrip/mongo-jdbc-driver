@@ -3,6 +3,7 @@ package com.dbschema.mongo;
 import com.dbschema.mongo.mongosh.MongoshScriptEngine;
 import com.dbschema.mongo.mongosh.PrecalculatingShellHolder;
 import com.dbschema.mongo.mongosh.ShellHolder;
+import com.mongodb.MongoCredential;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,14 +18,17 @@ public class MongoConnection implements Connection {
   private String schema;
   private boolean isClosed = false;
   private boolean isReadOnly = false;
+  private MongoCredential.OidcCallbackContext oidcCallbackContext;
 
   public MongoConnection(@NotNull String url,
                          @NotNull Properties info,
                          @Nullable String username,
                          @Nullable String password,
                          int fetchDocumentsForMeta,
-                         @NotNull ShellHolder shellHolder) throws SQLException {
-    this.service = new MongoService(url, info, username, password, fetchDocumentsForMeta);
+                         @NotNull ShellHolder shellHolder,
+                         @Nullable MongoCredential.OidcCallbackContext callbackContext) throws SQLException {
+    this.oidcCallbackContext = callbackContext;
+    this.service = new MongoService(url, info, username, password, fetchDocumentsForMeta, this.oidcCallbackContext);
     this.scriptEngine = new MongoshScriptEngine(this, shellHolder);
     try {
       setSchema(service.getDatabaseNameFromUrl());
