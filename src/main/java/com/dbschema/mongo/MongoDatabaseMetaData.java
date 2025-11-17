@@ -441,7 +441,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * @see java.sql.DatabaseMetaData#getDriverVersion()
    */
   public String getDriverVersion() {
-    return "1.20";
+    return "1.21";
   }
 
   /**
@@ -455,7 +455,7 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * @see java.sql.DatabaseMetaData#getDriverMinorVersion()
    */
   public int getDriverMinorVersion() {
-    return 20;
+    return 21;
   }
 
   public boolean usesLocalFiles() {
