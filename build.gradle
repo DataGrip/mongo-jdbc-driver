@@ -1,7 +1,7 @@
 plugins {
     id 'java'
-    id "org.jetbrains.kotlin.jvm" version "1.5.21"
-    id "com.github.johnrengelman.shadow" version "7.0.0"
+    id "org.jetbrains.kotlin.jvm" version "1.9.25"
+    id "com.github.johnrengelman.shadow" version "8.1.1"
 }
 
 version '1.20'
@@ -15,8 +15,9 @@ dependencies {
     implementation "org.mongodb:mongodb-driver-sync:4.11.1"
     implementation group: 'org.jetbrains', name: 'annotations', version: '15.0'
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.10.0'
-    implementation group: 'org.graalvm.js', name: 'js', version: '22.3.1'
-    implementation files('libs/JMongosh-0.9.jar')
+    implementation group: 'org.graalvm.polyglot', name: 'polyglot', version: '25.0.1'
+    implementation group: 'org.graalvm.js', name: 'js', version: '25.0.1'
+    implementation files('libs/JMongosh-0.9.1.jar')
     testImplementation group: 'junit', name: 'junit', version: '4.13.1'
     testImplementation group: 'commons-io', name: 'commons-io', version: '2.7'
 }
@@ -29,4 +30,7 @@ test {
 shadowJar {
     archiveFileName = "mongo-jdbc-standalone-${version}.jar"
     mergeServiceFiles()
+    manifest {
+        attributes('Multi-Release' : 'true')
+    }
 }
