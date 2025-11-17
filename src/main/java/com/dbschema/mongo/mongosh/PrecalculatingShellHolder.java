@@ -26,11 +26,17 @@ public class PrecalculatingShellHolder implements ShellHolder {
   @NotNull
   private Future<MongoShell> submitNewShell() {
     return executorService.submit(() -> {
-      // disable warning about not available runtime compilation
-      System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
-      MongoShell shell = new MongoShell(null, engine);
-      shell.eval("'initial warm up'");
-      return shell;
+        ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(MongoShell.class.getClassLoader());
+            // disable warning about not available runtime compilation
+            System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
+            MongoShell shell = new MongoShell(null, engine);
+            shell.eval("'initial warm up'");
+            return shell;
+        } finally {
+            Thread.currentThread().setContextClassLoader(originalClassLoader);
+        }
     });
   }
 

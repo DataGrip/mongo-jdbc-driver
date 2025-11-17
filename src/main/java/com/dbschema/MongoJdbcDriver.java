@@ -5,6 +5,7 @@ import com.dbschema.mongo.MongoConnection;
 import com.dbschema.mongo.mongosh.LazyShellHolder;
 import com.dbschema.mongo.mongosh.PrecalculatingShellHolder;
 import com.dbschema.mongo.mongosh.ShellHolder;
+import com.mongodb.mongosh.MongoShell;
 import org.graalvm.polyglot.Engine;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,7 +58,15 @@ public class MongoJdbcDriver implements Driver {
     Engine engine = null;
     if (!"true".equals(System.getProperty("mongosh.disableSharedEngine"))) {
       if (sharedEngine == null) {
-        sharedEngine = Engine.create("js");
+          ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+          try {
+              Thread.currentThread().setContextClassLoader(MongoShell.class.getClassLoader());
+              sharedEngine = Engine.create("js");
+          }
+          finally {
+              Thread.currentThread().setContextClassLoader(originalClassLoader);
+          }
+
       }
       engine = sharedEngine;
     }
