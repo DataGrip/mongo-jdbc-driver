@@ -24,6 +24,7 @@ import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponseParser;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
+
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
@@ -39,23 +40,19 @@ public class OidcAuthFlow {
     private static final Logger logger = Logger.getLogger(OidcAuthFlow.class.getName());
     private static final String OFFLINE_ACCESS = "offline_access";
     private static final String OPENID = "openid";
-    private OidcCallbackResult oidcCallbackResult;
 
-    public OidcAuthFlow() {}
+    public OidcAuthFlow() {
+    }
 
-    public Scope buildScopes(
-            String clientID, IdpInfo idpServerInfo, OIDCProviderMetadata providerMetadata) {
+    public Scope buildScopes(String clientID, IdpInfo idpServerInfo, OIDCProviderMetadata providerMetadata) {
         Set<String> scopes = new HashSet<>();
         Scope supportedScopes = providerMetadata.getScopes();
 
-        // Add openid and offline_access scopes by default
         scopes.add(OPENID);
         scopes.add(OFFLINE_ACCESS);
 
-        // Add custom scopes from request that are supported by the IdP
         List<String> requestedScopes = idpServerInfo.getRequestScopes();
         if (requestedScopes != null) {
-            // azure
             String clientIDDefault = clientID + "/.default";
             if (requestedScopes.contains(clientIDDefault)) {
                 scopes.add(clientIDDefault);
@@ -64,7 +61,8 @@ public class OidcAuthFlow {
                 for (String scope : requestedScopes) {
                     if (supportedScopes.contains(scope)) {
                         scopes.add(scope);
-                    } else {
+                    }
+                    else {
                         logger.warning(String.format("Scope '%s' is not supported", scope));
                     }
                 }
@@ -98,11 +96,7 @@ public class OidcAuthFlow {
 
             server.start();
 
-            URI redirectURI =
-                    new URI(
-                            "http://localhost:"
-                                    + Server.DEFAULT_REDIRECT_PORT
-                                    + "/redirect");
+            URI redirectURI = new URI("http://localhost:" + server.getPort() + "/redirect");
             State state = new State();
             CodeVerifier codeVerifier = new CodeVerifier();
 
@@ -117,16 +111,23 @@ public class OidcAuthFlow {
                             .endpointURI(authorizationEndpoint)
                             .build();
 
+            URI authorizationURI = request.toURI();
+            if (authorizationURI == null) {
+                logger.log(Level.SEVERE, "Authorization request URI is null");
+                return null;
+            }
+
             try {
-                openURL(request.toURI().toString());
-            } catch (Exception e) {
-                log(Level.SEVERE, "Failed to open the browser: " + e.getMessage());
+                openURL(authorizationURI);
+            }
+            catch (Exception e) {
+                logger.log(Level.SEVERE, "Failed to open the browser: " + e.getMessage());
                 return null;
             }
 
             OidcResponse response = server.getOidcResponse(callbackContext.getTimeout());
             if (response == null || !state.getValue().equals(response.getState())) {
-                log(Level.SEVERE, "OIDC response is null or returned an invalid state");
+                logger.log(Level.SEVERE, "OIDC response is null or returned an invalid state");
                 return null;
             }
 
@@ -139,111 +140,44 @@ public class OidcAuthFlow {
             HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send();
             TokenResponse tokenResponse = OIDCTokenResponseParser.parse(httpResponse);
             if (!tokenResponse.indicatesSuccess()) {
-                log(Level.SEVERE,  String.format("Request failed: %s", httpResponse.getBody()));
+                logger.log(Level.SEVERE, String.format("Request failed: %s", httpResponse.getBody()));
                 return null;
             }
 
-            return getOidcCallbackResultFromTokenResponse((OIDCTokenResponse) tokenResponse);
-        } catch (OidcTimeoutException e) {
+            return buildCallbackResult((OIDCTokenResponse) tokenResponse, issuerURI, clientID);
+        }
+        catch (OidcTimeoutException e) {
             throw e;
         }
         catch (Exception e) {
-            log(Level.SEVERE, "Error during OIDC authentication " + e.getMessage());
-
+            logger.log(Level.SEVERE, "Error during OIDC authentication: " + e.getMessage());
             return null;
-        } finally {
-            try {
-                Thread.sleep((1000 * 2));
-            } catch (InterruptedException e) {
-                log(Level.WARNING, "Thread interrupted " + e.getMessage());
-            }
+        }
+        finally {
             server.stop();
-            switchContext();
         }
     }
 
-    private void switchContext() {
-        String osName = System.getProperty("os.name").toLowerCase();
-        logger.log(Level.INFO, String.format("osName: %s", osName));
-        Runtime runtime = Runtime.getRuntime();
-        try {
-            runtime.exec(new String[]{"osascript", "-e" , "tell application \"Datagrip\" to activate"});
-        } catch (IOException e) {
-            log(Level.SEVERE,e.getMessage());
-        }
-
-    }
-
-    /**
-     * Opens the specified URI in the default web browser, supporting macOS, Windows, and
-     * Linux/Unix. This method uses platform-specific commands to invoke the browser.
-     *
-     * @param url the URL to be opened as a string
-     * @throws Exception if no supported browser is found or an error occurs while attempting to
-     *     open the URL
-     */
-    private void openURL(String url) throws Exception {
-        String osName = System.getProperty("os.name").toLowerCase();
-        logger.log(Level.INFO, String.format("osName: %s", osName));
-        Runtime runtime = Runtime.getRuntime();
-
-        if (osName.contains("windows")) {
-            runtime.exec(new String[] {"rundll32", "url.dll,FileProtocolHandler", url});
-        } else if (osName.contains("mac os")) {
-            runtime.exec(new String[] {"open", "-gj" ,url});
-        } else {
-            String[] browsers = {"xdg-open", "firefox", "google-chrome"};
-            IOException lastError = null;
-            for (String browser : browsers) {
-                try {
-                    // Check if browser exists
-                    Process process = runtime.exec(new String[] {"which", browser});
-                    if (process.waitFor() == 0) {
-                        runtime.exec(new String[] {browser, url});
-                    }
-                } catch (IOException e) {
-                    lastError = e;
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-
-            throw lastError != null
-                    ? lastError
-                    : new IOException("No web browser found to open the URL");
-        }
-    }
-
-    private void log(Level level, String message) {
-        logger.log(level, message);
-    }
-
-    public OidcCallbackResult doRefresh(OidcCallbackContext callbackContext)
+    public OidcCallbackResult doRefresh(OidcCallbackContext callbackContext, String refreshTokenValue)
             throws RefreshFailedException {
         IdpInfo idpServerInfo = callbackContext.getIdpInfo();
         String clientID = idpServerInfo.getClientId();
         String issuerURI = idpServerInfo.getIssuer();
 
-        // Check that the IdP information is valid
         if (!isValid(idpServerInfo, clientID, issuerURI)) {
             return null;
         }
         try {
-            // Use OpenID Connect Discovery to fetch the provider metadata
             OIDCProviderMetadata providerMetadata =
                     OIDCProviderMetadata.resolve(new Issuer(issuerURI));
             URI tokenEndpoint = providerMetadata.getTokenEndpointURI();
 
-            // This function will never be called without a refresh token (to be checked in the driver function),
-            // but we throw an exception to be explicit about the fact that we expect a refresh token.
-            String refreshToken = callbackContext.getRefreshToken();
-            if (refreshToken == null) {
+            if (refreshTokenValue == null) {
                 throw new IllegalArgumentException("Refresh token is required");
             }
 
             RefreshTokenGrant refreshTokenGrant =
-                    new RefreshTokenGrant(new RefreshToken(refreshToken));
+                    new RefreshTokenGrant(new RefreshToken(refreshTokenValue));
             TokenRequest tokenRequest =
                     new TokenRequest(tokenEndpoint, new ClientID(clientID), refreshTokenGrant);
             HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send();
@@ -252,33 +186,23 @@ public class OidcAuthFlow {
                 TokenResponse tokenResponse = OIDCTokenResponseParser.parse(httpResponse);
                 if (!tokenResponse.indicatesSuccess()) {
                     TokenErrorResponse errorResponse = tokenResponse.toErrorResponse();
-                    String errorCode =
-                            errorResponse.getErrorObject() != null
-                                    ? errorResponse.getErrorObject().getCode()
-                                    : null;
-                    String errorDescription =
-                            errorResponse.getErrorObject() != null
-                                    ? errorResponse.getErrorObject().getDescription()
-                                    : null;
+                    String errorCode = errorResponse.getErrorObject() != null
+                            ? errorResponse.getErrorObject().getCode() : null;
+                    String errorDescription = errorResponse.getErrorObject() != null
+                            ? errorResponse.getErrorObject().getDescription() : null;
                     throw new RefreshFailedException(
-                            "Token refresh failed with error: "
-                                    + "code="
-                                    + errorCode
-                                    + ", description="
-                                    + errorDescription);
+                            "Token refresh failed: code=" + errorCode + ", description=" + errorDescription);
                 }
-                return getOidcCallbackResultFromTokenResponse((OIDCTokenResponse) tokenResponse);
-            } catch (ParseException e) {
-                throw new RefreshFailedException(
-                        "Failed to parse server response: "
-                                + e.getMessage()
-                                + " [response="
-                                + httpResponse.getBody()
-                                + "]");
+                return buildCallbackResult((OIDCTokenResponse) tokenResponse, issuerURI, clientID);
             }
-
-        } catch (Exception e) {
-            log(Level.SEVERE, "OpenID Connect: Error during token refresh. " + e.getMessage());
+            catch (ParseException e) {
+                throw new RefreshFailedException(
+                        "Failed to parse server response: " + e.getMessage()
+                                + " [response=" + httpResponse.getBody() + "]");
+            }
+        }
+        catch (Exception e) {
+            logger.log(Level.SEVERE, "OpenID Connect: Error during token refresh. " + e.getMessage());
             if (e instanceof RefreshFailedException) {
                 throw (RefreshFailedException) e;
             }
@@ -290,16 +214,52 @@ public class OidcAuthFlow {
         return idpInfo != null && clientID != null && !clientID.isEmpty() && issuerURI != null;
     }
 
-    private OidcCallbackResult getOidcCallbackResultFromTokenResponse(
-            OIDCTokenResponse tokenResponse) {
+    private OidcCallbackResult buildCallbackResult(
+            OIDCTokenResponse tokenResponse, String issuerURI, String clientID) {
         Tokens tokens = tokenResponse.getOIDCTokens();
         String accessToken = tokens.getAccessToken().getValue();
         String refreshToken =
                 tokens.getRefreshToken() != null ? tokens.getRefreshToken().getValue() : null;
         Duration expiresIn = Duration.ofSeconds(tokens.getAccessToken().getLifetime());
 
-        this.oidcCallbackResult = new OidcCallbackResult(accessToken, expiresIn, refreshToken);
+        OidcCallbackResult result = new OidcCallbackResult(accessToken, expiresIn, refreshToken);
+        OidcTokenCache.put(issuerURI, clientID, result, expiresIn);
+        return result;
+    }
 
-        return this.oidcCallbackResult;
+    /**
+     * Opens the specified URI in the default web browser using platform-specific commands.
+     */
+    private void openURL(URI uri) throws Exception {
+        String url = uri.toString();
+        String osName = System.getProperty("os.name").toLowerCase();
+        Runtime runtime = Runtime.getRuntime();
+
+        if (osName.contains("windows")) {
+            runtime.exec(new String[]{"rundll32", "url.dll,FileProtocolHandler", url});
+        }
+        else if (osName.contains("mac")) {
+            runtime.exec(new String[]{"open", url});
+        }
+        else {
+            String[] launchers = {"xdg-open", "firefox", "google-chrome"};
+            for (String launcher : launchers) {
+                try {
+                    Process which = runtime.exec(new String[]{"which", launcher});
+                    if (which.waitFor() == 0) {
+                        runtime.exec(new String[]{launcher, url});
+                        return;
+                    }
+                }
+                catch (IOException ignored) {
+                    // try next launcher
+                }
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw e;
+                }
+            }
+            throw new IOException("No browser launcher found on this platform");
+        }
     }
 }

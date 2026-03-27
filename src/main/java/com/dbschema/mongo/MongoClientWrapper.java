@@ -30,10 +30,8 @@ public class MongoClientWrapper implements AutoCloseable {
   private boolean isClosed = false;
   private final MongoClient mongoClient;
   public final String databaseNameFromUrl;
-  public final OidcCallback oidcCallback;
 
-  public MongoClientWrapper(@NotNull String uri, @NotNull Properties prop, @Nullable String username, @Nullable String password, @Nullable MongoCredential.OidcCallbackContext callbackContext) throws SQLException {
-      this.oidcCallback = new OidcCallback(callbackContext);
+  public MongoClientWrapper(@NotNull String uri, @NotNull Properties prop, @Nullable String username, @Nullable String password) throws SQLException {
     try {
         boolean automaticEncoding = ENCODE_CREDENTIALS_DEFAULT;
         if (prop.getProperty(ENCODE_CREDENTIALS) != null) {
@@ -63,24 +61,22 @@ public class MongoClientWrapper implements AutoCloseable {
 
       ConnectionString connectionString = new ConnectionString(uri);
 
-        MongoCredential credential;
-
-        credential =
-                MongoCredential.createOidcCredential(
-                                connectionString.getUsername())
-                        .withMechanismProperty(
-                                MongoCredential.OIDC_HUMAN_CALLBACK_KEY, oidcCallback);
-
-
         databaseNameFromUrl = connectionString.getDatabase();
         MongoClientSettings.Builder builder = MongoClientSettings.builder()
             .applyConnectionString(connectionString)
             .serverApi(serverApi)
-            .credential(credential)
             .uuidRepresentation(createUuidRepresentation(prop.getProperty(UUID_REPRESENTATION, UUID_REPRESENTATION_DEFAULT)))
             .applyToConnectionPoolSettings(b -> b.maxSize(getMaxPoolSize(prop)))
-
             .applyToSocketSettings(b -> b.connectTimeout(Integer.parseInt(prop.getProperty(CONNECT_TIMEOUT, CONNECT_TIMEOUT_DEFAULT)), TimeUnit.MILLISECONDS));
+
+        String authMechanism = prop.getProperty(AUTH_MECHANISM);
+        if ("MONGODB-OIDC".equals(authMechanism)) {
+            MongoCredential credential =
+                    MongoCredential.createOidcCredential(null)
+                            .withMechanismProperty(
+                                    MongoCredential.OIDC_HUMAN_CALLBACK_KEY, new OidcCallback());
+            builder.credential(credential);
+        }
 
         String application = prop.getProperty(APPLICATION_NAME);
         if (!isNullOrEmpty(application)) {
@@ -186,10 +182,6 @@ public class MongoClientWrapper implements AutoCloseable {
   public MongoDatabase getDatabase(String databaseName) throws SQLAlreadyClosedException {
     checkClosed();
     return mongoClient.getDatabase(databaseName);
-  }
-
-  public OidcCallback getOidcCallback() {
-    return this.oidcCallback;
   }
 
   @NotNull

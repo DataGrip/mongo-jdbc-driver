@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
@@ -23,13 +24,13 @@ public class Server {
 
     private static final Logger logger = Logger.getLogger(Server.class.getName());
 
-    public static final int DEFAULT_REDIRECT_PORT = 27098;
     private static final int RESPONSE_TIMEOUT_SECONDS = 300;
     private static final String ACCEPTED_ENDPOINT = "/accepted";
     private static final String CALLBACK_ENDPOINT = "/callback";
     private static final String REDIRECT_ENDPOINT = "/redirect";
 
     private HttpServer server;
+    private int port;
     private final BlockingQueue<OidcResponse> oidcResponseQueue;
 
     public Server() {
@@ -37,21 +38,29 @@ public class Server {
     }
 
     /**
-     * Starts the HTTP server and sets up the necessary contexts and handlers.
+     * Starts the HTTP server on a random available port and sets up the necessary contexts and handlers.
      *
      * @throws IOException if an I/O error occurs while creating or starting the server
      */
     public void start() throws IOException {
-        server = HttpServer.create(new InetSocketAddress(DEFAULT_REDIRECT_PORT), 0);
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 
         server.createContext(CALLBACK_ENDPOINT, new CallbackHandler());
         server.createContext(REDIRECT_ENDPOINT, new CallbackHandler());
         server.createContext(ACCEPTED_ENDPOINT, new AcceptedHandler());
         server.setExecutor(Executors.newFixedThreadPool(5));
 
-        // Start the server
         server.start();
-        logger.info("Server started on port " + DEFAULT_REDIRECT_PORT);
+        port = server.getAddress().getPort();
+        logger.info("Server started on port " + port);
+    }
+
+    /**
+     * Returns the port the server is listening on.
+     * Only valid after {@link #start()} has been called.
+     */
+    public int getPort() {
+        return port;
     }
 
     public OidcResponse getOidcResponse() throws InterruptedException, OidcTimeoutException {
@@ -78,22 +87,53 @@ public class Server {
 
     private class CallbackHandler implements HttpHandler {
 
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            Map<String, String> queryParams = parseQueryParams(exchange);
+            OidcResponse oidcResponse = new OidcResponse();
+
+            if (queryParams.containsKey("code")) {
+                oidcResponse.setCode(queryParams.get("code"));
+                oidcResponse.setState(queryParams.getOrDefault("state", ""));
+                if (!putOidcResponse(exchange, oidcResponse)) return;
+
+                exchange.getResponseHeaders().set("Location", ACCEPTED_ENDPOINT);
+                reply(exchange, HttpURLConnection.HTTP_MOVED_TEMP);
+            }
+            else if (queryParams.containsKey("error")) {
+                oidcResponse.setError(queryParams.get("error"));
+                oidcResponse.setErrorDescription(
+                        queryParams.getOrDefault("error_description", "Unknown error"));
+                if (!putOidcResponse(exchange, oidcResponse)) return;
+                reply(exchange, HttpURLConnection.HTTP_BAD_REQUEST);
+            }
+            else {
+                oidcResponse.setError("Not found");
+                String allParams = queryParams.entrySet().stream()
+                        .map(entry -> entry.getKey() + "=" + entry.getValue())
+                        .reduce((a, b) -> a + ", " + b)
+                        .orElse("No parameters");
+                oidcResponse.setErrorDescription("Not found. Parameters: " + allParams);
+                if (!putOidcResponse(exchange, oidcResponse)) return;
+                reply(exchange, HttpURLConnection.HTTP_NOT_FOUND);
+            }
+        }
+
         private Map<String, String> parseQueryParams(HttpExchange exchange) {
             Map<String, String> queryParams = new HashMap<>();
             String rawQuery = exchange.getRequestURI().getRawQuery();
+            if (rawQuery == null) return queryParams;
 
-            if (rawQuery != null) {
-                String[] params = rawQuery.split("&");
-                for (String param : params) {
-                    int equalsIndex = param.indexOf('=');
-                    if (equalsIndex > 0) {
-                        String key = param.substring(0, equalsIndex);
-                        String encodedValue = param.substring(equalsIndex + 1);
-                        String value = URLDecoder.decode(encodedValue, StandardCharsets.UTF_8);
-                        queryParams.put(key, value);
-                    } else {
-                        queryParams.put(param, "");
-                    }
+            String[] params = rawQuery.split("&");
+            for (String param : params) {
+                int equalsIndex = param.indexOf('=');
+                if (equalsIndex > 0) {
+                    String key = param.substring(0, equalsIndex);
+                    String value = URLDecoder.decode(param.substring(equalsIndex + 1), StandardCharsets.UTF_8);
+                    queryParams.put(key, value);
+                }
+                else {
+                    queryParams.put(param, "");
                 }
             }
             return queryParams;
@@ -104,51 +144,11 @@ public class Server {
             try {
                 oidcResponseQueue.put(oidcResponse);
                 return true;
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 reply(exchange, 500);
                 return false;
-            }
-        }
-
-
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            Map<String, String> queryParams = parseQueryParams(exchange);
-            OidcResponse oidcResponse = new OidcResponse();
-
-            if (queryParams.containsKey("code")) {
-                oidcResponse.setCode(queryParams.get("code"));
-                oidcResponse.setState(queryParams.getOrDefault("state", ""));
-                if (!putOidcResponse(exchange, oidcResponse)) {
-                    return;
-                }
-
-                exchange.getResponseHeaders().set("Location", ACCEPTED_ENDPOINT);
-                reply(exchange, HttpURLConnection.HTTP_MOVED_TEMP);
-            } else if (queryParams.containsKey("error")) {
-                oidcResponse.setError(queryParams.get("error"));
-                oidcResponse.setErrorDescription(
-                        queryParams.getOrDefault("error_description", "Unknown error"));
-                if (!putOidcResponse(exchange, oidcResponse)) {
-                    return;
-                }
-                reply(exchange, HttpURLConnection.HTTP_BAD_REQUEST);
-
-            } else {
-                oidcResponse.setError("Not found");
-                String allParams =
-                        queryParams
-                                .entrySet()
-                                .stream()
-                                .map(entry -> entry.getKey() + "=" + entry.getValue())
-                                .reduce((param1, param2) -> param1 + ", " + param2)
-                                .orElse("No parameters");
-                oidcResponse.setErrorDescription("Not found. Parameters: " + allParams);
-                if (!putOidcResponse(exchange, oidcResponse)) {
-                    return;
-                }
-                reply(exchange, HttpURLConnection.HTTP_NOT_FOUND);
             }
         }
     }
@@ -156,16 +156,39 @@ public class Server {
     private class AcceptedHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            reply(exchange, HttpURLConnection.HTTP_OK);
+            String html = loadResource("/oidc/accepted.html");
+            replyWithBody(exchange, HttpURLConnection.HTTP_OK, html);
         }
     }
 
-    private void reply(HttpExchange exchange, int statusCode)
-            throws IOException {
+    private String loadResource(String path) throws IOException {
+        try (InputStream is = getClass().getResourceAsStream(path)) {
+            if (is == null) {
+                throw new IOException("Resource not found: " + path);
+            }
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private void reply(HttpExchange exchange, int statusCode) throws IOException {
         exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
         try (exchange) {
             exchange.sendResponseHeaders(statusCode, -1);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
+            logger.log(Level.SEVERE, "Error sending response", e);
+            throw e;
+        }
+    }
+
+    private void replyWithBody(HttpExchange exchange, int statusCode, String body) throws IOException {
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
+        try (exchange) {
+            exchange.sendResponseHeaders(statusCode, bytes.length);
+            exchange.getResponseBody().write(bytes);
+        }
+        catch (Exception e) {
             logger.log(Level.SEVERE, "Error sending response", e);
             throw e;
         }
