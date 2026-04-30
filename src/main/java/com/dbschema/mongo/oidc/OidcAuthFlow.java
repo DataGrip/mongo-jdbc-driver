@@ -25,6 +25,7 @@ import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponseParser;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 
+import java.awt.Desktop;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
@@ -37,229 +38,255 @@ import javax.security.auth.RefreshFailedException;
 
 public class OidcAuthFlow {
 
-    private static final Logger logger = Logger.getLogger(OidcAuthFlow.class.getName());
-    private static final String OFFLINE_ACCESS = "offline_access";
-    private static final String OPENID = "openid";
+  private static final Logger logger = Logger.getLogger(OidcAuthFlow.class.getName());
+  private static final String OFFLINE_ACCESS = "offline_access";
+  private static final String OPENID = "openid";
 
-    public OidcAuthFlow() {
+  public Scope buildScopes(String clientID, IdpInfo idpServerInfo, OIDCProviderMetadata providerMetadata) {
+    Set<String> scopes = new HashSet<>();
+    Scope supportedScopes = providerMetadata.getScopes();
+
+    scopes.add(OPENID);
+    scopes.add(OFFLINE_ACCESS);
+
+    List<String> requestedScopes = idpServerInfo.getRequestScopes();
+    if (requestedScopes != null) {
+      String clientIDDefault = clientID + "/.default";
+      if (requestedScopes.contains(clientIDDefault)) {
+        scopes.add(clientIDDefault);
+      }
+      if (supportedScopes != null) {
+        for (String scope : requestedScopes) {
+          if (supportedScopes.contains(scope)) {
+            scopes.add(scope);
+          }
+          else {
+            logger.warning(String.format("Scope '%s' is not supported", scope));
+          }
+        }
+      }
     }
 
-    public Scope buildScopes(String clientID, IdpInfo idpServerInfo, OIDCProviderMetadata providerMetadata) {
-        Set<String> scopes = new HashSet<>();
-        Scope supportedScopes = providerMetadata.getScopes();
+    Scope finalScopes = new Scope();
+    for (String scope : scopes) {
+      finalScopes.add(new Scope.Value(scope));
+    }
+    return finalScopes;
+  }
 
-        scopes.add(OPENID);
-        scopes.add(OFFLINE_ACCESS);
+  public OidcCallbackResult doAuthCodeFlow(OidcCallbackContext callbackContext)
+      throws OidcTimeoutException {
+    IdpInfo idpServerInfo = callbackContext.getIdpInfo();
+    String clientID = idpServerInfo.getClientId();
+    String issuerURI = idpServerInfo.getIssuer();
 
-        List<String> requestedScopes = idpServerInfo.getRequestScopes();
-        if (requestedScopes != null) {
-            String clientIDDefault = clientID + "/.default";
-            if (requestedScopes.contains(clientIDDefault)) {
-                scopes.add(clientIDDefault);
-            }
-            if (supportedScopes != null) {
-                for (String scope : requestedScopes) {
-                    if (supportedScopes.contains(scope)) {
-                        scopes.add(scope);
-                    }
-                    else {
-                        logger.warning(String.format("Scope '%s' is not supported", scope));
-                    }
-                }
-            }
-        }
-
-        Scope finalScopes = new Scope();
-        for (String scope : scopes) {
-            finalScopes.add(new Scope.Value(scope));
-        }
-        return finalScopes;
+    if (!isValid(idpServerInfo, clientID, issuerURI)) {
+      throw new IllegalStateException("OIDC configuration is incomplete: missing IdpInfo, clientID, or issuerURI");
     }
 
-    public OidcCallbackResult doAuthCodeFlow(OidcCallbackContext callbackContext)
-            throws OidcTimeoutException {
-        IdpInfo idpServerInfo = callbackContext.getIdpInfo();
-        String clientID = idpServerInfo.getClientId();
-        String issuerURI = idpServerInfo.getIssuer();
+    Server server = new Server();
+    try {
+      OIDCProviderMetadata providerMetadata =
+          OIDCProviderMetadata.resolve(new Issuer(issuerURI));
+      URI authorizationEndpoint = providerMetadata.getAuthorizationEndpointURI();
+      URI tokenEndpoint = providerMetadata.getTokenEndpointURI();
+      Scope requestedScopes = buildScopes(clientID, idpServerInfo, providerMetadata);
 
-        if (!isValid(idpServerInfo, clientID, issuerURI)) {
-            return null;
+      server.start();
+
+      URI redirectURI = new URI("http://localhost:" + server.getPort() + "/redirect");
+      State state = new State();
+      CodeVerifier codeVerifier = new CodeVerifier();
+
+      AuthorizationRequest request =
+          new AuthorizationRequest.Builder(
+                  new ResponseType(ResponseType.Value.CODE),
+                  new ClientID(clientID))
+              .scope(requestedScopes)
+              .redirectionURI(redirectURI)
+              .state(state)
+              .codeChallenge(codeVerifier, CodeChallengeMethod.S256)
+              .endpointURI(authorizationEndpoint)
+              .build();
+
+      URI authorizationURI = request.toURI();
+      if (authorizationURI == null) {
+        throw new IllegalStateException("Authorization request URI is null");
+      }
+
+      try {
+        openURL(authorizationURI);
+      }
+      catch (Exception e) {
+        throw new IllegalStateException("Failed to open the browser: " + e.getMessage(), e);
+      }
+
+      OidcResponse response = server.getOidcResponse(callbackContext.getTimeout());
+      if (response == null || !state.getValue().equals(response.getState())) {
+        throw new IllegalStateException("OIDC response is null or returned an invalid state");
+      }
+
+      AuthorizationCode code = new AuthorizationCode(response.getCode());
+      AuthorizationCodeGrant codeGrant =
+          new AuthorizationCodeGrant(code, redirectURI, codeVerifier);
+      TokenRequest tokenRequest =
+          new TokenRequest(tokenEndpoint, new ClientID(clientID), codeGrant);
+
+      HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send();
+      TokenResponse tokenResponse = OIDCTokenResponseParser.parse(httpResponse);
+      if (!tokenResponse.indicatesSuccess()) {
+        throw new IllegalStateException(String.format("Token request failed: %s", httpResponse.getBody()));
+      }
+
+      return buildCallbackResult((OIDCTokenResponse) tokenResponse, issuerURI, clientID);
+    }
+    catch (OidcTimeoutException e) {
+      throw e;
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("OIDC authentication interrupted", e);
+    }
+    catch (Exception e) {
+      throw new RuntimeException("Error during OIDC authentication: " + e.getMessage(), e);
+    }
+    finally {
+      server.stop();
+    }
+  }
+
+  public OidcCallbackResult doRefresh(OidcCallbackContext callbackContext, String refreshTokenValue)
+      throws RefreshFailedException {
+    IdpInfo idpServerInfo = callbackContext.getIdpInfo();
+    String clientID = idpServerInfo.getClientId();
+    String issuerURI = idpServerInfo.getIssuer();
+
+    if (!isValid(idpServerInfo, clientID, issuerURI)) {
+      return null;
+    }
+    try {
+      OIDCProviderMetadata providerMetadata =
+          OIDCProviderMetadata.resolve(new Issuer(issuerURI));
+      URI tokenEndpoint = providerMetadata.getTokenEndpointURI();
+
+      if (refreshTokenValue == null) {
+        throw new IllegalArgumentException("Refresh token is required");
+      }
+
+      RefreshTokenGrant refreshTokenGrant =
+          new RefreshTokenGrant(new RefreshToken(refreshTokenValue));
+      TokenRequest tokenRequest =
+          new TokenRequest(tokenEndpoint, new ClientID(clientID), refreshTokenGrant);
+      HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send();
+
+      try {
+        TokenResponse tokenResponse = OIDCTokenResponseParser.parse(httpResponse);
+        if (!tokenResponse.indicatesSuccess()) {
+          TokenErrorResponse errorResponse = tokenResponse.toErrorResponse();
+          String errorCode = errorResponse.getErrorObject() != null
+              ? errorResponse.getErrorObject().getCode() : null;
+          String errorDescription = errorResponse.getErrorObject() != null
+              ? errorResponse.getErrorObject().getDescription() : null;
+          throw new RefreshFailedException(
+              "Token refresh failed: code=" + errorCode + ", description=" + errorDescription);
         }
+        return buildCallbackResult((OIDCTokenResponse) tokenResponse, issuerURI, clientID);
+      }
+      catch (ParseException e) {
+        throw new RefreshFailedException(
+            "Failed to parse server response: " + e.getMessage()
+                + " [response=" + httpResponse.getBody() + "]");
+      }
+    }
+    catch (RefreshFailedException e) {
+      throw e;
+    }
+    catch (Exception e) {
+      logger.log(Level.SEVERE, "OpenID Connect: Error during token refresh. " + e.getMessage());
+      throw new RefreshFailedException("Token refresh failed: " + e.getMessage());
+    }
+  }
 
-        Server server = new Server();
-        try {
-            OIDCProviderMetadata providerMetadata =
-                    OIDCProviderMetadata.resolve(new Issuer(issuerURI));
-            URI authorizationEndpoint = providerMetadata.getAuthorizationEndpointURI();
-            URI tokenEndpoint = providerMetadata.getTokenEndpointURI();
-            Scope requestedScopes = buildScopes(clientID, idpServerInfo, providerMetadata);
+  private boolean isValid(IdpInfo idpInfo, String clientID, String issuerURI) {
+    return idpInfo != null && clientID != null && !clientID.isEmpty() && issuerURI != null;
+  }
 
-            server.start();
+  private OidcCallbackResult buildCallbackResult(
+      OIDCTokenResponse tokenResponse, String issuerURI, String clientID) {
+    Tokens tokens = tokenResponse.getOIDCTokens();
+    String accessToken = tokens.getAccessToken().getValue();
+    String refreshToken =
+        tokens.getRefreshToken() != null ? tokens.getRefreshToken().getValue() : null;
+    Duration expiresIn = Duration.ofSeconds(tokens.getAccessToken().getLifetime());
 
-            URI redirectURI = new URI("http://localhost:" + server.getPort() + "/redirect");
-            State state = new State();
-            CodeVerifier codeVerifier = new CodeVerifier();
+    OidcCallbackResult result = new OidcCallbackResult(accessToken, expiresIn, refreshToken);
+    OidcTokenCache.put(issuerURI, clientID, result, expiresIn);
+    return result;
+  }
 
-            AuthorizationRequest request =
-                    new AuthorizationRequest.Builder(
-                                    new ResponseType(ResponseType.Value.CODE),
-                                    new ClientID(clientID))
-                            .scope(requestedScopes)
-                            .redirectionURI(redirectURI)
-                            .state(state)
-                            .codeChallenge(codeVerifier, CodeChallengeMethod.S256)
-                            .endpointURI(authorizationEndpoint)
-                            .build();
+  private static final int MAX_URI_LENGTH = 2048;
+  private static final Set<String> ALLOWED_SCHEMES = Set.of("https", "http");
 
-            URI authorizationURI = request.toURI();
-            if (authorizationURI == null) {
-                logger.log(Level.SEVERE, "Authorization request URI is null");
-                return null;
-            }
+  /**
+   * Opens the specified URI in the default web browser.
+   *
+   * Tries {@link Desktop#browse(URI)} first. When running inside DataGrip's
+   * driver JVM the custom AWT toolkit's {@code isSupported()} probe calls
+   * {@code browse(null)}, which crashes on the IDE side. In that case we
+   * fall back to platform commands matching IntelliJ's own
+   * {@code BrowserLauncherAppless}.
+   */
+  private void openURL(URI uri) throws IOException {
+    validateURI(uri);
 
-            try {
-                openURL(authorizationURI);
-            }
-            catch (Exception e) {
-                logger.log(Level.SEVERE, "Failed to open the browser: " + e.getMessage());
-                return null;
-            }
-
-            OidcResponse response = server.getOidcResponse(callbackContext.getTimeout());
-            if (response == null || !state.getValue().equals(response.getState())) {
-                logger.log(Level.SEVERE, "OIDC response is null or returned an invalid state");
-                return null;
-            }
-
-            AuthorizationCode code = new AuthorizationCode(response.getCode());
-            AuthorizationCodeGrant codeGrant =
-                    new AuthorizationCodeGrant(code, redirectURI, codeVerifier);
-            TokenRequest tokenRequest =
-                    new TokenRequest(tokenEndpoint, new ClientID(clientID), codeGrant);
-
-            HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send();
-            TokenResponse tokenResponse = OIDCTokenResponseParser.parse(httpResponse);
-            if (!tokenResponse.indicatesSuccess()) {
-                logger.log(Level.SEVERE, String.format("Request failed: %s", httpResponse.getBody()));
-                return null;
-            }
-
-            return buildCallbackResult((OIDCTokenResponse) tokenResponse, issuerURI, clientID);
-        }
-        catch (OidcTimeoutException e) {
-            throw e;
-        }
-        catch (Exception e) {
-            logger.log(Level.SEVERE, "Error during OIDC authentication: " + e.getMessage());
-            return null;
-        }
-        finally {
-            server.stop();
-        }
+    try {
+      Desktop.getDesktop().browse(uri);
+      return;
+    }
+    catch (Exception e) {
+      logger.log(Level.WARNING, "Desktop.browse() failed, falling back to platform command", e);
     }
 
-    public OidcCallbackResult doRefresh(OidcCallbackContext callbackContext, String refreshTokenValue)
-            throws RefreshFailedException {
-        IdpInfo idpServerInfo = callbackContext.getIdpInfo();
-        String clientID = idpServerInfo.getClientId();
-        String issuerURI = idpServerInfo.getIssuer();
+    String osName = System.getProperty("os.name", "").toLowerCase();
+    ProcessBuilder pb;
+    if (osName.contains("mac")) {
+      pb = new ProcessBuilder("open", uri.toString());
+    }
+    else if (osName.contains("windows")) {
+      pb = new ProcessBuilder("cmd.exe", "/c", "start", "\"\"", uri.toString());
+    }
+    else if (osName.contains("linux")) {
+      pb = new ProcessBuilder("xdg-open", uri.toString());
+    }
+    else {
+      throw new UnsupportedOperationException("Cannot open browser on " + osName);
+    }
+    pb.redirectErrorStream(true);
+    pb.start();
+  }
 
-        if (!isValid(idpServerInfo, clientID, issuerURI)) {
-            return null;
-        }
-        try {
-            OIDCProviderMetadata providerMetadata =
-                    OIDCProviderMetadata.resolve(new Issuer(issuerURI));
-            URI tokenEndpoint = providerMetadata.getTokenEndpointURI();
-
-            if (refreshTokenValue == null) {
-                throw new IllegalArgumentException("Refresh token is required");
-            }
-
-            RefreshTokenGrant refreshTokenGrant =
-                    new RefreshTokenGrant(new RefreshToken(refreshTokenValue));
-            TokenRequest tokenRequest =
-                    new TokenRequest(tokenEndpoint, new ClientID(clientID), refreshTokenGrant);
-            HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send();
-
-            try {
-                TokenResponse tokenResponse = OIDCTokenResponseParser.parse(httpResponse);
-                if (!tokenResponse.indicatesSuccess()) {
-                    TokenErrorResponse errorResponse = tokenResponse.toErrorResponse();
-                    String errorCode = errorResponse.getErrorObject() != null
-                            ? errorResponse.getErrorObject().getCode() : null;
-                    String errorDescription = errorResponse.getErrorObject() != null
-                            ? errorResponse.getErrorObject().getDescription() : null;
-                    throw new RefreshFailedException(
-                            "Token refresh failed: code=" + errorCode + ", description=" + errorDescription);
-                }
-                return buildCallbackResult((OIDCTokenResponse) tokenResponse, issuerURI, clientID);
-            }
-            catch (ParseException e) {
-                throw new RefreshFailedException(
-                        "Failed to parse server response: " + e.getMessage()
-                                + " [response=" + httpResponse.getBody() + "]");
-            }
-        }
-        catch (Exception e) {
-            logger.log(Level.SEVERE, "OpenID Connect: Error during token refresh. " + e.getMessage());
-            if (e instanceof RefreshFailedException) {
-                throw (RefreshFailedException) e;
-            }
-            return null;
-        }
+  private static void validateURI(URI uri) {
+    String scheme = uri.getScheme();
+    if (scheme == null || !ALLOWED_SCHEMES.contains(scheme.toLowerCase())) {
+      throw new IllegalArgumentException("Refusing to open URI with scheme: " + scheme);
     }
 
-    private boolean isValid(IdpInfo idpInfo, String clientID, String issuerURI) {
-        return idpInfo != null && clientID != null && !clientID.isEmpty() && issuerURI != null;
+    String host = uri.getHost();
+    if (host == null || host.isEmpty()) {
+      throw new IllegalArgumentException("URI must have a host");
     }
 
-    private OidcCallbackResult buildCallbackResult(
-            OIDCTokenResponse tokenResponse, String issuerURI, String clientID) {
-        Tokens tokens = tokenResponse.getOIDCTokens();
-        String accessToken = tokens.getAccessToken().getValue();
-        String refreshToken =
-                tokens.getRefreshToken() != null ? tokens.getRefreshToken().getValue() : null;
-        Duration expiresIn = Duration.ofSeconds(tokens.getAccessToken().getLifetime());
-
-        OidcCallbackResult result = new OidcCallbackResult(accessToken, expiresIn, refreshToken);
-        OidcTokenCache.put(issuerURI, clientID, result, expiresIn);
-        return result;
+    if (uri.toString().length() > MAX_URI_LENGTH) {
+      throw new IllegalArgumentException("URI exceeds maximum length of " + MAX_URI_LENGTH);
     }
 
-    /**
-     * Opens the specified URI in the default web browser using platform-specific commands.
-     */
-    private void openURL(URI uri) throws Exception {
-        String url = uri.toString();
-        String osName = System.getProperty("os.name").toLowerCase();
-        Runtime runtime = Runtime.getRuntime();
-
-        if (osName.contains("windows")) {
-            runtime.exec(new String[]{"rundll32", "url.dll,FileProtocolHandler", url});
-        }
-        else if (osName.contains("mac")) {
-            runtime.exec(new String[]{"open", url});
-        }
-        else {
-            String[] launchers = {"xdg-open", "firefox", "google-chrome"};
-            for (String launcher : launchers) {
-                try {
-                    Process which = runtime.exec(new String[]{"which", launcher});
-                    if (which.waitFor() == 0) {
-                        runtime.exec(new String[]{launcher, url});
-                        return;
-                    }
-                }
-                catch (IOException ignored) {
-                    // try next launcher
-                }
-                catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw e;
-                }
-            }
-            throw new IOException("No browser launcher found on this platform");
-        }
+    if (uri.getUserInfo() != null) {
+      throw new IllegalArgumentException("URI must not contain user info");
     }
+
+    String uriString = uri.toString();
+    if (uriString.contains("..") || uriString.contains("\n") || uriString.contains("\r")) {
+      throw new IllegalArgumentException("URI contains invalid characters");
+    }
+  }
 }

@@ -15,12 +15,10 @@ dependencies {
     implementation "org.mongodb:mongodb-driver-sync:5.6.1"
     implementation group: 'org.jetbrains', name: 'annotations', version: '15.0'
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.10.0'
-    implementation group: 'org.graalvm.js', name: 'js', version: '22.3.1'
-    implementation files('libs/JMongosh-0.9.jar')
-    implementation group: 'com.nimbusds', name: 'oauth2-oidc-sdk', version: '11.+'
-    implementation group: 'org.graalvm.polyglot', name: 'polyglot', version: '25.0.1'
     implementation group: 'org.graalvm.js', name: 'js', version: '25.0.1'
     implementation files('libs/JMongosh-0.9.1.jar')
+    implementation group: 'com.nimbusds', name: 'oauth2-oidc-sdk', version: '11.23.1'
+    implementation group: 'org.graalvm.polyglot', name: 'polyglot', version: '25.0.1'
     testImplementation group: 'junit', name: 'junit', version: '4.13.1'
     testImplementation group: 'commons-io', name: 'commons-io', version: '2.7'
 }

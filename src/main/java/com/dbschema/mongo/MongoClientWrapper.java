@@ -4,8 +4,6 @@ import com.dbschema.mongo.oidc.OidcCallback;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
-import com.mongodb.ServerApi;
-import com.mongodb.ServerApiVersion;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -33,95 +31,88 @@ public class MongoClientWrapper implements AutoCloseable {
 
   public MongoClientWrapper(@NotNull String uri, @NotNull Properties prop, @Nullable String username, @Nullable String password) throws SQLException {
     try {
-        boolean automaticEncoding = ENCODE_CREDENTIALS_DEFAULT;
-        if (prop.getProperty(ENCODE_CREDENTIALS) != null) {
-            automaticEncoding = Boolean.parseBoolean(prop.getProperty(ENCODE_CREDENTIALS));
-        }
+      boolean automaticEncoding = ENCODE_CREDENTIALS_DEFAULT;
+      if (prop.getProperty(ENCODE_CREDENTIALS) != null) {
+        automaticEncoding = Boolean.parseBoolean(prop.getProperty(ENCODE_CREDENTIALS));
+      }
 
+      String authMechanism = prop.getProperty(AUTH_MECHANISM);
+      if (!"MONGODB-OIDC".equals(authMechanism)) {
         uri = insertCredentials(uri, username, password, automaticEncoding);
-        uri = insertAuthMechanism(uri, prop.getProperty(AUTH_MECHANISM));
-        uri = insertAuthSource(uri, prop.getProperty(AUTH_SOURCE));
-        uri = insertAuthProperty(uri, AWS_SESSION_TOKEN, prop.getProperty(AWS_SESSION_TOKEN));
-        uri = insertAuthProperty(uri, SERVICE_NAME, prop.getProperty(SERVICE_NAME));
-        uri = insertAuthProperty(uri, SERVICE_REALM, prop.getProperty(SERVICE_REALM));
-        String canonicalizeHostName = prop.getProperty(CANONICALIZE_HOST_NAME);
-        if (Boolean.TRUE.toString().equalsIgnoreCase(canonicalizeHostName) || Boolean.FALSE.toString().equalsIgnoreCase(canonicalizeHostName)) {
-            uri = insertAuthProperty(uri, CANONICALIZE_HOST_NAME, canonicalizeHostName);
-        }
-        else if (canonicalizeHostName != null) {
-            System.err.println("Unknown " + CANONICALIZE_HOST_NAME + " value. Must be true or false.");
-        }
-        uri = insertRetryWrites(uri, prop.getProperty(RETRY_WRITES));
-
-
-        // Construct a ServerApi instance using the ServerApi.builder() method
-        ServerApi serverApi = ServerApi.builder()
-                .version(ServerApiVersion.V1)
-                .build();
+      }
+      uri = insertAuthMechanism(uri, authMechanism);
+      uri = insertAuthSource(uri, prop.getProperty(AUTH_SOURCE));
+      uri = insertAuthProperty(uri, AWS_SESSION_TOKEN, prop.getProperty(AWS_SESSION_TOKEN));
+      uri = insertAuthProperty(uri, SERVICE_NAME, prop.getProperty(SERVICE_NAME));
+      uri = insertAuthProperty(uri, SERVICE_REALM, prop.getProperty(SERVICE_REALM));
+      String canonicalizeHostName = prop.getProperty(CANONICALIZE_HOST_NAME);
+      if (Boolean.TRUE.toString().equalsIgnoreCase(canonicalizeHostName) || Boolean.FALSE.toString().equalsIgnoreCase(canonicalizeHostName)) {
+        uri = insertAuthProperty(uri, CANONICALIZE_HOST_NAME, canonicalizeHostName);
+      }
+      else if (canonicalizeHostName != null) {
+        System.err.println("Unknown " + CANONICALIZE_HOST_NAME + " value. Must be true or false.");
+      }
+      uri = insertRetryWrites(uri, prop.getProperty(RETRY_WRITES));
 
       ConnectionString connectionString = new ConnectionString(uri);
+      databaseNameFromUrl = connectionString.getDatabase();
+      int maxPoolSize = getMaxPoolSize(prop);
+      MongoClientSettings.Builder builder = MongoClientSettings.builder()
+          .applyConnectionString(connectionString)
+          .applyToConnectionPoolSettings(b -> b.maxSize(maxPoolSize));
 
-        databaseNameFromUrl = connectionString.getDatabase();
-        MongoClientSettings.Builder builder = MongoClientSettings.builder()
-            .applyConnectionString(connectionString)
-            .serverApi(serverApi)
-            .uuidRepresentation(createUuidRepresentation(prop.getProperty(UUID_REPRESENTATION, UUID_REPRESENTATION_DEFAULT)))
-            .applyToConnectionPoolSettings(b -> b.maxSize(getMaxPoolSize(prop)))
-            .applyToSocketSettings(b -> b.connectTimeout(Integer.parseInt(prop.getProperty(CONNECT_TIMEOUT, CONNECT_TIMEOUT_DEFAULT)), TimeUnit.MILLISECONDS));
+      if ("MONGODB-OIDC".equals(authMechanism)) {
+        MongoCredential credential =
+            MongoCredential.createOidcCredential(null)
+                .withMechanismProperty(
+                    MongoCredential.OIDC_HUMAN_CALLBACK_KEY, new OidcCallback());
+        builder.credential(credential);
+      }
 
-        String authMechanism = prop.getProperty(AUTH_MECHANISM);
-        if ("MONGODB-OIDC".equals(authMechanism)) {
-            MongoCredential credential =
-                    MongoCredential.createOidcCredential(null)
-                            .withMechanismProperty(
-                                    MongoCredential.OIDC_HUMAN_CALLBACK_KEY, new OidcCallback());
-            builder.credential(credential);
-        }
-
-        String application = prop.getProperty(APPLICATION_NAME);
-        if (!isNullOrEmpty(application)) {
-            builder.applicationName(application);
-        }
-        if ("true".equals(prop.getProperty("ssl"))) {
-            boolean allowInvalidCertificates = uri.contains("tlsAllowInvalidCertificates=true") || uri.contains("sslAllowInvalidCertificates=true")
-                    || isTrue(prop.getProperty(ALLOW_INVALID_CERTIFICATES, Boolean.toString(ALLOW_INVALID_CERTIFICATES_DEFAULT)));
-            builder.applyToSslSettings(s -> {
-                s.enabled(true);
-                boolean allowInvalidHostnames = isTrue(prop.getProperty(ALLOW_INVALID_HOSTNAMES, Boolean.toString(ALLOW_INVALID_HOSTNAMES_DEFAULT)));
-                if (allowInvalidHostnames) s.invalidHostNameAllowed(true);
-                if (allowInvalidCertificates) {
-                    String keyStoreType = System.getProperty("javax.net.ssl.keyStoreType", KeyStore.getDefaultType());
-                    String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword", "");
-                    String keyStoreUrl = System.getProperty("javax.net.ssl.keyStore", "");
-                    // check keyStoreUrl
-                    if (!isNullOrEmpty(keyStoreUrl)) {
-                        try {
-                            new URL(keyStoreUrl);
-                        } catch (MalformedURLException e) {
-                            keyStoreUrl = "file:" + keyStoreUrl;
-                        }
-                    }
-                    try {
-                        s.context(getTrustEverybodySSLContext(keyStoreUrl, keyStoreType, keyStorePassword));
-                    }
-                    catch (SSLUtil.SSLParamsException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
-        }
-        if (connectionString.getUuidRepresentation() == null) {
-            String uuidRepresentation = prop.getProperty(UUID_REPRESENTATION, UUID_REPRESENTATION_DEFAULT);
-            builder.uuidRepresentation(createUuidRepresentation(uuidRepresentation));
-        }
-        if (connectionString.getServerSelectionTimeout() == null) {
-            int timeout = Integer.parseInt(prop.getProperty(SERVER_SELECTION_TIMEOUT, SERVER_SELECTION_TIMEOUT_DEFAULT));
-            builder.applyToClusterSettings(b -> b.serverSelectionTimeout(timeout, TimeUnit.MILLISECONDS));
-        }
-        if (connectionString.getConnectTimeout() == null) {
-            int timeout = Integer.parseInt(prop.getProperty(CONNECT_TIMEOUT, CONNECT_TIMEOUT_DEFAULT));
-            builder.applyToSocketSettings(b -> b.connectTimeout(timeout, TimeUnit.MILLISECONDS));
-        }
+      String application = prop.getProperty(APPLICATION_NAME);
+      if (!isNullOrEmpty(application)) {
+        builder.applicationName(application);
+      }
+      if ("true".equals(prop.getProperty("ssl"))) {
+        boolean allowInvalidCertificates = uri.contains("tlsAllowInvalidCertificates=true") || uri.contains("sslAllowInvalidCertificates=true")
+            || isTrue(prop.getProperty(ALLOW_INVALID_CERTIFICATES, Boolean.toString(ALLOW_INVALID_CERTIFICATES_DEFAULT)));
+        builder.applyToSslSettings(s -> {
+          s.enabled(true);
+          boolean allowInvalidHostnames = isTrue(prop.getProperty(ALLOW_INVALID_HOSTNAMES, Boolean.toString(ALLOW_INVALID_HOSTNAMES_DEFAULT)));
+          if (allowInvalidHostnames) s.invalidHostNameAllowed(true);
+          if (allowInvalidCertificates) {
+            String keyStoreType = System.getProperty("javax.net.ssl.keyStoreType", KeyStore.getDefaultType());
+            String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword", "");
+            String keyStoreUrl = System.getProperty("javax.net.ssl.keyStore", "");
+            // check keyStoreUrl
+            if (!isNullOrEmpty(keyStoreUrl)) {
+              try {
+                new URL(keyStoreUrl);
+              } catch (MalformedURLException e) {
+                keyStoreUrl = "file:" + keyStoreUrl;
+              }
+            }
+            try {
+              s.context(getTrustEverybodySSLContext(keyStoreUrl, keyStoreType, keyStorePassword));
+            }
+            catch (SSLUtil.SSLParamsException e) {
+              throw new RuntimeException(e);
+            }
+          }
+        });
+      }
+      if (connectionString.getUuidRepresentation() == null) {
+        String uuidRepresentation = prop.getProperty(UUID_REPRESENTATION, UUID_REPRESENTATION_DEFAULT);
+        builder.uuidRepresentation(createUuidRepresentation(uuidRepresentation));
+      }
+      if (connectionString.getServerSelectionTimeout() == null) {
+        int timeout = Integer.parseInt(prop.getProperty(SERVER_SELECTION_TIMEOUT, SERVER_SELECTION_TIMEOUT_DEFAULT));
+        builder.applyToClusterSettings(b -> b.serverSelectionTimeout(timeout, TimeUnit.MILLISECONDS));
+      }
+      if (connectionString.getConnectTimeout() == null) {
+        int timeout = Integer.parseInt(prop.getProperty(CONNECT_TIMEOUT, CONNECT_TIMEOUT_DEFAULT));
+        builder.applyToSocketSettings(b -> b.connectTimeout(timeout, TimeUnit.MILLISECONDS));
+      }
 
       this.mongoClient = MongoClients.create(builder.build());
     }

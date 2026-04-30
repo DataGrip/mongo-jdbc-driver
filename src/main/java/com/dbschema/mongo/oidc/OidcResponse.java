@@ -1,58 +1,57 @@
 package com.dbschema.mongo.oidc;
 
-public class OidcResponse {
-    private String code;
-    private String state;
-    private String error;
-    private String errorDescription;
+public final class OidcResponse {
+  private final String code;
+  private final String state;
+  private final String error;
+  private final String errorDescription;
 
-    public String getCode() {
-        return code;
-    }
+  private OidcResponse(String code, String state, String error, String errorDescription) {
+    this.code = code;
+    this.state = state;
+    this.error = error;
+    this.errorDescription = errorDescription;
+  }
 
-    public String getState() {
-        return state;
-    }
+  public static OidcResponse success(String code, String state) {
+    return new OidcResponse(code, state, null, null);
+  }
 
-    public String getError() {
-        return error;
-    }
+  public static OidcResponse error(String error, String errorDescription) {
+    return new OidcResponse(null, null, error, errorDescription);
+  }
 
-    public String getErrorDescription() {
-        return errorDescription;
-    }
+  public String getCode() {
+    return code;
+  }
 
-    public void setCode(String code) {
-        this.code = code;
-    }
+  public String getState() {
+    return state;
+  }
 
-    public void setState(String state) {
-        this.state = state;
-    }
+  public String getError() {
+    return error;
+  }
 
-    public void setError(String error) {
-        this.error = error;
-    }
+  public String getErrorDescription() {
+    return errorDescription;
+  }
 
-    public void setErrorDescription(String errorDescription) {
-        this.errorDescription = errorDescription;
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    if (code != null) {
+      sb.append("Code: ").append(code).append("\n");
     }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        if (code != null) {
-            sb.append("Code: ").append(code).append("\n");
-        }
-        if (state != null) {
-            sb.append("State: ").append(state).append("\n");
-        }
-        if (error != null) {
-            sb.append("Error: ").append(error).append("\n");
-        }
-        if (errorDescription != null) {
-            sb.append("Error Description: ").append(errorDescription).append("\n");
-        }
-        return sb.toString();
+    if (state != null) {
+      sb.append("State: ").append(state).append("\n");
     }
+    if (error != null) {
+      sb.append("Error: ").append(error).append("\n");
+    }
+    if (errorDescription != null) {
+      sb.append("Error Description: ").append(errorDescription).append("\n");
+    }
+    return sb.toString();
+  }
 }
