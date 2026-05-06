@@ -6,6 +6,12 @@ plugins {
 
 version '1.22'
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
 repositories {
     mavenCentral()
 }
