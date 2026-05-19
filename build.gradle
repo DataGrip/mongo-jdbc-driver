@@ -4,7 +4,13 @@ plugins {
     id "com.github.johnrengelman.shadow" version "8.1.1"
 }
 
-version '1.21'
+version '1.22'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 repositories {
     mavenCentral()
@@ -13,13 +19,13 @@ repositories {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.mongodb:mongodb-driver-sync:4.11.1"
-    implementation group: 'org.jetbrains', name: 'annotations', version: '15.0'
-    implementation group: 'org.apache.commons', name: 'commons-text', version: '1.10.0'
-    implementation group: 'org.graalvm.polyglot', name: 'polyglot', version: '25.0.1'
-    implementation group: 'org.graalvm.js', name: 'js', version: '25.0.1'
+    implementation "org.jetbrains:annotations:15.0"
+    implementation "org.apache.commons:commons-text:1.10.0"
+    implementation "org.graalvm.polyglot:polyglot:25.0.1"
+    implementation "org.graalvm.js:js:25.0.1"
     implementation files('libs/JMongosh-0.9.1.jar')
-    testImplementation group: 'junit', name: 'junit', version: '4.13.1'
-    testImplementation group: 'commons-io', name: 'commons-io', version: '2.7'
+    testImplementation "junit:junit:4.13.1"
+    testImplementation "commons-io:commons-io:2.14.0"
 }
 
 test {
