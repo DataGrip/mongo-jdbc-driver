@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 public class DriverPropertyInfoHelper {
   public static final String AUTH_MECHANISM = "authMechanism";
-  public static final String[] AUTH_MECHANISM_CHOICES = new String[]{"GSSAPI", "MONGODB-AWS", "MONGODB-X509", "PLAIN", "SCRAM-SHA-1", "SCRAM-SHA-256"};
+  public static final String[] AUTH_MECHANISM_CHOICES = new String[]{"GSSAPI", "MONGODB-AWS", "MONGODB-X509", "PLAIN", "SCRAM-SHA-1", "SCRAM-SHA-256", "MONGODB-OIDC"};
   public static final String AUTH_SOURCE = "authSource";
   public static final String AWS_SESSION_TOKEN = "AWS_SESSION_TOKEN";
   public static final String SERVICE_NAME = "SERVICE_NAME";

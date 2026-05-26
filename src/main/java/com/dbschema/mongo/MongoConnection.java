@@ -1,7 +1,6 @@
 package com.dbschema.mongo;
 
 import com.dbschema.mongo.mongosh.MongoshScriptEngine;
-import com.dbschema.mongo.mongosh.PrecalculatingShellHolder;
 import com.dbschema.mongo.mongosh.ShellHolder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
