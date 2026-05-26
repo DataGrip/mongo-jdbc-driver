@@ -1,14 +1,16 @@
 package com.dbschema.mongo.schema;
 
 import com.mongodb.MongoQueryException;
-import com.mongodb.client.FindIterable;
 import com.mongodb.client.ListIndexesIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import org.bson.Document;
-
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Projections;
+import org.bson.conversions.Bson;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +24,7 @@ public class MetaCollection extends MetaJson {
   public MetaCollection(final MongoCollection<?> mongoCollection, final int fetchDocumentsForMeta) {
     super(null, mongoCollection.getNamespace().getCollectionName(), TYPE_MAP);
     db = mongoCollection.getNamespace().getDatabaseName();
-    discoverCollectionFirstRecords(mongoCollection, fetchDocumentsForMeta);
+    discoverCollectionSampleRecords(mongoCollection, fetchDocumentsForMeta);
     discoverIndexes(mongoCollection);
 
   }
@@ -33,12 +35,12 @@ public class MetaCollection extends MetaJson {
     return index;
   }
 
-
-  private void discoverCollectionFirstRecords(MongoCollection<?> mongoCollection, int iterations) {
-    try (MongoCursor<?> cursor = mongoCollection.find().iterator()) {
+  private void discoverCollectionSampleRecords(MongoCollection<?> mongoCollection, int iterations) {
+    List<Bson> pipeline = List.of(Aggregates.sample(iterations));
+    try (MongoCursor<?> cursor = mongoCollection.aggregate(pipeline).iterator()) {
       int iteration = 0;
       while (cursor.hasNext() && ++iteration <= iterations) {
-        discoverMap(this, cursor.next());
+        discoverMap(this, cursor.next(), true);
       }
     }
     catch (MongoQueryException e) {
@@ -47,36 +49,21 @@ public class MetaCollection extends MetaJson {
     }
   }
 
-  private void discoverCollectionRandomRecords(MongoCollection<Document> mongoCollection, int iterations) {
-    int skip = 10, i = 0;
-    FindIterable<Document> jFindIterable = mongoCollection.find(); // .limit(-1)
-    while (i++ < iterations) {
-      final MongoCursor<?> crs = jFindIterable.iterator();
-      while (i++ < iterations && crs.hasNext()) {
-        discoverMap(this, crs.next());
-      }
-      jFindIterable = jFindIterable.skip(skip);
-      skip = skip * 2;
-    }
-  }
-
-  private void discoverMap(MetaJson parentMap, Object object) {
-    if (object instanceof Map) {
-      Map<?, ?> map = (Map<?, ?>) object;
-      for (Object key : map.keySet()) {
+  private void discoverMap(MetaJson parentMap, Object object, boolean updateMandatory) {
+    if (object instanceof Map<?, ?> map) {
+        for (Object key : map.keySet()) {
         final Object value = map.get(key);
         String type = (value != null ? value.getClass().getName() : "String");
         if (type.lastIndexOf('.') > 0) type = type.substring(type.lastIndexOf('.') + 1);
         if (value instanceof Map) {
           final MetaJson childrenMap = parentMap.createJsonMapField(key.toString(), isFirstDiscover);
-          discoverMap(childrenMap, value);
+          discoverMap(childrenMap, value, updateMandatory);
         }
-        else if (value instanceof List) {
-          final List<?> list = (List<?>) value;
-          if ((list.isEmpty() || isListOfDocuments(value))) {
+        else if (value instanceof List<?> list) {
+            if ((list.isEmpty() || isListOfDocuments(value))) {
             final MetaJson subDocument = parentMap.createJsonListField(key.toString(), isFirstDiscover);
-            for (Object child : (List<?>) value) {
-              discoverMap(subDocument, child);
+            for (Object child : list) {
+              discoverMap(subDocument, child, updateMandatory);
             }
           }
           else {
@@ -87,9 +74,11 @@ public class MetaCollection extends MetaJson {
           parentMap.createField((String) key, type, getJavaType(value), isFirstDiscover);
         }
       }
-      for (MetaField field : parentMap.fields) {
-        if (!map.containsKey(field.name)) {
-          field.setMandatory(false);
+      if (updateMandatory) {
+        for (MetaField field : parentMap.fields) {
+          if (!map.containsKey(field.name)) {
+            field.setMandatory(false);
+          }
         }
       }
     }
@@ -106,12 +95,11 @@ public class MetaCollection extends MetaJson {
 
 
   private boolean isListOfDocuments(Object obj) {
-    if (obj instanceof List) {
-      List<?> list = (List<?>) obj;
-      for (Object val : list) {
+    if (obj instanceof List<?> list) {
+        for (Object val : list) {
         if (!(val instanceof Map)) return false;
       }
-      return list.size() > 0;
+      return !list.isEmpty();
     }
     return false;
   }
@@ -121,34 +109,102 @@ public class MetaCollection extends MetaJson {
   private static final String KEY_KEY = "key";
 
   private void discoverIndexes(MongoCollection<?> dbCollection) {
+    ListIndexesIterable<?> iterable;
     try {
-      ListIndexesIterable<?> iterable = dbCollection.listIndexes();
-      for (Object indexObject : iterable) {
-        if (indexObject instanceof Map) {
-          Map<?, ?> indexMap = (Map<?, ?>) indexObject;
-          final String indexName = String.valueOf(indexMap.get(KEY_NAME));
-          final boolean indexIsPk = "_id_".endsWith(indexName);
-          final boolean indexIsUnique = Boolean.TRUE.equals(indexMap.get(KEY_UNIQUE));
-          final Object columnsObj = indexMap.get(KEY_KEY);
-          if (columnsObj instanceof Map) {
-            final Map<?, ?> columnsMap = (Map<?, ?>) columnsObj;
-            MetaIndex metaIndex = createMetaIndex(indexName, indexIsPk, indexIsUnique);
-            for (Map.Entry<?, ?> fieldEntry : columnsMap.entrySet()) {
-              final MetaField metaField = findField((String) fieldEntry.getKey());
-              if (metaField != null) {
-                metaIndex.addColumn(new MetaIndexField(metaField, (Integer) fieldEntry.getValue()));
-              }
-              else {
-                System.err.println("MongoJDBC discover index cannot find metaField '" + fieldEntry.getKey() + "' for index " + indexObject);
-              }
-            }
-          }
-        }
-      }
+      iterable = dbCollection.listIndexes();
     }
     catch (Throwable ex) {
-      System.err.println("Error in discover indexes " + dbCollection + "." + this + ". " + ex);
+      System.err.println("Error listing indexes for " + dbCollection + "." + this + ". " + ex);
+      return;
     }
+    for (Object indexObject : iterable) {
+      try {
+        processIndex(dbCollection, indexObject);
+      }
+      catch (Throwable ex) {
+        System.err.println("Error processing index " + indexObject + " of " + dbCollection + ". " + ex);
+      }
+    }
+  }
+
+  private void processIndex(MongoCollection<?> dbCollection, Object indexObject) {
+    if (!(indexObject instanceof Map<?, ?> indexMap)) return;
+    final String indexName = String.valueOf(indexMap.get(KEY_NAME));
+    final boolean indexIsPk = "_id_".equals(indexName);
+    final boolean indexIsUnique = Boolean.TRUE.equals(indexMap.get(KEY_UNIQUE));
+    final Object columnsObj = indexMap.get(KEY_KEY);
+    if (!(columnsObj instanceof Map<?, ?> columnsMap)) return;
+    MetaIndex metaIndex = createMetaIndex(indexName, indexIsPk, indexIsUnique);
+    for (Map.Entry<?, ?> fieldEntry : columnsMap.entrySet()) {
+      String fieldPath = String.valueOf(fieldEntry.getKey());
+      int direction = directionOf(fieldEntry.getValue());
+      MetaField metaField = resolveIndexField(dbCollection, fieldPath);
+      metaIndex.addColumn(new MetaIndexField(metaField, direction));
+    }
+  }
+
+  private MetaField resolveIndexField(MongoCollection<?> dbCollection, String fieldPath) {
+    MetaField field = findField(fieldPath);
+    if (field != null) return field;
+    field = fetchAndRegisterField(dbCollection, fieldPath);
+    if (field != null) return field;
+    return createStubField(fieldPath);
+  }
+
+  // 1/-1 for ascending/descending; for "text"/"2dsphere"/"hashed" there is no asc/desc semantics.
+  private static int directionOf(Object value) {
+    return value instanceof Number ? ((Number) value).intValue() : 0;
+  }
+
+  private MetaField fetchAndRegisterField(MongoCollection<?> coll, String fieldPath) {
+    try (MongoCursor<?> cursor = coll
+        .find(Filters.exists(fieldPath))
+        .projection(Projections.include(fieldPath))
+        .limit(1)
+        .iterator()) {
+      if (!cursor.hasNext()) return null;
+      return registerFieldFromDoc(cursor.next(), fieldPath);
+    }
+    catch (MongoQueryException e) {
+      if (e.getErrorCode() == 13) return null; // unauthorized to read
+      throw e;
+    }
+  }
+
+  private MetaField registerFieldFromDoc(Object docObject, String fieldPath) {
+    if (!(docObject instanceof Map<?, ?> currentMap)) return null;
+    String[] parts = fieldPath.split("\\.", -1);
+    MetaJson parentNode = this;
+    for (int i = 0; i < parts.length - 1; i++) {
+      Object next = currentMap.get(parts[i]);
+      if (!(next instanceof Map)) return null;
+      parentNode = parentNode.createJsonMapField(parts[i], false);
+      currentMap = (Map<?, ?>) next;
+    }
+    String leaf = parts[parts.length - 1];
+    if (!currentMap.containsKey(leaf)) return null;
+    discoverMap(parentNode, Collections.singletonMap(leaf, currentMap.get(leaf)), false);
+    for (MetaField existing : parentNode.fields) {
+      if (existing.name.equals(leaf)) return existing;
+    }
+    return null;
+  }
+
+  // Type defaults to VARCHAR; the index stays visible in JDBC metadata.
+  private MetaField createStubField(String fieldPath) {
+    String[] parts = fieldPath.split("\\.", -1);
+    MetaJson parent = this;
+    for (int i = 0; i < parts.length - 1; i++) {
+      parent = parent.createJsonMapField(parts[i], false);
+    }
+    String leaf = parts[parts.length - 1];
+    for (MetaField existing : parent.fields) {
+      if (existing.name.equals(leaf)) return existing;
+    }
+    MetaField stub = new MetaField(parent, leaf, "String", java.sql.Types.VARCHAR);
+    stub.setMandatory(false);
+    parent.fields.add(stub);
+    return stub;
   }
 
 
