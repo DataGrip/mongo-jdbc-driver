@@ -36,6 +36,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.security.auth.RefreshFailedException;
 
+import static com.dbschema.mongo.oidc.Server.REDIRECT_ENDPOINT;
+
 public class OidcAuthFlow {
 
   private static final Logger logger = Logger.getLogger(OidcAuthFlow.class.getName());
@@ -50,19 +52,17 @@ public class OidcAuthFlow {
     scopes.add(OFFLINE_ACCESS);
 
     List<String> requestedScopes = idpServerInfo.getRequestScopes();
-    if (requestedScopes != null) {
-      String clientIDDefault = clientID + "/.default";
-      if (requestedScopes.contains(clientIDDefault)) {
-        scopes.add(clientIDDefault);
-      }
-      if (supportedScopes != null) {
-        for (String scope : requestedScopes) {
-          if (supportedScopes.contains(scope)) {
-            scopes.add(scope);
-          }
-          else {
-            logger.warning(String.format("Scope '%s' is not supported", scope));
-          }
+    String clientIDDefault = clientID + "/.default";
+    if (requestedScopes.contains(clientIDDefault)) {
+      scopes.add(clientIDDefault);
+    }
+    if (supportedScopes != null) {
+      for (String scope : requestedScopes) {
+        if (supportedScopes.contains(scope)) {
+          scopes.add(scope);
+        }
+        else {
+          logger.warning(String.format("Scope '%s' is not supported", scope));
         }
       }
     }
@@ -76,6 +76,11 @@ public class OidcAuthFlow {
 
   public OidcCallbackResult doAuthCodeFlow(OidcCallbackContext callbackContext)
       throws OidcTimeoutException {
+
+    if(callbackContext.getIdpInfo() == null) {
+      throw new IllegalStateException("OIDC configuration is incomplete: missing IdpInfo");
+    }
+
     IdpInfo idpServerInfo = callbackContext.getIdpInfo();
     String clientID = idpServerInfo.getClientId();
     String issuerURI = idpServerInfo.getIssuer();
@@ -94,7 +99,7 @@ public class OidcAuthFlow {
 
       server.start();
 
-      URI redirectURI = new URI("http://localhost:" + server.getPort() + "/redirect");
+      URI redirectURI = new URI("http://127.0.0.1:" + server.getPort() + REDIRECT_ENDPOINT);
       State state = new State();
       CodeVerifier codeVerifier = new CodeVerifier();
 
@@ -129,8 +134,8 @@ public class OidcAuthFlow {
       AuthorizationCode code = new AuthorizationCode(response.getCode());
       AuthorizationCodeGrant codeGrant =
           new AuthorizationCodeGrant(code, redirectURI, codeVerifier);
-      TokenRequest tokenRequest =
-          new TokenRequest(tokenEndpoint, new ClientID(clientID), codeGrant);
+      TokenRequest.Builder tokenRequestBuilder = new TokenRequest.Builder(tokenEndpoint, new ClientID(clientID), codeGrant);
+      TokenRequest tokenRequest = tokenRequestBuilder.build();
 
       HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send();
       TokenResponse tokenResponse = OIDCTokenResponseParser.parse(httpResponse);
@@ -157,6 +162,11 @@ public class OidcAuthFlow {
 
   public OidcCallbackResult doRefresh(OidcCallbackContext callbackContext, String refreshTokenValue)
       throws RefreshFailedException {
+
+    if(callbackContext.getIdpInfo() == null) {
+      throw new IllegalStateException("OIDC configuration is incomplete: missing IdpInfo");
+    }
+
     IdpInfo idpServerInfo = callbackContext.getIdpInfo();
     String clientID = idpServerInfo.getClientId();
     String issuerURI = idpServerInfo.getIssuer();
@@ -173,10 +183,11 @@ public class OidcAuthFlow {
         throw new IllegalArgumentException("Refresh token is required");
       }
 
-      RefreshTokenGrant refreshTokenGrant =
-          new RefreshTokenGrant(new RefreshToken(refreshTokenValue));
-      TokenRequest tokenRequest =
-          new TokenRequest(tokenEndpoint, new ClientID(clientID), refreshTokenGrant);
+      RefreshTokenGrant refreshTokenGrant = new RefreshTokenGrant(new RefreshToken(refreshTokenValue));
+
+      TokenRequest.Builder tokenRequestBuilder = new TokenRequest.Builder(tokenEndpoint, new ClientID(clientID), refreshTokenGrant);
+      TokenRequest tokenRequest = tokenRequestBuilder.build();
+
       HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send();
 
       try {

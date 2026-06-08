@@ -29,7 +29,7 @@ public class Server {
   private static final int SERVER_THREAD_POOL_SIZE = 5;
   private static final String ACCEPTED_ENDPOINT = "/accepted";
   private static final String CALLBACK_ENDPOINT = "/callback";
-  private static final String REDIRECT_ENDPOINT = "/redirect";
+  public static final String REDIRECT_ENDPOINT = "/redirect";
 
   private HttpServer server;
   private ExecutorService executor;

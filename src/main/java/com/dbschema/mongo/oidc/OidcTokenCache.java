@@ -77,26 +77,17 @@ public final class OidcTokenCache {
         return issuerURI + "|" + clientID;
     }
 
-    private static final class CachedToken {
-        final OidcCallbackResult result;
-        final Instant storedAt;
-        final Duration expiresIn;
-
-        CachedToken(OidcCallbackResult result, Instant storedAt, Duration expiresIn) {
-            this.result = result;
-            this.storedAt = storedAt;
-            this.expiresIn = expiresIn;
-        }
+    private record CachedToken(OidcCallbackResult result, Instant storedAt, Duration expiresIn) {
 
         boolean isExpired() {
-            if (expiresIn == null) {
-                return true;
+                if (expiresIn == null) {
+                    return true;
+                }
+                Duration effectiveTtl = expiresIn.minus(EXPIRY_MARGIN);
+                if (effectiveTtl.isNegative() || effectiveTtl.isZero()) {
+                    return true;
+                }
+                return Instant.now().isAfter(storedAt.plus(effectiveTtl));
             }
-            Duration effectiveTtl = expiresIn.minus(EXPIRY_MARGIN);
-            if (effectiveTtl.isNegative() || effectiveTtl.isZero()) {
-                return true;
-            }
-            return Instant.now().isAfter(storedAt.plus(effectiveTtl));
         }
-    }
 }

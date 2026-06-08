@@ -3,6 +3,7 @@ package com.dbschema.mongo.oidc;
 import com.mongodb.MongoCredential;
 import com.mongodb.MongoCredential.OidcCallbackContext;
 import com.mongodb.MongoCredential.OidcCallbackResult;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -15,7 +16,7 @@ public class OidcCallback implements MongoCredential.OidcCallback {
   private final OidcAuthFlow oidcAuthFlow = new OidcAuthFlow();
 
   @Override
-  public OidcCallbackResult onRequest(OidcCallbackContext callbackContext) {
+  public @NotNull OidcCallbackResult onRequest(@NotNull OidcCallbackContext callbackContext) {
     String issuerURI = callbackContext.getIdpInfo() != null
         ? callbackContext.getIdpInfo().getIssuer() : null;
     String clientID = callbackContext.getIdpInfo() != null
