@@ -33,12 +33,14 @@ public class Server {
   private static final String ACCEPTED_ENDPOINT = "/accepted";
   private static final String CALLBACK_ENDPOINT = "/callback";
   public static final String REDIRECT_ENDPOINT = "/redirect";
-  public int redirectPort;
+  private final int redirectPort;
+  private final String redirectHost;
 
   private HttpServer server;
   private ExecutorService executor;private final BlockingQueue<OidcResponse> oidcResponseQueue;
 
-  public Server(@NotNull String redirectPort) {
+  public Server(@NotNull String redirectHost, @NotNull String redirectPort) {
+    this.redirectHost = redirectHost;
     this.redirectPort = Integer.parseInt(redirectPort);
     oidcResponseQueue = new LinkedBlockingQueue<>();
   }
@@ -49,7 +51,7 @@ public class Server {
    * @throws IOException if an I/O error occurs while creating or starting the server
    */
   public void start() throws IOException {
-    server = HttpServer.create(new InetSocketAddress("localhost", this.redirectPort), 0);
+    server = HttpServer.create(new InetSocketAddress(this.redirectHost, this.redirectPort), 0);
 
     server.createContext(CALLBACK_ENDPOINT, new CallbackHandler());
     server.createContext(REDIRECT_ENDPOINT, new CallbackHandler());
@@ -67,6 +69,10 @@ public class Server {
    */
   public int getPort() {
     return this.server.getAddress().getPort();
+  }
+
+  public String getHost() {
+    return this.server.getAddress().getHostName();
   }
 
   public OidcResponse getOidcResponse() throws InterruptedException, OidcTimeoutException {

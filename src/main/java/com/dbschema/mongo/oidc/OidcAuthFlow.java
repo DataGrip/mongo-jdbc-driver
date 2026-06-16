@@ -45,8 +45,10 @@ public class OidcAuthFlow {
   private static final String OFFLINE_ACCESS = "offline_access";
   private static final String OPENID = "openid";
   private final String redirectPort;
+  private final String redirectHost;
 
-  public OidcAuthFlow(@NotNull String redirectPort) {
+  public OidcAuthFlow(@NotNull String redirectHost, @NotNull String redirectPort) {
+    this.redirectHost = redirectHost;
     this.redirectPort = redirectPort;
   }
 
@@ -95,7 +97,7 @@ public class OidcAuthFlow {
       throw new IllegalStateException("OIDC configuration is incomplete: missing IdpInfo, clientID, or issuerURI");
     }
 
-    Server server = new Server(this.redirectPort);
+    Server server = new Server(this.redirectHost, this.redirectPort);
     try {
       OIDCProviderMetadata providerMetadata =
           OIDCProviderMetadata.resolve(new Issuer(issuerURI));
@@ -105,7 +107,7 @@ public class OidcAuthFlow {
 
       server.start();
 
-      URI redirectURI = new URI("http://localhost:" + server.getPort() + REDIRECT_ENDPOINT);
+      URI redirectURI = new URI("http://" + this.redirectHost + ":" + this.redirectPort + REDIRECT_ENDPOINT);
       State state = new State();
       CodeVerifier codeVerifier = new CodeVerifier();
 
