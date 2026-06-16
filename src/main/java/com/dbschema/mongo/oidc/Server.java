@@ -3,6 +3,7 @@ package com.dbschema.mongo.oidc;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +22,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.dbschema.mongo.DriverPropertyInfoHelper.OIDC_CALLBACK_PORT_DEFAULT;
+
 public class Server {
 
   private static final Logger logger = Logger.getLogger(Server.class.getName());
@@ -30,13 +33,13 @@ public class Server {
   private static final String ACCEPTED_ENDPOINT = "/accepted";
   private static final String CALLBACK_ENDPOINT = "/callback";
   public static final String REDIRECT_ENDPOINT = "/redirect";
+  public int redirectPort;
 
   private HttpServer server;
-  private ExecutorService executor;
-  private int port;
-  private final BlockingQueue<OidcResponse> oidcResponseQueue;
+  private ExecutorService executor;private final BlockingQueue<OidcResponse> oidcResponseQueue;
 
-  public Server() {
+  public Server(@NotNull String redirectPort) {
+    this.redirectPort = Integer.parseInt(redirectPort);
     oidcResponseQueue = new LinkedBlockingQueue<>();
   }
 
@@ -46,7 +49,7 @@ public class Server {
    * @throws IOException if an I/O error occurs while creating or starting the server
    */
   public void start() throws IOException {
-    server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+    server = HttpServer.create(new InetSocketAddress("localhost", this.redirectPort), 0);
 
     server.createContext(CALLBACK_ENDPOINT, new CallbackHandler());
     server.createContext(REDIRECT_ENDPOINT, new CallbackHandler());
@@ -55,8 +58,7 @@ public class Server {
     server.setExecutor(executor);
 
     server.start();
-    port = server.getAddress().getPort();
-    logger.info("Server started on port " + port);
+    logger.info("Server started on port " + this.redirectPort);
   }
 
   /**
@@ -64,7 +66,7 @@ public class Server {
    * Only valid after {@link #start()} has been called.
    */
   public int getPort() {
-    return port;
+    return this.server.getAddress().getPort();
   }
 
   public OidcResponse getOidcResponse() throws InterruptedException, OidcTimeoutException {

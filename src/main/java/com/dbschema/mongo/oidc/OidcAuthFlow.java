@@ -24,6 +24,7 @@ import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponseParser;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.Desktop;
 import java.io.IOException;
@@ -43,6 +44,11 @@ public class OidcAuthFlow {
   private static final Logger logger = Logger.getLogger(OidcAuthFlow.class.getName());
   private static final String OFFLINE_ACCESS = "offline_access";
   private static final String OPENID = "openid";
+  private final String redirectPort;
+
+  public OidcAuthFlow(@NotNull String redirectPort) {
+    this.redirectPort = redirectPort;
+  }
 
   public Scope buildScopes(String clientID, IdpInfo idpServerInfo, OIDCProviderMetadata providerMetadata) {
     Set<String> scopes = new HashSet<>();
@@ -89,7 +95,7 @@ public class OidcAuthFlow {
       throw new IllegalStateException("OIDC configuration is incomplete: missing IdpInfo, clientID, or issuerURI");
     }
 
-    Server server = new Server();
+    Server server = new Server(this.redirectPort);
     try {
       OIDCProviderMetadata providerMetadata =
           OIDCProviderMetadata.resolve(new Issuer(issuerURI));
@@ -99,7 +105,7 @@ public class OidcAuthFlow {
 
       server.start();
 
-      URI redirectURI = new URI("http://127.0.0.1:" + server.getPort() + REDIRECT_ENDPOINT);
+      URI redirectURI = new URI("http://localhost:" + server.getPort() + REDIRECT_ENDPOINT);
       State state = new State();
       CodeVerifier codeVerifier = new CodeVerifier();
 
@@ -143,7 +149,7 @@ public class OidcAuthFlow {
         throw new IllegalStateException(String.format("Token request failed: %s", httpResponse.getBody()));
       }
 
-      return buildCallbackResult((OIDCTokenResponse) tokenResponse, issuerURI, clientID);
+      return buildCallbackResult((OIDCTokenResponse) tokenResponse, issuerURI, clientID, null);
     }
     catch (OidcTimeoutException e) {
       throw e;
@@ -201,7 +207,7 @@ public class OidcAuthFlow {
           throw new RefreshFailedException(
               "Token refresh failed: code=" + errorCode + ", description=" + errorDescription);
         }
-        return buildCallbackResult((OIDCTokenResponse) tokenResponse, issuerURI, clientID);
+        return buildCallbackResult((OIDCTokenResponse) tokenResponse, issuerURI, clientID, refreshTokenValue);
       }
       catch (ParseException e) {
         throw new RefreshFailedException(
@@ -223,11 +229,11 @@ public class OidcAuthFlow {
   }
 
   private OidcCallbackResult buildCallbackResult(
-      OIDCTokenResponse tokenResponse, String issuerURI, String clientID) {
+      OIDCTokenResponse tokenResponse, String issuerURI, String clientID, String fallbackRefreshToken) {
     Tokens tokens = tokenResponse.getOIDCTokens();
     String accessToken = tokens.getAccessToken().getValue();
     String refreshToken =
-        tokens.getRefreshToken() != null ? tokens.getRefreshToken().getValue() : null;
+        tokens.getRefreshToken() != null ? tokens.getRefreshToken().getValue() : fallbackRefreshToken;
     Duration expiresIn = Duration.ofSeconds(tokens.getAccessToken().getLifetime());
 
     OidcCallbackResult result = new OidcCallbackResult(accessToken, expiresIn, refreshToken);

@@ -34,6 +34,8 @@ public class DriverPropertyInfoHelper {
   public static final String RETRY_WRITES = "retryWrites";
   public static final String[] RETRY_WRITES_CHOICES = new String[]{Boolean.toString(false), Boolean.toString(true)};
   private static final String RETRY_WRITES_DOCS = "https://www.mongodb.com/docs/manual/core/retryable-writes/";
+  public static final String OIDC_CALLBACK_PORT = "oidcCallbackPort";
+  public static final int OIDC_CALLBACK_PORT_DEFAULT = 27097;
 
 
   public DriverPropertyInfo[] getPropertyInfo() {
@@ -73,6 +75,8 @@ public class DriverPropertyInfoHelper {
     addPropInfo(propInfos, RETRY_WRITES, null, "See " + RETRY_WRITES_DOCS, RETRY_WRITES_CHOICES);
 
     addPropInfo(propInfos, APPLICATION_NAME, null, "Sets the logical name of the application.", null);
+
+    addPropInfo(propInfos, OIDC_CALLBACK_PORT, Integer.toString(OIDC_CALLBACK_PORT_DEFAULT), "Sets the port for the OIDC callback.", null);
 
     return propInfos.toArray(new DriverPropertyInfo[0]);
   }

@@ -26,7 +26,7 @@ dependencies {
     implementation "com.nimbusds:oauth2-oidc-sdk:11.23.1"
     implementation "org.graalvm.polyglot:polyglot:25.0.1"
     testImplementation "junit:junit:4.13.1"
-    testImplementation "commons-io:commons-io:2.7"
+    testImplementation "commons-io:commons-io:2.14.0"
 }
 
 test {

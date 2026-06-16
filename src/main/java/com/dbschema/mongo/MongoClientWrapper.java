@@ -65,7 +65,7 @@ public class MongoClientWrapper implements AutoCloseable {
         MongoCredential credential =
             MongoCredential.createOidcCredential(null)
                 .withMechanismProperty(
-                    MongoCredential.OIDC_HUMAN_CALLBACK_KEY, new OidcCallback());
+                    MongoCredential.OIDC_HUMAN_CALLBACK_KEY, new OidcCallback(getRedirectPort(prop)));
         builder.credential(credential);
       }
 
@@ -152,6 +152,19 @@ public class MongoClientWrapper implements AutoCloseable {
       e.printStackTrace();
     }
     return MAX_POOL_SIZE_DEFAULT;
+  }
+
+  private String getRedirectPort(@NotNull Properties prop) {
+    try{
+      String redirectPort = prop.getProperty(OIDC_CALLBACK_PORT);
+      if (redirectPort != null) {
+        return redirectPort;
+      }
+      return Integer.toString(OIDC_CALLBACK_PORT_DEFAULT);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return Integer.toString(OIDC_CALLBACK_PORT_DEFAULT);
+    }
   }
 
   @Override

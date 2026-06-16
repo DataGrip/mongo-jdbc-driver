@@ -13,7 +13,12 @@ public class OidcCallback implements MongoCredential.OidcCallback {
 
   private static final Logger logger = Logger.getLogger(OidcCallback.class.getName());
 
-  private final OidcAuthFlow oidcAuthFlow = new OidcAuthFlow();
+  private final OidcAuthFlow oidcAuthFlow;
+
+  public OidcCallback(@NotNull String redirectPort){
+    logger.log(Level.INFO, "Initializing OIDC callback with redirect port: {0}", redirectPort);
+    this.oidcAuthFlow = new OidcAuthFlow(redirectPort);
+  }
 
   @Override
   public @NotNull OidcCallbackResult onRequest(@NotNull OidcCallbackContext callbackContext) {
