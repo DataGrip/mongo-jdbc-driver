@@ -266,22 +266,25 @@ public class OidcAuthFlow {
       logger.log(Level.WARNING, "Desktop.browse() failed, falling back to platform command", e);
     }
 
-    String osName = System.getProperty("os.name", "").toLowerCase();
-    ProcessBuilder pb;
-    if (osName.contains("mac")) {
-      pb = new ProcessBuilder("open", uri.toString());
+    ProcessBuilder pb = new ProcessBuilder(buildBrowserOpenCommand(System.getProperty("os.name", ""), uri));
+    pb.redirectErrorStream(true);
+    pb.start();
+  }
+
+  static List<String> buildBrowserOpenCommand(String osName, URI uri) {
+    String normalizedOsName = osName == null ? "" : osName.toLowerCase();
+    if (normalizedOsName.contains("mac")) {
+      return List.of("open", uri.toString());
     }
-    else if (osName.contains("windows")) {
-      pb = new ProcessBuilder("cmd.exe", "/c", "start", "\"\"", uri.toString());
+    else if (normalizedOsName.contains("windows")) {
+      return List.of("rundll32.exe", "url.dll,FileProtocolHandler", uri.toString());
     }
-    else if (osName.contains("linux")) {
-      pb = new ProcessBuilder("xdg-open", uri.toString());
+    else if (normalizedOsName.contains("linux")) {
+      return List.of("xdg-open", uri.toString());
     }
     else {
       throw new UnsupportedOperationException("Cannot open browser on " + osName);
     }
-    pb.redirectErrorStream(true);
-    pb.start();
   }
 
   private static void validateURI(URI uri) {
