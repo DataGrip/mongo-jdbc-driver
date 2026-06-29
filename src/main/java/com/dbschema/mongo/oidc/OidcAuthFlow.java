@@ -107,7 +107,7 @@ public class OidcAuthFlow {
 
       server.start();
 
-      URI redirectURI = new URI("http://" + this.redirectHost + ":" + this.redirectPort + REDIRECT_ENDPOINT);
+      URI redirectURI = new URI("http", null, server.getRedirectHost(), server.getPort(), REDIRECT_ENDPOINT, null, null);
       State state = new State();
       CodeVerifier codeVerifier = new CodeVerifier();
 

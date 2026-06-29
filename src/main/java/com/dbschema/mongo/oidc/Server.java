@@ -75,6 +75,10 @@ public class Server {
     return this.server.getAddress().getHostName();
   }
 
+  public String getRedirectHost() {
+    return this.redirectHost;
+  }
+
   public OidcResponse getOidcResponse() throws InterruptedException, OidcTimeoutException {
     return getOidcResponse(Duration.ofSeconds(RESPONSE_TIMEOUT_SECONDS));
   }
