@@ -13,6 +13,8 @@ import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.TokenErrorResponse;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
+import com.nimbusds.oauth2.sdk.http.HTTPRequest;
+import com.nimbusds.oauth2.sdk.http.HTTPRequestConfigurator;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
@@ -26,9 +28,11 @@ import com.nimbusds.openid.connect.sdk.OIDCTokenResponseParser;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import org.jetbrains.annotations.NotNull;
 
+import javax.net.ssl.SSLSocketFactory;
 import java.awt.Desktop;
 import java.io.IOException;
 import java.net.URI;
+import java.security.GeneralSecurityException;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
@@ -46,10 +50,16 @@ public class OidcAuthFlow {
   private static final String OPENID = "openid";
   private final String redirectPort;
   private final String redirectHost;
+  private final boolean trustSystemKeychain;
 
   public OidcAuthFlow(@NotNull String redirectHost, @NotNull String redirectPort) {
+    this(redirectHost, redirectPort, false);
+  }
+
+  public OidcAuthFlow(@NotNull String redirectHost, @NotNull String redirectPort, boolean trustSystemKeychain) {
     this.redirectHost = redirectHost;
     this.redirectPort = redirectPort;
+    this.trustSystemKeychain = trustSystemKeychain;
   }
 
   public Scope buildScopes(String clientID, IdpInfo idpServerInfo, OIDCProviderMetadata providerMetadata) {
@@ -99,8 +109,9 @@ public class OidcAuthFlow {
 
     Server server = new Server(this.redirectHost, this.redirectPort);
     try {
+      SSLSocketFactory sslSocketFactory = systemSocketFactory();
       OIDCProviderMetadata providerMetadata =
-          OIDCProviderMetadata.resolve(new Issuer(issuerURI));
+          OIDCProviderMetadata.resolve(new Issuer(issuerURI), httpRequestConfigurator(sslSocketFactory));
       URI authorizationEndpoint = providerMetadata.getAuthorizationEndpointURI();
       URI tokenEndpoint = providerMetadata.getTokenEndpointURI();
       Scope requestedScopes = buildScopes(clientID, idpServerInfo, providerMetadata);
@@ -145,7 +156,11 @@ public class OidcAuthFlow {
       TokenRequest.Builder tokenRequestBuilder = new TokenRequest.Builder(tokenEndpoint, new ClientID(clientID), codeGrant);
       TokenRequest tokenRequest = tokenRequestBuilder.build();
 
-      HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send();
+      HTTPRequest httpRequest = tokenRequest.toHTTPRequest();
+      if (sslSocketFactory != null) {
+        httpRequest.setSSLSocketFactory(sslSocketFactory);
+      }
+      HTTPResponse httpResponse = httpRequest.send();
       TokenResponse tokenResponse = OIDCTokenResponseParser.parse(httpResponse);
       if (!tokenResponse.indicatesSuccess()) {
         throw new IllegalStateException(String.format("Token request failed: %s", httpResponse.getBody()));
@@ -183,8 +198,9 @@ public class OidcAuthFlow {
       return null;
     }
     try {
+      SSLSocketFactory sslSocketFactory = systemSocketFactory();
       OIDCProviderMetadata providerMetadata =
-          OIDCProviderMetadata.resolve(new Issuer(issuerURI));
+          OIDCProviderMetadata.resolve(new Issuer(issuerURI), httpRequestConfigurator(sslSocketFactory));
       URI tokenEndpoint = providerMetadata.getTokenEndpointURI();
 
       if (refreshTokenValue == null) {
@@ -196,7 +212,11 @@ public class OidcAuthFlow {
       TokenRequest.Builder tokenRequestBuilder = new TokenRequest.Builder(tokenEndpoint, new ClientID(clientID), refreshTokenGrant);
       TokenRequest tokenRequest = tokenRequestBuilder.build();
 
-      HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send();
+      HTTPRequest httpRequest = tokenRequest.toHTTPRequest();
+      if (sslSocketFactory != null) {
+        httpRequest.setSSLSocketFactory(sslSocketFactory);
+      }
+      HTTPResponse httpResponse = httpRequest.send();
 
       try {
         TokenResponse tokenResponse = OIDCTokenResponseParser.parse(httpResponse);
@@ -228,6 +248,29 @@ public class OidcAuthFlow {
 
   private boolean isValid(IdpInfo idpInfo, String clientID, String issuerURI) {
     return idpInfo != null && clientID != null && !clientID.isEmpty() && issuerURI != null;
+  }
+
+  /**
+   * Builds an {@link SSLSocketFactory} trusting the system certificate stores, used for the outgoing
+   * OIDC HTTPS calls so they succeed behind a corporate / custom root CA. Returns {@code null} when
+   * the factory cannot be built, in which case the SDK defaults are used.
+   */
+  private SSLSocketFactory systemSocketFactory() {
+    try {
+      return OidcTls.systemSocketFactory(trustSystemKeychain);
+    }
+    catch (GeneralSecurityException e) {
+      logger.log(Level.WARNING, "Falling back to default TLS trust settings: " + e.getMessage());
+      return null;
+    }
+  }
+
+  private HTTPRequestConfigurator httpRequestConfigurator(SSLSocketFactory sslSocketFactory) {
+    return httpRequest -> {
+      if (sslSocketFactory != null) {
+        httpRequest.setSSLSocketFactory(sslSocketFactory);
+      }
+    };
   }
 
   private OidcCallbackResult buildCallbackResult(

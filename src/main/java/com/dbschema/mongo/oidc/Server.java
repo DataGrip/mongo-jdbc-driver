@@ -22,8 +22,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.dbschema.mongo.DriverPropertyInfoHelper.OIDC_CALLBACK_PORT_DEFAULT;
-
 public class Server {
 
   private static final Logger logger = Logger.getLogger(Server.class.getName());
