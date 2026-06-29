@@ -4,7 +4,7 @@ plugins {
     id "com.github.johnrengelman.shadow" version "8.1.1"
 }
 
-version '1.22'
+version '1.23'
 
 java {
     toolchain {
@@ -14,6 +14,29 @@ java {
 
 repositories {
     mavenCentral()
+}
+
+tasks.register('verifyDriverVersion') {
+    def metaFile = file('src/main/java/com/dbschema/mongo/MongoDatabaseMetaData.java')
+    def expected = project.version.toString()
+    inputs.file(metaFile)
+    inputs.property('version', expected)
+    doLast {
+        def matcher = (metaFile.text =~ /getDriverVersion\(\)\s*\{\s*return\s*"([^"]+)"/)
+        if (!matcher.find()) {
+            throw new GradleException("Could not find getDriverVersion() literal in ${metaFile}")
+        }
+        def actual = matcher.group(1)
+        if (actual != expected) {
+            throw new GradleException(
+                "Driver version mismatch: MongoDatabaseMetaData.getDriverVersion() returns '${actual}' " +
+                "but the Gradle version is '${expected}'. Update the return value to keep them in sync.")
+        }
+    }
+}
+
+tasks.named('compileJava') {
+    dependsOn 'verifyDriverVersion'
 }
 
 dependencies {
