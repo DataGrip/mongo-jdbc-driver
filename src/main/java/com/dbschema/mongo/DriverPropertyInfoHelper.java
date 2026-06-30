@@ -38,8 +38,8 @@ public class DriverPropertyInfoHelper {
   public static final int OIDC_CALLBACK_PORT_DEFAULT = 27097;
   public static final String OIDC_CALLBACK_HOST = "oidcCallbackHost";
   public static final String OIDC_CALLBACK_HOST_DEFAULT = "localhost";
-  public static final String OIDC_TRUST_SYSTEM_KEYCHAIN = "oidcTrustSystemKeychain";
-  public static final boolean OIDC_TRUST_SYSTEM_KEYCHAIN_DEFAULT = false;
+  public static final String OIDC_TRUST_SYSTEM_CERTIFICATES = "oidcTrustSystemCertificates";
+  public static final boolean OIDC_TRUST_SYSTEM_CERTIFICATES_DEFAULT = false;
 
 
   public DriverPropertyInfo[] getPropertyInfo() {
@@ -84,11 +84,11 @@ public class DriverPropertyInfoHelper {
 
     addPropInfo(propInfos, OIDC_CALLBACK_HOST, OIDC_CALLBACK_HOST_DEFAULT, "Sets the host for the OIDC callback.", null);
 
-    addPropInfo(propInfos, OIDC_TRUST_SYSTEM_KEYCHAIN, Boolean.toString(OIDC_TRUST_SYSTEM_KEYCHAIN_DEFAULT),
-        "macOS only. When true, certificates from the macOS keychains are exported via the 'security' " +
-            "tool and trusted for the OIDC HTTPS calls. WARNING: this ignores per-certificate macOS trust " +
-            "settings and may trust leaf or explicitly distrusted certificates. Leave false and use cacerts " +
-            "or javax.net.ssl.trustStore unless you understand the risk.", new String[]{"true", "false"});
+    addPropInfo(propInfos, OIDC_TRUST_SYSTEM_CERTIFICATES, Boolean.toString(OIDC_TRUST_SYSTEM_CERTIFICATES_DEFAULT),
+        "When true, OIDC HTTPS calls also trust platform certificate stores: Linux system CA bundles and " +
+            "macOS keychains. WARNING: macOS keychain export ignores per-certificate trust settings and may " +
+            "trust leaf or explicitly distrusted certificates. Leave false and use cacerts or " +
+            "javax.net.ssl.trustStore unless you understand the risk.", new String[]{"true", "false"});
 
     return propInfos.toArray(new DriverPropertyInfo[0]);
   }

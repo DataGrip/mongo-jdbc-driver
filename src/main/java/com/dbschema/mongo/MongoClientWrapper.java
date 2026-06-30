@@ -66,7 +66,7 @@ public class MongoClientWrapper implements AutoCloseable {
             MongoCredential.createOidcCredential(null)
                 .withMechanismProperty(
                     MongoCredential.OIDC_HUMAN_CALLBACK_KEY,
-                    new OidcCallback(getRedirectHost(prop), getRedirectPort(prop), getTrustSystemKeychain(prop)));
+                    new OidcCallback(getRedirectHost(prop), getRedirectPort(prop), getTrustSystemCertificates(prop)));
         builder.credential(credential);
       }
 
@@ -181,9 +181,13 @@ public class MongoClientWrapper implements AutoCloseable {
     }
   }
 
-  private boolean getTrustSystemKeychain(@NotNull Properties prop) {
-    String value = prop.getProperty(OIDC_TRUST_SYSTEM_KEYCHAIN);
-    return value == null ? OIDC_TRUST_SYSTEM_KEYCHAIN_DEFAULT : Boolean.parseBoolean(value);
+  @SuppressWarnings("deprecation")
+  private boolean getTrustSystemCertificates(@NotNull Properties prop) {
+    String value = prop.getProperty(OIDC_TRUST_SYSTEM_CERTIFICATES);
+    if (value == null) {
+      value = prop.getProperty(OIDC_TRUST_SYSTEM_KEYCHAIN);
+    }
+    return value == null ? OIDC_TRUST_SYSTEM_CERTIFICATES_DEFAULT : Boolean.parseBoolean(value);
   }
 
   @Override
