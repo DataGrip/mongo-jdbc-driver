@@ -50,16 +50,16 @@ public class OidcAuthFlow {
   private static final String OPENID = "openid";
   private final String redirectPort;
   private final String redirectHost;
-  private final boolean trustSystemCertificates;
+  private final boolean trustSystemKeychain;
 
   public OidcAuthFlow(@NotNull String redirectHost, @NotNull String redirectPort) {
     this(redirectHost, redirectPort, false);
   }
 
-  public OidcAuthFlow(@NotNull String redirectHost, @NotNull String redirectPort, boolean trustSystemCertificates) {
+  public OidcAuthFlow(@NotNull String redirectHost, @NotNull String redirectPort, boolean trustSystemKeychain) {
     this.redirectHost = redirectHost;
     this.redirectPort = redirectPort;
-    this.trustSystemCertificates = trustSystemCertificates;
+    this.trustSystemKeychain = trustSystemKeychain;
   }
 
   public Scope buildScopes(String clientID, IdpInfo idpServerInfo, OIDCProviderMetadata providerMetadata) {
@@ -257,7 +257,7 @@ public class OidcAuthFlow {
    */
   private SSLSocketFactory systemSocketFactory() {
     try {
-      return OidcTls.systemSocketFactory(trustSystemCertificates);
+      return OidcTls.systemSocketFactory(trustSystemKeychain);
     }
     catch (GeneralSecurityException e) {
       logger.log(Level.WARNING, "Falling back to default TLS trust settings: " + e.getMessage());

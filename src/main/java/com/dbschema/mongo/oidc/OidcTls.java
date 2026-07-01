@@ -32,25 +32,26 @@ import java.util.logging.Logger;
  * <ol>
  *   <li>the JRE default trust store — {@code cacerts}, or {@code javax.net.ssl.trustStore} when that
  *       system property is set;</li>
- *   <li>on Windows, the native {@code Windows-ROOT} store (which honors the OS trust settings);</li>
+ *   <li>on Windows, the native {@code Windows-ROOT} store (honors the OS trust settings);</li>
  *   <li>on Linux, the curated system CA bundle (populated by {@code update-ca-certificates} /
- *       {@code update-ca-trust}) — only when the caller opts in via
- *       {@code trustSystemCertificates} (see below);</li>
+ *       {@code update-ca-trust}), which Java itself does not read by default;</li>
  *   <li>on macOS, certificates exported from the keychains — only when the caller opts in via
- *       {@code trustSystemCertificates} (see below).</li>
+ *       {@code trustSystemKeychain} (see below).</li>
  * </ol>
  * A server certificate is accepted if any of these trust managers accepts it.
  *
- * <p><b>System certificates (opt-in).</b> Additional platform stores are disabled by default and
- * only enabled when the {@code oidcTrustSystemCertificates} driver property is set to {@code true}.
- * On macOS, enumerating the keychain via {@code security find-certificate} ignores per-certificate
- * trust settings and would promote leaf / explicitly distrusted certificates to trust anchors.
+ * <p>Windows-ROOT and the Linux CA bundle are curated OS trust stores, so they are always trusted.
+ *
+ * <p><b>macOS keychain (opt-in).</b> Disabled by default and only enabled when the
+ * {@code oidcTrustSystemKeychain} driver property is {@code true}. Enumerating the keychain via
+ * {@code security find-certificate} ignores per-certificate trust settings and would promote
+ * leaf / explicitly distrusted certificates to trust anchors.
  */
 final class OidcTls {
 
   private static final Logger logger = Logger.getLogger(OidcTls.class.getName());
 
-  /** Lazily built socket factories, keyed by the {@code trustSystemCertificates} flag. */
+  /** Lazily built socket factories, keyed by the {@code trustSystemKeychain} flag. */
   private static final Map<Boolean, SSLSocketFactory> CACHE = new ConcurrentHashMap<>();
 
   private OidcTls() {
@@ -60,41 +61,43 @@ final class OidcTls {
    * Returns a cached {@link SSLSocketFactory} for the given trust configuration, building it on
    * first use.
    *
-   * @param trustSystemCertificates when {@code true}, also trust Linux system CA bundles and
-   *                                certificates exported from the macOS keychains
+   * @param trustSystemKeychain when {@code true}, also trust certificates exported from the macOS
+   *                            keychains (macOS only; ignores macOS trust settings — see class doc)
    */
-  static SSLSocketFactory systemSocketFactory(boolean trustSystemCertificates) throws GeneralSecurityException {
-    SSLSocketFactory cached = CACHE.get(trustSystemCertificates);
+  static SSLSocketFactory systemSocketFactory(boolean trustSystemKeychain) throws GeneralSecurityException {
+    SSLSocketFactory cached = CACHE.get(trustSystemKeychain);
     if (cached != null) {
       return cached;
     }
     // Not using computeIfAbsent: building throws a checked exception.
-    SSLSocketFactory factory = buildSocketFactory(trustSystemCertificates);
-    CACHE.put(trustSystemCertificates, factory);
+    SSLSocketFactory factory = buildSocketFactory(trustSystemKeychain);
+    CACHE.put(trustSystemKeychain, factory);
     return factory;
   }
 
-  private static SSLSocketFactory buildSocketFactory(boolean trustSystemCertificates) throws GeneralSecurityException {
+  private static SSLSocketFactory buildSocketFactory(boolean trustSystemKeychain) throws GeneralSecurityException {
     List<X509TrustManager> trustManagers = new ArrayList<>();
 
     // JRE default trust store: cacerts, or javax.net.ssl.trustStore when that property is set
     // (init((KeyStore) null) honors it).
     addDefaultTrustManager(trustManagers);
 
-    // Native OS trust store.
+    // Native OS trust store (curated, always trusted).
     String osName = System.getProperty("os.name", "").toLowerCase();
     if (osName.contains("windows")) {
       // Windows-ROOT honors the OS trust configuration.
       addTrustManager(trustManagers, loadWindowsRootStore());
     }
-    else if (osName.contains("linux") && trustSystemCertificates) {
+    else if (osName.contains("linux")) {
       // The curated system CA bundle; Java does not read it by default, but bundled JREs (e.g.
       // the IDE's JBR) rely on this to pick up CAs installed via update-ca-certificates.
       addTrustManager(trustManagers, loadLinuxSystemCertificates());
     }
-    else if (osName.contains("mac") && trustSystemCertificates) {
-      // Opt-in: the JDK "KeychainStore" type only exposes the user login keychain and misses
-      // corporate roots in the System / System Roots keychains, so export them via the `security` CLI.
+
+    // macOS keychain: opt-in only (ignores per-certificate trust settings — see class doc).
+    if (osName.contains("mac") && trustSystemKeychain) {
+      // The JDK "KeychainStore" type only exposes the user login keychain and misses corporate
+      // roots in the System / System Roots keychains, so export them via the `security` CLI.
       addTrustManager(trustManagers, loadMacSystemCertificates());
     }
 
@@ -190,7 +193,7 @@ final class OidcTls {
     return null;
   }
 
-  /** Keychains scanned for trusted roots on macOS when {@code oidcTrustSystemCertificates} is enabled. */
+  /** Keychains scanned for trusted roots on macOS when {@code oidcTrustSystemKeychain} is enabled. */
   private static final String[] MAC_KEYCHAINS = {
       "/System/Library/Keychains/SystemRootCertificates.keychain",
       "/Library/Keychains/System.keychain",

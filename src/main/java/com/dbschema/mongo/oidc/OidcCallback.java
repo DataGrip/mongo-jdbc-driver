@@ -19,9 +19,9 @@ public class OidcCallback implements MongoCredential.OidcCallback {
     this(redirectHost, redirectPort, false);
   }
 
-  public OidcCallback(@NotNull String redirectHost, @NotNull String redirectPort, boolean trustSystemCertificates) {
+  public OidcCallback(@NotNull String redirectHost, @NotNull String redirectPort, boolean trustSystemKeychain) {
     logger.log(Level.INFO, "Initializing OIDC callback with redirect: {0}:{1}", new Object[]{redirectHost, redirectPort});
-    this.oidcAuthFlow = new OidcAuthFlow(redirectHost, redirectPort, trustSystemCertificates);
+    this.oidcAuthFlow = new OidcAuthFlow(redirectHost, redirectPort, trustSystemKeychain);
   }
 
   @Override
