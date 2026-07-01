@@ -1,7 +1,9 @@
 package com.dbschema.mongo;
 
+import com.dbschema.mongo.oidc.OidcCallback;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoCredential;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -34,8 +36,11 @@ public class MongoClientWrapper implements AutoCloseable {
         automaticEncoding = Boolean.parseBoolean(prop.getProperty(ENCODE_CREDENTIALS));
       }
 
-      uri = insertCredentials(uri, username, password, automaticEncoding);
-      uri = insertAuthMechanism(uri, prop.getProperty(AUTH_MECHANISM));
+      String authMechanism = prop.getProperty(AUTH_MECHANISM);
+      if (!"MONGODB-OIDC".equals(authMechanism)) {
+        uri = insertCredentials(uri, username, password, automaticEncoding);
+      }
+      uri = insertAuthMechanism(uri, authMechanism);
       uri = insertAuthSource(uri, prop.getProperty(AUTH_SOURCE));
       uri = insertAuthProperty(uri, AWS_SESSION_TOKEN, prop.getProperty(AWS_SESSION_TOKEN));
       uri = insertAuthProperty(uri, SERVICE_NAME, prop.getProperty(SERVICE_NAME));
@@ -55,6 +60,16 @@ public class MongoClientWrapper implements AutoCloseable {
       MongoClientSettings.Builder builder = MongoClientSettings.builder()
           .applyConnectionString(connectionString)
           .applyToConnectionPoolSettings(b -> b.maxSize(maxPoolSize));
+
+      if ("MONGODB-OIDC".equals(authMechanism)) {
+        MongoCredential credential =
+            MongoCredential.createOidcCredential(null)
+                .withMechanismProperty(
+                    MongoCredential.OIDC_HUMAN_CALLBACK_KEY,
+                    new OidcCallback(getRedirectHost(prop), getRedirectPort(prop), getTrustSystemKeychain(prop)));
+        builder.credential(credential);
+      }
+
       String application = prop.getProperty(APPLICATION_NAME);
       if (!isNullOrEmpty(application)) {
         builder.applicationName(application);
@@ -99,6 +114,7 @@ public class MongoClientWrapper implements AutoCloseable {
         int timeout = Integer.parseInt(prop.getProperty(CONNECT_TIMEOUT, CONNECT_TIMEOUT_DEFAULT));
         builder.applyToSocketSettings(b -> b.connectTimeout(timeout, TimeUnit.MILLISECONDS));
       }
+
       this.mongoClient = MongoClients.create(builder.build());
     }
     catch (Exception e) {
@@ -137,6 +153,37 @@ public class MongoClientWrapper implements AutoCloseable {
       e.printStackTrace();
     }
     return MAX_POOL_SIZE_DEFAULT;
+  }
+
+  private String getRedirectPort(@NotNull Properties prop) {
+    try{
+      String redirectPort = prop.getProperty(OIDC_CALLBACK_PORT);
+      if (redirectPort != null) {
+        return redirectPort;
+      }
+      return Integer.toString(OIDC_CALLBACK_PORT_DEFAULT);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return Integer.toString(OIDC_CALLBACK_PORT_DEFAULT);
+    }
+  }
+
+  private String getRedirectHost(@NotNull Properties prop) {
+    try{
+      String redirectPort = prop.getProperty(OIDC_CALLBACK_HOST);
+      if (redirectPort != null) {
+        return redirectPort;
+      }
+      return OIDC_CALLBACK_HOST_DEFAULT;
+    } catch (Exception e) {
+      e.printStackTrace();
+      return OIDC_CALLBACK_HOST_DEFAULT;
+    }
+  }
+
+  private boolean getTrustSystemKeychain(@NotNull Properties prop) {
+    String value = prop.getProperty(OIDC_TRUST_SYSTEM_KEYCHAIN);
+    return value == null ? OIDC_TRUST_SYSTEM_KEYCHAIN_DEFAULT : Boolean.parseBoolean(value);
   }
 
   @Override

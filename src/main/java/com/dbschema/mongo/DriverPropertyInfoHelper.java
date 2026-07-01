@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 public class DriverPropertyInfoHelper {
   public static final String AUTH_MECHANISM = "authMechanism";
-  public static final String[] AUTH_MECHANISM_CHOICES = new String[]{"GSSAPI", "MONGODB-AWS", "MONGODB-X509", "PLAIN", "SCRAM-SHA-1", "SCRAM-SHA-256"};
+  public static final String[] AUTH_MECHANISM_CHOICES = new String[]{"GSSAPI", "MONGODB-AWS", "MONGODB-X509", "PLAIN", "SCRAM-SHA-1", "SCRAM-SHA-256", "MONGODB-OIDC"};
   public static final String AUTH_SOURCE = "authSource";
   public static final String AWS_SESSION_TOKEN = "AWS_SESSION_TOKEN";
   public static final String SERVICE_NAME = "SERVICE_NAME";
@@ -34,6 +34,12 @@ public class DriverPropertyInfoHelper {
   public static final String RETRY_WRITES = "retryWrites";
   public static final String[] RETRY_WRITES_CHOICES = new String[]{Boolean.toString(false), Boolean.toString(true)};
   private static final String RETRY_WRITES_DOCS = "https://www.mongodb.com/docs/manual/core/retryable-writes/";
+  public static final String OIDC_CALLBACK_PORT = "oidcCallbackPort";
+  public static final int OIDC_CALLBACK_PORT_DEFAULT = 27097;
+  public static final String OIDC_CALLBACK_HOST = "oidcCallbackHost";
+  public static final String OIDC_CALLBACK_HOST_DEFAULT = "localhost";
+  public static final String OIDC_TRUST_SYSTEM_KEYCHAIN = "oidcTrustSystemKeychain";
+  public static final boolean OIDC_TRUST_SYSTEM_KEYCHAIN_DEFAULT = false;
 
 
   public DriverPropertyInfo[] getPropertyInfo() {
@@ -73,6 +79,18 @@ public class DriverPropertyInfoHelper {
     addPropInfo(propInfos, RETRY_WRITES, null, "See " + RETRY_WRITES_DOCS, RETRY_WRITES_CHOICES);
 
     addPropInfo(propInfos, APPLICATION_NAME, null, "Sets the logical name of the application.", null);
+
+    addPropInfo(propInfos, OIDC_CALLBACK_PORT, Integer.toString(OIDC_CALLBACK_PORT_DEFAULT), "Sets the port for the OIDC callback.", null);
+
+    addPropInfo(propInfos, OIDC_CALLBACK_HOST, OIDC_CALLBACK_HOST_DEFAULT, "Sets the host for the OIDC callback.", null);
+
+    addPropInfo(propInfos, OIDC_TRUST_SYSTEM_KEYCHAIN, Boolean.toString(OIDC_TRUST_SYSTEM_KEYCHAIN_DEFAULT),
+        "macOS only. When true, certificates from the macOS keychains are exported via the 'security' " +
+            "tool and trusted for the OIDC HTTPS calls. WARNING: this ignores per-certificate macOS trust " +
+            "settings and may trust leaf or explicitly distrusted certificates. Leave false and use cacerts " +
+            "or javax.net.ssl.trustStore unless you understand the risk. (Windows-ROOT and the Linux system " +
+            "CA bundle are curated OS stores and are always trusted, regardless of this flag.)",
+        new String[]{"true", "false"});
 
     return propInfos.toArray(new DriverPropertyInfo[0]);
   }

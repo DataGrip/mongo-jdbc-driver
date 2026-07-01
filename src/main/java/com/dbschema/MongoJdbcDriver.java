@@ -100,6 +100,7 @@ public class MongoJdbcDriver implements Driver {
     synchronized (this) {
       ShellHolder shellHolder = this.shellHolder;
       this.shellHolder = createShellHolder();
+
       return new MongoConnection(url, info, username, password, fetchDocumentsForMeta, shellHolder);
     }
   }
