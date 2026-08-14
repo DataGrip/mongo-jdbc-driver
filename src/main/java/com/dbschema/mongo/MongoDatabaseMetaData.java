@@ -16,6 +16,34 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
   private static final String DB_NAME = "Mongo";
   private final MongoConnection con;
 
+  /** Kept in sync with the Gradle version by the 'verifyDriverVersion' task. */
+  public final static String DRIVER_VERSION = "1.24";
+
+  // derived, so that the one literal the 'verifyDriverVersion' task pins is the whole version: the major
+  // and the minor used to be maintained by hand next to it, and the minor had drifted (21 against 1.23)
+  private final static String[] VERSION_PARTS = DRIVER_VERSION.split("\\.");
+  private final static int MAJOR_VERSION = versionPart(0);
+  private final static int MINOR_VERSION = versionPart(1);
+
+  /**
+   * Parsed leniently, and never in a way that can throw: this runs in a static initializer, so a version
+   * literal the parse choked on would take down every call on this class with an ExceptionInInitializerError
+   * rather than just misreport the version. A qualifier is dropped ('25-rc1' reads as 25), and anything left
+   * unparseable reads as 0. The 'verifyDriverVersion' task rejects such a literal at build time.
+   */
+  private static int versionPart(int index) {
+    if (index >= VERSION_PARTS.length) return 0;
+    String part = VERSION_PARTS[index].trim();
+    int end = 0;
+    while (end < part.length() && Character.isDigit(part.charAt(end))) end++;
+    try {
+      return end == 0 ? 0 : Integer.parseInt(part.substring(0, end));
+    }
+    catch (NumberFormatException e) { // a digit run too long for an int
+      return 0;
+    }
+  }
+
   public final static String OBJECT_ID_TYPE_NAME = "OBJECT_ID";
   public final static String DOCUMENT_TYPE_NAME = "DOCUMENT";
 
@@ -157,9 +185,8 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
         null, // "SOURCE_DATA_TYPE", (not a DISTINCT or REF type)
         "NO" // "IS_AUTOINCREMENT" (can be auto-generated, but can also be specified)
     });
-    if (field instanceof MetaJson) {
-      MetaJson json = (MetaJson) field;
-      for (MetaField children : json.fields) {
+    if (field instanceof MetaJson json) {
+        for (MetaField children : json.fields) {
         exportColumnsRecursive(collection, columnsData, children);
       }
     }
@@ -441,21 +468,21 @@ public class MongoDatabaseMetaData implements DatabaseMetaData {
    * @see java.sql.DatabaseMetaData#getDriverVersion()
    */
   public String getDriverVersion() {
-    return "1.23";
+    return DRIVER_VERSION;
   }
 
   /**
    * @see java.sql.DatabaseMetaData#getDriverMajorVersion()
    */
   public int getDriverMajorVersion() {
-    return 1;
+    return MAJOR_VERSION;
   }
 
   /**
    * @see java.sql.DatabaseMetaData#getDriverMinorVersion()
    */
   public int getDriverMinorVersion() {
-    return 21;
+    return MINOR_VERSION;
   }
 
   public boolean usesLocalFiles() {

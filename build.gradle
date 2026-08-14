@@ -4,7 +4,7 @@ plugins {
     id "com.github.johnrengelman.shadow" version "8.1.1"
 }
 
-version '1.23'
+version '1.24'
 
 java {
     toolchain {
@@ -22,15 +22,24 @@ tasks.register('verifyDriverVersion') {
     inputs.file(metaFile)
     inputs.property('version', expected)
     doLast {
-        def matcher = (metaFile.text =~ /getDriverVersion\(\)\s*\{\s*return\s*"([^"]+)"/)
+        def matcher = (metaFile.text =~ /DRIVER_VERSION\s*=\s*"([^"]+)"/)
         if (!matcher.find()) {
-            throw new GradleException("Could not find getDriverVersion() literal in ${metaFile}")
+            throw new GradleException("Could not find the DRIVER_VERSION literal in ${metaFile}")
         }
         def actual = matcher.group(1)
         if (actual != expected) {
             throw new GradleException(
-                "Driver version mismatch: MongoDatabaseMetaData.getDriverVersion() returns '${actual}' " +
-                "but the Gradle version is '${expected}'. Update the return value to keep them in sync.")
+                "Driver version mismatch: MongoDatabaseMetaData.DRIVER_VERSION is '${actual}' " +
+                "but the Gradle version is '${expected}'. Update the constant to keep them in sync -- the " +
+                "major and the minor version are derived from it.")
+        }
+        // the major and the minor are derived from this literal, so a qualifier would be reported as a
+        // version it is not: '1.25-rc1' reads as 1.25. Rejected here rather than at runtime.
+        if (!(actual ==~ /\d+(\.\d+)*/)) {
+            throw new GradleException(
+                "MongoDatabaseMetaData.DRIVER_VERSION is '${actual}', which is not a dotted numeric " +
+                "version. The major and the minor version reported over JDBC are derived from it, so a " +
+                "qualifier would be silently dropped. Release from a numeric version.")
         }
     }
 }

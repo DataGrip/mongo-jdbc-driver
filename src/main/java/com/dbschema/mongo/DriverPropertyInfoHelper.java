@@ -40,16 +40,20 @@ public class DriverPropertyInfoHelper {
   public static final String OIDC_CALLBACK_HOST_DEFAULT = "localhost";
   public static final String OIDC_TRUST_SYSTEM_KEYCHAIN = "oidcTrustSystemKeychain";
   public static final boolean OIDC_TRUST_SYSTEM_KEYCHAIN_DEFAULT = false;
+  public static final String OIDC_ALLOWED_HOSTS = "oidcAllowedHosts";
+  public static final String OIDC_PRINCIPAL = "oidcPrincipal";
+  public static final String OIDC_PRINCIPAL_NONE = "none";
 
 
   public DriverPropertyInfo[] getPropertyInfo() {
     ArrayList<DriverPropertyInfo> propInfos = new ArrayList<>();
 
     addPropInfo(propInfos, AUTH_MECHANISM, "", "MongoDB authentication mechanism", AUTH_MECHANISM_CHOICES);
-    addPropInfo(propInfos, AUTH_SOURCE, "", "Specify the database name associated with the user's credentials.\n" +
-            "If authSource is unspecified, authSource defaults to the defaultauthdb specified in the connection string.\n" +
-            "If defaultauthdb is unspecified, then authSource defaults to admin.\n" +
-            "MongoDB will ignore authSource values if no username is provided.", null);
+    addPropInfo(propInfos, AUTH_SOURCE, "", """
+            Specify the database name associated with the user's credentials.
+            If authSource is unspecified, authSource defaults to the defaultauthdb specified in the connection string.
+            If defaultauthdb is unspecified, then authSource defaults to admin.
+            MongoDB will ignore authSource values if no username is provided.""", null);
     addPropInfo(propInfos, AWS_SESSION_TOKEN, "", "AWS session token", null);
     addPropInfo(propInfos, SERVICE_NAME, "", "Set the Kerberos service name when connecting to Kerberized MongoDB instances. This value must match the service name set on MongoDB instances to which you are connecting. Only valid when using the GSSAPI authentication mechanism.\n" +
             "SERVICE_NAME defaults to mongodb for all clients and MongoDB instances. If you change the saslServiceName setting on a MongoDB instance, you must set SERVICE_NAME to match that setting. Only valid when using the GSSAPI authentication mechanism.", null);
@@ -59,9 +63,10 @@ public class DriverPropertyInfoHelper {
     addPropInfo(propInfos, ENCODE_CREDENTIALS, Boolean.toString(ENCODE_CREDENTIALS_DEFAULT), "Connection url requires username and password to be url encoded." +
         " This setting turns on automatic url-encoding", null);
 
-    addPropInfo(propInfos, UUID_REPRESENTATION, UUID_REPRESENTATION_DEFAULT, "UUID representation defines how UUIDs are decoded and encoded.\n" +
-            "'standard' - newly created UUIDs are encoded using binary subtype 4. All UUIDs of subtype 3 are shown as raw binary values without decoding to UUID.\n" +
-            "'javaLegacy', 'csharpLegacy', 'pythonLegacy' - newly created UUIDs are encoded using corresponding legacy format (subtype 3). UUIDs of subtype 3 are decoded using corresponding legacy format despite of their actual format. UUIDs of subtype 4 are decoded using 'standard' format.",
+    addPropInfo(propInfos, UUID_REPRESENTATION, UUID_REPRESENTATION_DEFAULT, """
+                    UUID representation defines how UUIDs are decoded and encoded.
+                    'standard' - newly created UUIDs are encoded using binary subtype 4. All UUIDs of subtype 3 are shown as raw binary values without decoding to UUID.
+                    'javaLegacy', 'csharpLegacy', 'pythonLegacy' - newly created UUIDs are encoded using corresponding legacy format (subtype 3). UUIDs of subtype 3 are decoded using corresponding legacy format despite of their actual format. UUIDs of subtype 4 are decoded using 'standard' format.""",
         UUID_REPRESENTATION_CHOICES);
 
     addPropInfo(propInfos, SERVER_SELECTION_TIMEOUT, SERVER_SELECTION_TIMEOUT_DEFAULT, "How long the driver will wait for server selection to succeed before throwing an exception.", null);
@@ -91,6 +96,39 @@ public class DriverPropertyInfoHelper {
             "or javax.net.ssl.trustStore unless you understand the risk. (Windows-ROOT and the Linux system " +
             "CA bundle are curated OS stores and are always trusted, regardless of this flag.)",
         new String[]{"true", "false"});
+
+    addPropInfo(propInfos, OIDC_ALLOWED_HOSTS, null,
+        "Comma-separated list of hostnames or ip-addresses (without ports) that are allowed to be used for " +
+            "MONGODB-OIDC authentication. An entry may start with a '*.' wildcard which matches subdomains, " +
+            "for example '*.azure.com,*.mycorp.net'. These entries are added to the " +
+            "hosts trusted by default (*.mongodb.net, *.mongodb-qa.net, *.mongodb-dev.net, *.mongodbgov.net, " +
+            "localhost, 127.0.0.1, ::1), so connections to MongoDB Atlas keep working. Required when connecting " +
+            "with OIDC to a self-hosted server, because the driver refuses to start the browser login flow " +
+            "against a host that is not on the list. A '*' is only valid as that leading '*.' and nowhere " +
+            "else, so '*mycorp.net' and 'db.*.net' are rejected when the connection is opened; note that " +
+            "'*.mycorp.net' covers the subdomains of mycorp.net but not mycorp.net itself, which needs its " +
+            "own entry. Entries are matched against the hostname alone, so a port and the letter case are " +
+            "ignored: 'DB.MyCorp.NET:27017' is used as 'db.mycorp.net'. An entry that is not a hostname at " +
+            "all is rejected the same way a bad wildcard is, a pasted connection URL such as " +
+            "'mongodb://alice@db.mycorp.net:27017/admin' being the usual case: it could only ever be " +
+            "compared against a hostname, and would therefore never match.", null);
+
+    addPropInfo(propInfos, OIDC_PRINCIPAL, null,
+        "The principal name sent for MONGODB-OIDC authentication. It travels in the first handshake " +
+            "message, before any browser login, and is what a server matches against the 'matchPattern' of " +
+            "its identity providers. When this property is not set, the username written into the " +
+            "connection URL is used ('mongodb://alice@host/db'), and the username of the connection when " +
+            "the URL carries none -- the URL wins, as it does for every other authentication mechanism. " +
+            "Set it to '" + OIDC_PRINCIPAL_NONE + "' (or to an empty value) to send no principal at all, " +
+            "which is what a server with a single provider and no 'matchPattern' expects: needed when the " +
+            "connection keeps a username that is not the OIDC identity, for example a username left over " +
+            "from SCRAM authentication. Cached tokens are held per principal, so connections sending none " +
+            "share one token per provider within the process: two identities at one provider need this " +
+            "property set, or the second connection reuses the token the first one obtained. " +
+            "A principal that matches no provider, and a missing principal on a " +
+            "server that needs one, both fail with a bare 'AuthenticationFailed'; the driver logs whether " +
+            "a principal was sent and which of the two it was taken from, and the principal itself at the " +
+            "FINE level, so that a personal identifier is not written to the log by default.", null);
 
     return propInfos.toArray(new DriverPropertyInfo[0]);
   }
