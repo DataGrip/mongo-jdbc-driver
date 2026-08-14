@@ -3,6 +3,7 @@ package com.dbschema.mongo.oidc;
 import com.mongodb.MongoCredential;
 import com.mongodb.MongoCredential.OidcCallbackContext;
 import com.mongodb.MongoCredential.OidcCallbackResult;
+import com.nimbusds.oauth2.sdk.Scope;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.logging.Level;
@@ -30,9 +31,17 @@ public class OidcCallback implements MongoCredential.OidcCallback {
         ? callbackContext.getIdpInfo().getIssuer() : null;
     String clientID = callbackContext.getIdpInfo() != null
         ? callbackContext.getIdpInfo().getClientId() : null;
+    // part of the cache key: a token obtained for other scopes is for another audience and must not be reused
+    Scope scopes = callbackContext.getIdpInfo() != null
+        ? oidcAuthFlow.buildScopes(callbackContext.getIdpInfo()) : null;
+    // the principal too: the identity of the connection is the token's, since the server reads it from the
+    // token's claims and takes the principal of the handshake only to pick the provider. Sharing an entry
+    // between two principals therefore authenticates one of them as the other.
+    OidcTokenCache.Key cacheKey =
+        OidcTokenCache.Key.of(issuerURI, clientID, scopes, callbackContext.getUserName());
 
     // 1. Return cached token if still valid
-    OidcCallbackResult cached = OidcTokenCache.getIfValid(issuerURI, clientID);
+    OidcCallbackResult cached = OidcTokenCache.getIfValid(cacheKey);
     if (cached != null) {
       logger.log(Level.INFO, "Returning cached OIDC token (not expired)");
       return cached;
@@ -42,12 +51,12 @@ public class OidcCallback implements MongoCredential.OidcCallback {
     // Prefer the driver-provided refresh token (most recent), fall back to cached one
     String refreshToken = callbackContext.getRefreshToken();
     if (refreshToken == null || refreshToken.isEmpty()) {
-      refreshToken = OidcTokenCache.getRefreshToken(issuerURI, clientID);
+      refreshToken = OidcTokenCache.getRefreshToken(cacheKey);
     }
 
     if (refreshToken != null && !refreshToken.isEmpty()) {
       logger.log(Level.INFO, "Attempting token refresh");
-      OidcCallbackResult refreshed = tryRefresh(callbackContext, refreshToken, issuerURI, clientID);
+      OidcCallbackResult refreshed = tryRefresh(callbackContext, refreshToken, cacheKey);
       if (refreshed != null) {
         return refreshed;
       }
@@ -66,7 +75,7 @@ public class OidcCallback implements MongoCredential.OidcCallback {
 
   private OidcCallbackResult tryRefresh(OidcCallbackContext callbackContext,
                                         String refreshToken,
-                                        String issuerURI, String clientID) {
+                                        OidcTokenCache.Key cacheKey) {
     try {
       OidcCallbackResult refreshed = oidcAuthFlow.doRefresh(callbackContext, refreshToken);
       if (refreshed != null) {
@@ -77,7 +86,7 @@ public class OidcCallback implements MongoCredential.OidcCallback {
     catch (RefreshFailedException e) {
       logger.log(Level.WARNING, "Token refresh failed: " + e.getMessage());
     }
-    OidcTokenCache.invalidate(issuerURI, clientID);
+    OidcTokenCache.invalidate(cacheKey);
     return null;
   }
 }

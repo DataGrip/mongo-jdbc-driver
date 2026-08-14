@@ -17,8 +17,13 @@ public final class OidcResponse {
     return new OidcResponse(code, state, null, null);
   }
 
-  public static OidcResponse error(String error, String errorDescription) {
-    return new OidcResponse(null, null, error, errorDescription);
+  /**
+   * The state is carried on an error too: a provider echoes it back on the error redirect as well
+   * (RFC 6749 section 4.1.2.1), and it is what tells the error of the login in progress apart from an
+   * unsolicited request to the callback port.
+   */
+  public static OidcResponse error(String error, String errorDescription, String state) {
+    return new OidcResponse(null, state, error, errorDescription);
   }
 
   public String getCode() {
